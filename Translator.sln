@@ -5,6 +5,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3E280F85-01AC-448B-9883-C6224EDF6B0D}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
+		docker-compose.yaml = docker-compose.yaml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Translator.Infrastructure", "src\Translator.Infrastructure\Translator.Infrastructure.csproj", "{A56F2418-00A5-4A51-937C-81FDB2F82345}"
