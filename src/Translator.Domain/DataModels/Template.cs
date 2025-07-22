@@ -5,6 +5,7 @@ namespace Translator.Domain.DataModels;
 
 public class Template : BaseDataModel
 {
+    private const int HashMaxLength = 24;
     private readonly Lazy<SHA256> _hasher = new(SHA256.Create);
     public string Name { get; private set; }
     public string? Hash { get; private set; }
@@ -14,7 +15,17 @@ public class Template : BaseDataModel
     public Template(string name)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
-        Hash = _hasher.Value.ComputeHash(Encoding.UTF8.GetBytes(name)).ToString();
+        Hash = HashName(name);
         TemplateValues = new List<TemplateValue>();
+    }
+
+    private string HashName(string name)
+    {
+        var bytes = Encoding.UTF8.GetBytes(name);
+        var hash = _hasher.Value.ComputeHash(bytes);
+        return Convert
+            .ToBase64String(hash)
+            .ToLowerInvariant()
+            [..HashMaxLength];
     }
 }
