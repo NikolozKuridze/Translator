@@ -20,10 +20,5 @@ public class TranslationConfiguration : IEntityTypeConfiguration<Translation>
         builder.Property(x => x.Key)
             .IsRequired()
             .HasMaxLength(TranslationConstants.KEY_MAX_LENGTH);
-
-        builder
-            .HasOne(x => x.TemplateValue)
-            .WithMany()
-            .HasForeignKey(x => x.TemplateValueId);
     }
 }

@@ -18,7 +18,7 @@ public class Repository<TEntity> : IRepository<TEntity>
     public async Task AddAsync(TEntity entity, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(entity);
-        await _dbSet.AddAsync(entity, cancellationToken);
+        await _context.AddAsync(entity, cancellationToken);
     }
 
     public Task UpdateAsync(TEntity entity)
