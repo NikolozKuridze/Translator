@@ -5,11 +5,10 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
+      <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.7" />
-    </ItemGroup>
-    <ItemGroup>
-      <Folder Include="Database\Postgres\Repository\" />
+      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
     </ItemGroup>
     <ItemGroup>
       <ProjectReference Include="..\Translator.Domain\Translator.Domain.csproj" />
