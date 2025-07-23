@@ -4,5 +4,5 @@ public enum ErrorCodes
 {
     NotFound = 404,
     BadRequest = 400,
-    Forbidden = 403,
+    Gone = 410
 }

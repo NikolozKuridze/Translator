@@ -20,6 +20,10 @@ public class TemplateConfiguration : IEntityTypeConfiguration<Template>
             .HasMaxLength(TemplateConstants.TEMPLATE_HASH_MAX_LENGTH);
 
         templateBuilder
+            .Property(x => x.Name)
+            .HasMaxLength(TemplateConstants.TEMPLATE_NAME_MAX_LENGTH);
+        
+        templateBuilder
             .HasMany(x => x.TemplateValues)
             .WithOne(x => x.Template)
             .HasForeignKey(x => x.TemplateId)

@@ -1,3 +1,5 @@
+using Serilog;
+using Translator.API.Middlewares;
 using Translator.Application;
 using Translator.Infrastructure;
 
@@ -9,6 +11,10 @@ builder.Services.AddApplicationDependencies();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+builder.Services.AddSerilog(
+    Log.Logger = new LoggerConfiguration()
+        .ReadFrom.Configuration(builder.Configuration)
+        .CreateLogger());
 
 var app = builder.Build();
 
@@ -17,5 +23,5 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.MapControllers();
 app.UseHttpsRedirection();
-
+app.UseMiddleware<ErrorHandlingMiddleware>();
 app.Run();

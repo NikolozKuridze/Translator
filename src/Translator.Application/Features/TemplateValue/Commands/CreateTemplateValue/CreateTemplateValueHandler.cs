@@ -2,22 +2,25 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Application.Helpers;
-using Translator.Domain.DataModels;
+
 using Translator.Infrastructure.Database.Postgres.Repository;
 using TemplateEntity = Translator.Domain.DataModels.Template;
 using TemplateValueEntity = Translator.Domain.DataModels.TemplateValue;
+using TranslationEntity = Translator.Domain.DataModels.Translation;
+
+
 namespace Translator.Application.Features.TemplateValue.Commands.CreateTemplateValue;
 
 public class CreateTemplateValueHandler : IRequestHandler<CreateTemplateValueCommand>
 {
     private readonly IRepository<TemplateEntity> _templateRepository;
     private readonly IRepository<TemplateValueEntity> _templateValueRepository;
-    private readonly IRepository<Translation> _translationRepository;
+    private readonly IRepository<TranslationEntity> _translationRepository;
 
     public CreateTemplateValueHandler(
         IRepository<TemplateEntity> templateRepository,
         IRepository<TemplateValueEntity> templateValueRepository,
-        IRepository<Translation> translationRepository)
+        IRepository<TranslationEntity> translationRepository)
     {
         _templateRepository = templateRepository;
         _templateValueRepository = templateValueRepository;
@@ -45,7 +48,7 @@ public class CreateTemplateValueHandler : IRequestHandler<CreateTemplateValueCom
 
         var templateValue = new TemplateValueEntity(existsTemplate.Id, request.Key);
 
-        var translation = new Translation(
+        var translation = new TranslationEntity(
                 templateValue.Id,
                 request.Value,
                 LanguageDetector.DetectLanguage(request.Value));

@@ -1,4 +1,6 @@
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
+using Translator.Application.Features.Translation.Commands.CreateTranslation;
 
 namespace Translator.Application;
 
@@ -10,5 +12,7 @@ public static class ApplicationDependencies
         {
             cfg.RegisterServicesFromAssemblies(typeof(ApplicationDependencies).Assembly);
         });
+
+        services.AddValidatorsFromAssemblyContaining<CreateTranslationCommandValidator>(includeInternalTypes: true);
     }
 }
