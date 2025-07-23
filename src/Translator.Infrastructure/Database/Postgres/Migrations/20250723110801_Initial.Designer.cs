@@ -12,7 +12,7 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250723082222_Initial")]
+    [Migration("20250723110801_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -39,7 +39,8 @@ namespace Translator.Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
                         .HasColumnName("name");
 
                     b.HasKey("Id")

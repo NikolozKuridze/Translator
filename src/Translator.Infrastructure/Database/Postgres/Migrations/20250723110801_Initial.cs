@@ -16,7 +16,7 @@ namespace Translator.Infrastructure.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "text", nullable: false),
+                    name = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     hash = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: true)
                 },
                 constraints: table =>
