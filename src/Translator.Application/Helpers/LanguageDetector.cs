@@ -4,6 +4,7 @@ namespace Translator.Application.Helpers;
 
 public static class LanguageDetector
 {
+    // TODO: check all symbols
     public static Languages DetectLanguage(string input)
     {
         foreach (char c in input)
@@ -28,5 +29,5 @@ public static class LanguageDetector
         c >= '\u10A0' && c <= '\u10FF';
 
     private static bool IsLatin(char c) =>
-        (c >= '\u0041' && c <= '\u007A') || (c >= '\u00C0' && c <= '\u00FF'); // basic + accented
+        (c >= '\u0041' && c <= '\u007A') || (c >= '\u00C0' && c <= '\u00FF'); 
 }
