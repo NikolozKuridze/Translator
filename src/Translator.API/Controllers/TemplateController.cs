@@ -1,44 +1,46 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Contracts;
 using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
-using Translator.Application.Features.TemplateValue.Commands.CreateTemplateValue;
+using Translator.Application.Features.Template.Queries.GetTemplate;
 
 namespace Translator.API.Controllers;
 
-[Route("template")]
 [ApiController]
 public class TemplateController : ControllerBase
 {
     private readonly IMediator _mediator;
 
     public TemplateController(IMediator mediator)
-    {
-        _mediator = mediator;
-    }
-
-    [HttpPost]
+        => _mediator = mediator;
+    
+    [HttpPost("{templateName}/create")]
     public async Task<IResult> AddTemplate(
-        [FromBody] CreateTemplateCommand command)
+        [FromRoute] string templateName)
     {
-        await _mediator.Send(command);
-        return Results.Ok();
-    }
-
-    [HttpPost("templateValue")]
-    public async Task<IResult> AddTemplateValue(
-        [FromBody] CreateTemplateValueCommand command)
-    {
+        var command = new CreateTemplateCommand(templateName);
         await _mediator.Send(command);
         return Results.Ok();
     }
     
-    [HttpDelete]
-    public async Task<IResult> DeleteTemplate(
-        [FromBody] DeleteTemplateCommand command)
+    [HttpPost("{templateName}")]
+    public async Task<IResult> GetTemplate(
+        [FromRoute] string templateName,
+        [FromBody] GetTemplateContract contract)
     {
+        var command = new GetTemplateCommand(templateName, contract.Language);
+        var result = await _mediator.Send(command);
+        return Results.Ok(result);
+    }
+    
+    [HttpDelete("{templateName}")]
+    public async Task<IResult> DeleteTemplate(
+        [FromRoute] string templateName)
+    {
+        var command = new DeleteTemplateCommand(templateName);
         await _mediator.Send(command);
-        return Results.Ok();
+        return Results.NoContent();
     }
 
 }
