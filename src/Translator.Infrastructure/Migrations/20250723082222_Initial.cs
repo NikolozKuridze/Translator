@@ -31,6 +31,7 @@ namespace Translator.Infrastructure.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     template_id = table.Column<Guid>(type: "uuid", nullable: false),
                     key = table.Column<string>(type: "text", nullable: false),
+                    hash = table.Column<string>(type: "text", nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -50,8 +51,7 @@ namespace Translator.Infrastructure.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     template_value_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    key = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
-                    value = table.Column<string>(type: "text", nullable: false),
+                    value = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     language = table.Column<string>(type: "text", nullable: false),
                     created = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     modified = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
@@ -70,6 +70,12 @@ namespace Translator.Infrastructure.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_template_hash",
                 table: "template",
+                column: "hash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_template_value_hash",
+                table: "template_value",
                 column: "hash",
                 unique: true);
 

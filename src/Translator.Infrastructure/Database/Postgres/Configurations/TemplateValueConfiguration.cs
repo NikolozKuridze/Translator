@@ -10,6 +10,9 @@ public class TemplateValueConfiguration : IEntityTypeConfiguration<TemplateValue
     {
         templateValueBuilder
             .HasKey(x => x.Id);
+        templateValueBuilder
+            .HasIndex(x => x.Hash)
+            .IsUnique();
         
         templateValueBuilder
             .Property(x => x.Key)

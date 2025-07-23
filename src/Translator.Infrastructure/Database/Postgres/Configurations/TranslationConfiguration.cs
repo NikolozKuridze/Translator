@@ -17,8 +17,8 @@ public class TranslationConfiguration : IEntityTypeConfiguration<Translation>
             .HasConversion<string>()
             .IsRequired();
         
-        builder.Property(x => x.Key)
+        builder.Property(x => x.Value)
             .IsRequired()
-            .HasMaxLength(TranslationConstants.KEY_MAX_LENGTH);
+            .HasMaxLength(TranslationConstants.VALUE_MAX_LENGTH);
     }
 }

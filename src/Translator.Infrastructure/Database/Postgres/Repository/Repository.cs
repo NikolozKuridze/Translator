@@ -21,21 +21,19 @@ public class Repository<TEntity> : IRepository<TEntity>
         await _context.AddAsync(entity, cancellationToken);
     }
 
-    public Task UpdateAsync(TEntity entity)
+    public async Task UpdateAsync(TEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
         _dbSet.Update(entity);
-        return Task.CompletedTask;
     }
 
-    public Task DeleteAsync(TEntity[] entities)
+    public async Task DeleteAsync(TEntity[] entities)
     {
         ArgumentNullException.ThrowIfNull(entities);
         foreach (var entity in entities)
         {
             _dbSet.Remove(entity);
         }
-        return Task.CompletedTask;
     }
 
     public IQueryable<TEntity> Where(Expression<Func<TEntity, bool>> predicate)
@@ -49,8 +47,8 @@ public class Repository<TEntity> : IRepository<TEntity>
         return _dbSet.AsQueryable();
     }
 
-    public Task<int> SaveChangesAsync(CancellationToken cancellationToken)
+    public async Task<int> SaveChangesAsync(CancellationToken cancellationToken)
     {
-        return _context.SaveChangesAsync(cancellationToken);
+        return await _context.SaveChangesAsync(cancellationToken);
     }
 }

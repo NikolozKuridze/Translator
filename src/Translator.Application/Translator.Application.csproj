@@ -7,6 +7,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Folder Include="Features\TemplateValue\Queries\" />
       <Folder Include="Features\Template\Queries\" />
     </ItemGroup>
 
