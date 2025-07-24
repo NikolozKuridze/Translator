@@ -22,6 +22,47 @@ namespace Translator.Infrastructure.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Translator.Domain.DataModels.Language", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
+                        .HasColumnName("code");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(true)
+                        .HasColumnName("is_active");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("name");
+
+                    b.Property<string>("UnicodeRange")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("unicode_range");
+
+                    b.HasKey("Id")
+                        .HasName("pk_language");
+
+                    b.HasIndex("Code")
+                        .IsUnique()
+                        .HasDatabaseName("ix_language_code");
+
+                    b.ToTable("language", (string)null);
+                });
+
             modelBuilder.Entity("Translator.Domain.DataModels.Template", b =>
                 {
                     b.Property<Guid>("Id")
@@ -33,6 +74,14 @@ namespace Translator.Infrastructure.Migrations
                         .HasMaxLength(24)
                         .HasColumnType("character varying(24)")
                         .HasColumnName("hash");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
+
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("language_id");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -46,6 +95,9 @@ namespace Translator.Infrastructure.Migrations
                     b.HasIndex("Hash")
                         .IsUnique()
                         .HasDatabaseName("ix_template_hash");
+
+                    b.HasIndex("LanguageId")
+                        .HasDatabaseName("ix_template_language_id");
 
                     b.ToTable("template", (string)null);
                 });
@@ -65,6 +117,10 @@ namespace Translator.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("hash");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
                     b.Property<string>("Key")
                         .IsRequired()
@@ -99,14 +155,13 @@ namespace Translator.Infrastructure.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created");
 
-                    b.Property<string>("Language")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("language");
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_active");
 
-                    b.Property<DateTimeOffset>("Modified")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("modified");
+                    b.Property<Guid>("LanguageId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("language_id");
 
                     b.Property<Guid>("TemplateValueId")
                         .HasColumnType("uuid")
@@ -121,10 +176,25 @@ namespace Translator.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("pk_translation");
 
+                    b.HasIndex("LanguageId")
+                        .HasDatabaseName("ix_translation_language_id");
+
                     b.HasIndex("TemplateValueId")
                         .HasDatabaseName("ix_translation_template_value_id");
 
                     b.ToTable("translation", (string)null);
+                });
+
+            modelBuilder.Entity("Translator.Domain.DataModels.Template", b =>
+                {
+                    b.HasOne("Translator.Domain.DataModels.Language", "Language")
+                        .WithMany()
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_template_language_language_id");
+
+                    b.Navigation("Language");
                 });
 
             modelBuilder.Entity("Translator.Domain.DataModels.TemplateValue", b =>
@@ -141,6 +211,13 @@ namespace Translator.Infrastructure.Migrations
 
             modelBuilder.Entity("Translator.Domain.DataModels.Translation", b =>
                 {
+                    b.HasOne("Translator.Domain.DataModels.Language", "Language")
+                        .WithMany("Translations")
+                        .HasForeignKey("LanguageId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_translation_language_language_id");
+
                     b.HasOne("Translator.Domain.DataModels.TemplateValue", "TemplateValue")
                         .WithMany("Translations")
                         .HasForeignKey("TemplateValueId")
@@ -148,7 +225,14 @@ namespace Translator.Infrastructure.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_translation_template_value_template_value_id");
 
+                    b.Navigation("Language");
+
                     b.Navigation("TemplateValue");
+                });
+
+            modelBuilder.Entity("Translator.Domain.DataModels.Language", b =>
+                {
+                    b.Navigation("Translations");
                 });
 
             modelBuilder.Entity("Translator.Domain.DataModels.Template", b =>
