@@ -16,4 +16,8 @@
       <ProjectReference Include="..\Translator.Infrastructure\Translator.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Helpers\" />
+    </ItemGroup>
+
 </Project>
