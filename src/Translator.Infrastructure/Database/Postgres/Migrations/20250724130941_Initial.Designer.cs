@@ -12,7 +12,7 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250724114353_Initial")]
+    [Migration("20250724130941_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -82,10 +82,6 @@ namespace Translator.Infrastructure.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("is_active");
 
-                    b.Property<Guid>("LanguageId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("language_id");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(32)
@@ -98,9 +94,6 @@ namespace Translator.Infrastructure.Migrations
                     b.HasIndex("Hash")
                         .IsUnique()
                         .HasDatabaseName("ix_template_hash");
-
-                    b.HasIndex("LanguageId")
-                        .HasDatabaseName("ix_template_language_id");
 
                     b.ToTable("template", (string)null);
                 });
@@ -186,18 +179,6 @@ namespace Translator.Infrastructure.Migrations
                         .HasDatabaseName("ix_translation_template_value_id");
 
                     b.ToTable("translation", (string)null);
-                });
-
-            modelBuilder.Entity("Translator.Domain.DataModels.Template", b =>
-                {
-                    b.HasOne("Translator.Domain.DataModels.Language", "Language")
-                        .WithMany()
-                        .HasForeignKey("LanguageId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_template_language_language_id");
-
-                    b.Navigation("Language");
                 });
 
             modelBuilder.Entity("Translator.Domain.DataModels.TemplateValue", b =>

@@ -33,18 +33,11 @@ namespace Translator.Infrastructure.Migrations
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     name = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     hash = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: true),
-                    is_active = table.Column<bool>(type: "boolean", nullable: false),
-                    language_id = table.Column<Guid>(type: "uuid", nullable: false)
+                    is_active = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_template", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_template_language_language_id",
-                        column: x => x.language_id,
-                        principalTable: "language",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -110,11 +103,6 @@ namespace Translator.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_template_language_id",
-                table: "template",
-                column: "language_id");
-
-            migrationBuilder.CreateIndex(
                 name: "ix_template_value_hash",
                 table: "template_value",
                 column: "hash",
@@ -143,13 +131,13 @@ namespace Translator.Infrastructure.Migrations
                 name: "translation");
 
             migrationBuilder.DropTable(
+                name: "language");
+
+            migrationBuilder.DropTable(
                 name: "template_value");
 
             migrationBuilder.DropTable(
                 name: "template");
-
-            migrationBuilder.DropTable(
-                name: "language");
         }
     }
 }
