@@ -32,7 +32,7 @@ public class Repository<TEntity> : IRepository<TEntity>
         ArgumentNullException.ThrowIfNull(entities);
         foreach (var entity in entities)
         {
-            _dbSet.Remove(entity);
+            entity.IsActive = false;
         }
     }
 
