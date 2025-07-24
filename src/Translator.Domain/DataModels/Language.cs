@@ -5,7 +5,6 @@ public class Language : BaseDataModel
     public string Code { get; set; } = default!; 
     public string Name { get; set; } = default!;
     public string UnicodeRange { get; set; } = default!;
-    public bool IsActive { get; set; } = true;
     
     public ICollection<Translation> Translations { get; set; } = null!;
 

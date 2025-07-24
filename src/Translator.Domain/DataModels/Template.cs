@@ -11,7 +11,6 @@ public class Template : BaseDataModel
     public string? Hash { get; private set; }
     
     public bool IsActive { get; private set; }
-    
     public ICollection<TemplateValue> TemplateValues { get; set; }
 
     public Template(string name)

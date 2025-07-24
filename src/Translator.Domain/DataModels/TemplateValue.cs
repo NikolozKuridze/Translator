@@ -7,7 +7,6 @@ public class TemplateValue : BaseDataModel
     public string Key { get; private set; } = null!;
     public string Hash { get; private set; } = null!;
     public DateTimeOffset CreatedAt { get; private set; }
-    public bool IsActive { get; private set; }
     
     public Template Template { get; private set; } = null!;
     public ICollection<Translation> Translations { get; set; }

@@ -24,12 +24,12 @@ public class TemplateController : ControllerBase
         return Results.Ok();
     }
     
-    [HttpPost("{templateName}")]
+    [HttpGet("{templateName}/{lang}")]
     public async Task<IResult> GetTemplate(
         [FromRoute] string templateName,
-        [FromBody] GetTemplateContract contract)
+        [AsParameters] string lang)
     {
-        var command = new GetTemplateCommand(templateName, contract.Language);
+        var command = new GetTemplateCommand(templateName, lang);
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
