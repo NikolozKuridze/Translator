@@ -1,7 +1,7 @@
 using FluentValidation;
 using Translator.Infrastructure.Database.Postgres.Constants;
 
-namespace Translator.Application.Features.Language.Commands;
+namespace Translator.Application.Features.Language.Commands.AddLanguage;
 
 public class AddLanguageCommandValidator : AbstractValidator<AddLanguageCommand>
 {

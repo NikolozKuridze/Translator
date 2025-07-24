@@ -5,7 +5,7 @@ using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using LanguageEntity = Translator.Domain.DataModels.Language;
 
-namespace Translator.Application.Features.Language.Commands;
+namespace Translator.Application.Features.Language.Commands.AddLanguage;
 
 public class AddLanguageHandler : IRequestHandler<AddLanguageCommand, AddLanguageResponse>
 {
