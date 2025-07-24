@@ -4,7 +4,8 @@ using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using LanguageEntity = Translator.Domain.DataModels.Language;
-namespace Translator.Application.Features.Language.DeleteLanguage;
+
+namespace Translator.Application.Features.Language.Commands.DeleteLanguage;
 
 public class DeleteLanguageHandler : IRequestHandler<DeleteLanguageCommand>
 {

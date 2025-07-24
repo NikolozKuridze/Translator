@@ -1,7 +1,7 @@
 using FluentValidation;
 using Translator.Infrastructure.Database.Postgres.Constants;
 
-namespace Translator.Application.Features.Language.DeleteLanguage;
+namespace Translator.Application.Features.Language.Commands.DeleteLanguage;
 
 public class DeleteLanguageCommandValidator : AbstractValidator<DeleteLanguageCommand>
 {
