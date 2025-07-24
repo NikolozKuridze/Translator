@@ -20,7 +20,7 @@ public class TranslationController : ControllerBase
         [FromRoute] string templateValue,
         [FromBody] CreateTranslationContract contract)
     {
-        var command = new CreateTranslationCommand(template, templateValue, contract.Value, contract.Language);        
+        var command = new CreateTranslationCommand(template, templateValue, contract.Value, contract.LanguageCode);        
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
