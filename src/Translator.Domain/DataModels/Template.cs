@@ -10,6 +10,8 @@ public class Template : BaseDataModel
     public string Name { get; private set; }
     public string? Hash { get; private set; }
     
+    public bool IsActive { get; private set; }
+    
     public ICollection<TemplateValue> TemplateValues { get; set; }
 
     public Template(string name)
@@ -17,6 +19,7 @@ public class Template : BaseDataModel
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Hash = HashName(name);
         TemplateValues = new List<TemplateValue>();
+        IsActive = true;
     }
 
     public static string HashName(string name)

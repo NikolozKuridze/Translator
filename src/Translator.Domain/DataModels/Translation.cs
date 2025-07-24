@@ -9,6 +9,7 @@ public class Translation : BaseDataModel
     public Languages Language { get; private set; }
     public DateTimeOffset Created { get; private set; }
     public DateTimeOffset Modified { get; private set; }
+    public bool IsActive { get; private set; }
     
     public TemplateValue TemplateValue { get; set; }
 
@@ -18,12 +19,7 @@ public class Translation : BaseDataModel
         TemplateValueId = templateValueId; 
         Value = value ?? throw new ArgumentNullException(nameof(value));
         Language = language;
+        IsActive = true;
         Created = DateTimeOffset.UtcNow;
-    }
-
-    public void ModifyValue(string newValue)
-    {
-        Value = newValue ?? throw new ArgumentNullException(nameof(newValue));
-        Modified = DateTimeOffset.UtcNow;
     }
 }   
