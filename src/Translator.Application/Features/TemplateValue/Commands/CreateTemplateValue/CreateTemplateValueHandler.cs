@@ -2,11 +2,11 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Application.Helpers;
-
 using Translator.Infrastructure.Database.Postgres.Repository;
 using TemplateEntity = Translator.Domain.DataModels.Template;
 using TemplateValueEntity = Translator.Domain.DataModels.TemplateValue;
 using TranslationEntity = Translator.Domain.DataModels.Translation;
+using LanguageEntity = Translator.Domain.DataModels.Language;
 
 
 namespace Translator.Application.Features.TemplateValue.Commands.CreateTemplateValue;
@@ -15,15 +15,18 @@ public class CreateTemplateValueHandler : IRequestHandler<CreateTemplateValueCom
 {
     private readonly IRepository<TemplateEntity> _templateRepository;
     private readonly IRepository<TemplateValueEntity> _templateValueRepository;
+    private readonly IRepository<LanguageEntity> _languageEntityRepository;
     private readonly IRepository<TranslationEntity> _translationRepository;
 
     public CreateTemplateValueHandler(
         IRepository<TemplateEntity> templateRepository,
         IRepository<TemplateValueEntity> templateValueRepository,
+        IRepository<LanguageEntity> languageEntityRepository,
         IRepository<TranslationEntity> translationRepository)
     {
         _templateRepository = templateRepository;
         _templateValueRepository = templateValueRepository;
+        _languageEntityRepository = languageEntityRepository;
         _translationRepository = translationRepository;
     }
     
@@ -40,6 +43,12 @@ public class CreateTemplateValueHandler : IRequestHandler<CreateTemplateValueCom
             .Where(t => t.Hash == existsTemplateValueHash)
             .SingleOrDefaultAsync(cancellationToken);
 
+        var languages = _languageEntityRepository
+            .AsQueryable()
+            .ToListAsync(cancellationToken).Result;
+        
+        var textLanguage = LanguageDetector.DetectOrThrow(request.Value, languages);
+        
         if (existsTemplateValue is not null)
             throw new TemplateValueAlreadyExistsException(request.Key);
         
@@ -50,8 +59,9 @@ public class CreateTemplateValueHandler : IRequestHandler<CreateTemplateValueCom
 
         var translation = new TranslationEntity(
                 templateValue.Id,
-                request.Value,
-                LanguageDetector.DetectLanguage(request.Value));
+                request.Value);
+        
+        translation.Language = textLanguage;
         
         await _templateValueRepository.AddAsync(templateValue, cancellationToken);
         await _translationRepository.AddAsync(translation, cancellationToken);

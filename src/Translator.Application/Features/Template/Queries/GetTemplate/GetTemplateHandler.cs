@@ -21,17 +21,18 @@ public class GetFastTranslationsHandler : IRequestHandler<GetTemplateCommand, IE
     {
         var hash = TemplateEntity.HashName(request.TemplateName);
 
-        var template = await _templateRepository
-            .Where(t => t.Hash == hash)
-            .Select(t => t.TemplateValues
-                .Select(v => new TemplateTranslationDto(
-                    v.Key,
-                    v.Translations
-                        .Where(tr => tr.Language == request.Language)
-                        .Select(tr => tr.Value)
-                        .FirstOrDefault() ?? string.Empty)))
-            .SingleOrDefaultAsync(cancellationToken);
-
+        var template = await (
+            from t in _templateRepository
+            where t.Hash == hash
+            from tv in t.TemplateValues
+            from tr in tv.Translations
+                .Where(translation => translation.Language.Code == request.LanguageCode)
+                .DefaultIfEmpty()
+            select new TemplateTranslationDto(
+                tv.Key,
+                tr.Value ?? string.Empty)
+        ).ToListAsync(cancellationToken);
+        
         return template ?? throw new TemplateNotFoundException(request.TemplateName);
     }
 }

@@ -6,7 +6,7 @@ using Translator.Application.Features.TemplateValue.Commands.DeleteTemplateValue
 
 namespace Translator.API.Controllers;
 
-[Route("api/templates/{template}/values")]
+[Route("{template}/values")]
 public class TemplateValueController : ControllerBase
 {
     private readonly IMediator _mediator;
