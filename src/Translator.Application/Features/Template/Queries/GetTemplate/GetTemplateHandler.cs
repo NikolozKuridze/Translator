@@ -27,7 +27,6 @@ public class GetFastTranslationsHandler : IRequestHandler<GetTemplateCommand, IE
             from tv in t.TemplateValues
             from tr in tv.Translations
                 .Where(translation => translation.Language.Code == request.LanguageCode)
-                .DefaultIfEmpty()
             select new TemplateTranslationDto(
                 tv.Key,
                 tr.Value ?? string.Empty)

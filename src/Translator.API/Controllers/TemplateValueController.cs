@@ -18,7 +18,7 @@ public class TemplateValueController : ControllerBase
         [FromRoute] string template,
         [FromBody] CreateTemplateValueContract contract)
     {
-        var command = new CreateTemplateValueCommand(template, contract.Key, contract.Value);
+        var command = new CreateTemplateValueCommand(template, contract.Key.Trim(), contract.Value.Trim());
         await _mediator.Send(command);
         return Results.Ok();
     }

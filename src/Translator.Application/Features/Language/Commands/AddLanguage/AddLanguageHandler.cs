@@ -25,7 +25,7 @@ public class AddLanguageHandler : IRequestHandler<AddLanguageCommand, AddLanguag
         await _validator.ValidateAndThrowAsync(request, cancellationToken);
 
         var existsLanguage = await _repository
-            .Where(x => x.Code == request.Code && x.IsActive == false)
+            .Where(x => x.Code == request.Code.ToLower() && x.IsActive == false)
             .SingleOrDefaultAsync(cancellationToken);
         
         if (existsLanguage is null)

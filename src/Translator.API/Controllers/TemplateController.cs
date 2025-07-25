@@ -19,7 +19,7 @@ public class TemplateController : ControllerBase
     public async Task<IResult> AddTemplate(
         [FromRoute] string templateName)
     {
-        var command = new CreateTemplateCommand(templateName);
+        var command = new CreateTemplateCommand(templateName.Trim());
         await _mediator.Send(command);
         return Results.Ok();
     }
