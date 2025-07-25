@@ -24,19 +24,18 @@ public class AddLanguageHandler : IRequestHandler<AddLanguageCommand, AddLanguag
     {
         await _validator.ValidateAndThrowAsync(request, cancellationToken);
 
-        var existsTranslation = await _repository
-            .Where(x => x.Code == request.Code)
+        var existsLanguage = await _repository
+            .Where(x => x.Code == request.Code && x.IsActive == false)
             .SingleOrDefaultAsync(cancellationToken);
         
-        if (existsTranslation is not null)
-            throw new LanguageAlreadyExistsException(request.Name);
-        
-        var language = new LanguageEntity(request.Code, request.Name, request.UnicodeRange);
-       
-        await _repository.AddAsync(language, cancellationToken);
+        if (existsLanguage is null)
+            throw new LanguageAlreadyAdded(request.Code);
+
+
+        existsLanguage.IsActive = true;
         await _repository.SaveChangesAsync(cancellationToken);
-        return new AddLanguageResponse(request.Code, request.Name);
+        return new AddLanguageResponse(request.Code);
     }
 }
 
-public record AddLanguageResponse(string LanguageCode, string LanguageName);
+public record AddLanguageResponse(string LanguageCode);
