@@ -15,16 +15,16 @@ public class LanguageController : ControllerBase
     public LanguageController(IMediator mediator)
         => _mediator = mediator;
 
-    [HttpPost("language/create")]
+    [HttpPost("language/add")]
     public async Task<IResult> Handle(
         [FromBody] AddLanguageContract request)
     {
-        var command = new AddLanguageCommand(request.Name, request.Code, request.UnicodeRange);
+        var command = new AddLanguageCommand(request.Code);
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
 
-    [HttpDelete("language/delete")]
+    [HttpDelete("language/remove")]
     public async Task<IResult> Handle(
         [FromBody] DeleteLanguageContract request)
     {

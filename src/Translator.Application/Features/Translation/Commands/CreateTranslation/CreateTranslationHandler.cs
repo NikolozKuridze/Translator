@@ -44,7 +44,7 @@ public class CreateTranslationHandler : IRequestHandler<CreateTranslationCommand
             .SingleOrDefaultAsync(cancellationToken);
 
         var languages = _languageEntityRepository
-            .AsQueryable()
+            .Where(l => l.IsActive)
             .ToListAsync(cancellationToken).Result;
         
         var textLanguage = LanguageDetector.DetectOrThrow(request.Value, languages);

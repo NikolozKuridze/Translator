@@ -44,7 +44,7 @@ public class CreateTemplateValueHandler : IRequestHandler<CreateTemplateValueCom
             .SingleOrDefaultAsync(cancellationToken);
 
         var languages = _languageEntityRepository
-            .AsQueryable()
+            .Where(l => l.IsActive == true)
             .ToListAsync(cancellationToken).Result;
         
         var textLanguage = LanguageDetector.DetectOrThrow(request.Value, languages);
