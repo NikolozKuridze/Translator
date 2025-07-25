@@ -32,7 +32,7 @@ public class LanguageConfiguration : IEntityTypeConfiguration<Language>
 
         builder
             .Property(l => l.IsActive)
-            .HasDefaultValue(true);
+            .HasDefaultValue(false);
 
         builder
             .HasMany(l => l.Translations)

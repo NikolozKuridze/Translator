@@ -13,4 +13,10 @@
     <ItemGroup>
       <ProjectReference Include="..\Translator.Domain\Translator.Domain.csproj" />
     </ItemGroup>
+    
+    <ItemGroup>
+        <None Update="Database/Postgres/SeedData/languages.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
 </Project>

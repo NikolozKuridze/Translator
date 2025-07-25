@@ -2,9 +2,9 @@ namespace Translator.Domain.DataModels;
 
 public class Language : BaseDataModel
 {
-    public string Code { get; set; } = default!; 
-    public string Name { get; set; } = default!;
-    public string UnicodeRange { get; set; } = default!;
+    public string Code { get; private set; } = default!; 
+    public string Name { get; private set; } = default!;
+    public string UnicodeRange { get; private set; } = default!;
     
     public ICollection<Translation> Translations { get; set; } = null!;
 
@@ -13,5 +13,6 @@ public class Language : BaseDataModel
         Code = code;
         Name = name;
         UnicodeRange = unicodeRange;
+        IsActive = false;
     }
 }
