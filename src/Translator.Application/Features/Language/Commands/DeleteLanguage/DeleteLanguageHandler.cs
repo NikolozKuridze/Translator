@@ -25,8 +25,9 @@ public class DeleteLanguageHandler : IRequestHandler<DeleteLanguageCommand>
         await _validator.ValidateAndThrowAsync(request, cancellationToken);
         
         var existsLanguage = await _repository
-            .Where(l => l.Code == request.Code)
+            .Where(l => l.Code == request.Code && l.IsActive)
             .SingleOrDefaultAsync(cancellationToken);
+        
         if (existsLanguage is null)
             throw new LanguageNotFoundException(request.Code);
         
