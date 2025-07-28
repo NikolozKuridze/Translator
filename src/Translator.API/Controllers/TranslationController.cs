@@ -1,9 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using TestTranslateApp.Application.Services.TranslationService;
 using Translator.API.Contracts;
 using Translator.Application.Features.TemplateValue.Commands.CreateTemplateValue;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
+using Translator.Domain.Contracts;
 
 namespace Translator.API.Controllers;
 
@@ -34,5 +36,18 @@ public class TranslationController : ControllerBase
         var command = new DeleteTranslationCommand(template, templateValue, contract.Value);
         await _mediator.Send(command);
         return Results.NoContent();
+    }
+
+    [HttpPost("translate")]
+    [ProducesResponseType(typeof(TranslateResponse), 200)]
+    [ProducesResponseType(typeof(TranslateResponse), 400)]
+    public async Task<IActionResult> Translate(
+        [FromBody] TranslateRequest request,
+        [FromServices] ITranslationService translationService)
+    {
+   
+        var response = await translationService.TranslateTextAsync(request);
+
+        return Ok(response);
     }
 }

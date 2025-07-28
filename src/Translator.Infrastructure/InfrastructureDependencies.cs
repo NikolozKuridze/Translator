@@ -1,14 +1,22 @@
+using Google.Cloud.Translation.V2;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using StackExchange.Redis;
+using TestTranslateApp.Application.Services.TranslationService;
+using TranslationService.Services;
+using TranslationService.Services.Caching;
 using Translator.Infrastructure.Configurations;
 using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
+using Translator.Infrastructure.Database.Redis;
 
 namespace Translator.Infrastructure;
 
 public static class InfrastructureDependencies 
 {
+
     public static void AddInfrastructureDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         // postgres
@@ -21,6 +29,24 @@ public static class InfrastructureDependencies
             });
         
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
+
+        // redis
+        services.Configure<RedisConfiguration>(
+           configuration.GetSection(nameof(RedisConfiguration)));
+
+        services.AddSingleton<IRedisService, RedisService>();
+
+        services.AddSingleton<IConnectionMultiplexer>(sp =>
+        {
+            var redisConfig = sp.GetRequiredService<IOptions<RedisConfiguration>>().Value;
+            return ConnectionMultiplexer.Connect(redisConfig.ConnectionString);
+        });
+
+        // google translate
+        services.AddSingleton<TranslationClient>(sp
+            => TranslationClient.Create());
+        services.AddSingleton<ITranslationService, GoogleTranslationService>();
+
 
     }
 }
