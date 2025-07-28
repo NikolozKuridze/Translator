@@ -8,7 +8,7 @@
       "applicationUrl": "http://localhost:5222",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "GOOGLE_APPLICATION_CREDENTIALS": "C:\\Users\\u\\Source\\Repos\\Translator\\src\\Translator.Infrastructure\\GoogleService\\nodal-subset-466109-r3-96908cf34494.json"
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:\\Users\\giorg\\RiderProjects\\Translator\\src\\Translator.Infrastructure\\GoogleService\\nodal-subset-466109-r3-96908cf34494.json"
       }
     },
     "https": {
@@ -18,7 +18,7 @@
       "applicationUrl": "https://localhost:7181;http://localhost:5222",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
-        "GOOGLE_APPLICATION_CREDENTIALS": "C:\\Users\\u\\Source\\Repos\\Translator\\src\\Translator.Infrastructure\\GoogleService\\nodal-subset-466109-r3-96908cf34494.json"
+        "GOOGLE_APPLICATION_CREDENTIALS": "C:\\Users\\giorg\\RiderProjects\\Translator\\src\\Translator.Infrastructure\\GoogleService\\nodal-subset-466109-r3-96908cf34494.json"
       }
     }
   }

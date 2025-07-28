@@ -1,6 +1,6 @@
 ﻿using Translator.Domain.Contracts;
 
-namespace TestTranslateApp.Application.Services.TranslationService;
+namespace Translator.Infrastructure.GoogleService;
 
 public interface ITranslationService
 {

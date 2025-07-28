@@ -4,13 +4,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
-using TestTranslateApp.Application.Services.TranslationService;
-using TranslationService.Services;
-using TranslationService.Services.Caching;
 using Translator.Infrastructure.Configurations;
 using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using Translator.Infrastructure.Database.Redis;
+using Translator.Infrastructure.GoogleService;
 
 namespace Translator.Infrastructure;
 

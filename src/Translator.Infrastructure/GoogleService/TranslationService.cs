@@ -1,10 +1,8 @@
 ﻿using Google.Cloud.Translation.V2;
-using Microsoft.Extensions.Logging;
-using TestTranslateApp.Application.Services.TranslationService;
 using Translator.Domain.Contracts;
-using TranslationService.Services.Caching;
+using Translator.Infrastructure.Database.Redis;
 
-namespace TranslationService.Services
+namespace Translator.Infrastructure.GoogleService
 {
     public class GoogleTranslationService : ITranslationService
     {
@@ -28,7 +26,10 @@ namespace TranslationService.Services
             string targetLanguageCode = request.TargetLanguage.ToString();
 
             string cacheKey = $"translation:{request.Text.Trim().ToLower()}:{targetLanguageCode}";
-            await _cacheService.GetAsync<TranslateResponse>(cacheKey);
+            var value = await _cacheService.GetAsync<TranslateResponse>(cacheKey);
+
+            if (value is not null)
+                return value;
             
             TranslationResult translationResult = await _translationClient.TranslateTextAsync(
                 request.Text,

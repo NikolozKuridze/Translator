@@ -1,10 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
-using System.Text.Json;
-using Translator.Infrastructure.Database.Redis;
 
-namespace TranslationService.Services.Caching
+namespace Translator.Infrastructure.Database.Redis
 {
     public class RedisService : IRedisService
     {
@@ -21,17 +19,20 @@ namespace TranslationService.Services.Caching
             _defaultExpiration = TimeSpan.FromSeconds(_configuration.DefaultCacheExpirationMinutes);
         }
 
-        public async Task<T> GetAsync<T>(string key)
-        { 
+        public async Task<T?> GetAsync<T>(string key)
+        {
             var value = await _cacheDb.StringGetAsync(key);
-           
+            
+            if (!value.HasValue)
+                return default;
+            
             return JsonSerializer.Deserialize<T>(value);
         }
 
         public async Task SetAsync<T>(string key, T value)
         {
             var jsonValue = JsonSerializer.Serialize(value);
-            await _cacheDb.StringSetAsync(key, jsonValue, _defaultExpiration);
+            var isTrue = await _cacheDb.StringSetAsync(key, jsonValue, _defaultExpiration);
         }
 
         public async Task RemoveAsync(string key)

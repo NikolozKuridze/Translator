@@ -1,8 +1,8 @@
-﻿namespace TranslationService.Services.Caching;
+﻿namespace Translator.Infrastructure.Database.Redis;
 
 public interface IRedisService
 {
-    Task<T> GetAsync<T>(string key);
+    Task<T?> GetAsync<T>(string key);
     Task SetAsync<T>(string key, T value);
     Task RemoveAsync(string key);
 }

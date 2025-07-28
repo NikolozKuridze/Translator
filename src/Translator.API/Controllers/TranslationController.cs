@@ -1,11 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using TestTranslateApp.Application.Services.TranslationService;
 using Translator.API.Contracts;
 using Translator.Application.Features.TemplateValue.Commands.CreateTemplateValue;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 using Translator.Domain.Contracts;
+using Translator.Infrastructure.GoogleService;
 
 namespace Translator.API.Controllers;
 
@@ -47,7 +47,6 @@ public class TranslationController : ControllerBase
     {
    
         var response = await translationService.TranslateTextAsync(request);
-
         return Ok(response);
     }
 }
