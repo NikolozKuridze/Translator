@@ -14,7 +14,7 @@ namespace Translator.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "language",
+                name: "languages",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -25,75 +25,93 @@ namespace Translator.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_language", x => x.id);
+                    table.PrimaryKey("pk_languages", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "template",
+                name: "templates",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    hash = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: true),
+                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    hash = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_template", x => x.id);
+                    table.PrimaryKey("pk_templates", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "template_value",
+                name: "values",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    template_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    key = table.Column<string>(type: "text", nullable: false),
-                    hash = table.Column<string>(type: "text", nullable: false),
+                    template_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    hash = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_template_value", x => x.id);
+                    table.PrimaryKey("pk_values", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TemplateValues",
+                columns: table => new
+                {
+                    templates_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    values_id = table.Column<Guid>(type: "uuid", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_template_values", x => new { x.templates_id, x.values_id });
                     table.ForeignKey(
-                        name: "fk_template_value_template_template_id",
-                        column: x => x.template_id,
-                        principalTable: "template",
+                        name: "fk_template_values_templates_templates_id",
+                        column: x => x.templates_id,
+                        principalTable: "templates",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_template_values_values_values_id",
+                        column: x => x.values_id,
+                        principalTable: "values",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
-                name: "translation",
+                name: "translations",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     template_value_id = table.Column<Guid>(type: "uuid", nullable: false),
                     language_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    value = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
+                    translation_value = table.Column<string>(type: "character varying(128)", maxLength: 128, nullable: false),
                     created = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     is_active = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_translation", x => x.id);
+                    table.PrimaryKey("pk_translations", x => x.id);
                     table.ForeignKey(
-                        name: "fk_translation_language_language_id",
+                        name: "fk_translations_languages_language_id",
                         column: x => x.language_id,
-                        principalTable: "language",
+                        principalTable: "languages",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "fk_translation_template_value_template_value_id",
+                        name: "fk_translations_values_template_value_id",
                         column: x => x.template_value_id,
-                        principalTable: "template_value",
+                        principalTable: "values",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.InsertData(
-                table: "language",
+                table: "languages",
                 columns: new[] { "id", "code", "name", "unicode_range" },
                 values: new object[,]
                 {
@@ -189,53 +207,56 @@ namespace Translator.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_language_code",
-                table: "language",
+                name: "ix_languages_code",
+                table: "languages",
                 column: "code",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_template_hash",
-                table: "template",
+                name: "ix_templates_hash",
+                table: "templates",
                 column: "hash",
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_template_value_hash",
-                table: "template_value",
-                column: "hash",
-                unique: true);
+                name: "ix_template_values_values_id",
+                table: "TemplateValues",
+                column: "values_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_template_value_template_id",
-                table: "template_value",
-                column: "template_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_translation_language_id",
-                table: "translation",
+                name: "ix_translations_language_id",
+                table: "translations",
                 column: "language_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_translation_template_value_id",
-                table: "translation",
+                name: "ix_translations_template_value_id",
+                table: "translations",
                 column: "template_value_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_values_hash",
+                table: "values",
+                column: "hash",
+                unique: true);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "translation");
+                name: "TemplateValues");
 
             migrationBuilder.DropTable(
-                name: "language");
+                name: "translations");
 
             migrationBuilder.DropTable(
-                name: "template_value");
+                name: "templates");
 
             migrationBuilder.DropTable(
-                name: "template");
+                name: "languages");
+
+            migrationBuilder.DropTable(
+                name: "values");
         }
     }
 }
