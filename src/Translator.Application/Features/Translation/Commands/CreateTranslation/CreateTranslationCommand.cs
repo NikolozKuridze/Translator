@@ -3,8 +3,7 @@ using MediatR;
 namespace Translator.Application.Features.Translation.Commands.CreateTranslation;
 
 public record CreateTranslationCommand(
-        string TemplateName,
-        string TemplateValueName,
-        string Value,
-        string LanguageCode
+    string ValueName,
+    string Translation,
+    string LanguageCode
     ) : IRequest<TranslationCreateResponse>;

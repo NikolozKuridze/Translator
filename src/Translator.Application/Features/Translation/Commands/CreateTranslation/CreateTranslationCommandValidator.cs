@@ -7,7 +7,7 @@ public class CreateTranslationCommandValidator : AbstractValidator<CreateTransla
 {
     public CreateTranslationCommandValidator()
     {
-        RuleFor(command => command.Value)
+        RuleFor(command => command.ValueName)
             .NotEmpty()
             .WithMessage("Value cannot be empty")
             .MaximumLength(TranslationConstants.VALUE_MAX_LENGTH)
