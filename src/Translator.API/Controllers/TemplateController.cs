@@ -17,10 +17,12 @@ public class TemplateController : ControllerBase
     
     [HttpPost("{templateName}/create")]
     public async Task<IResult> AddTemplate(
-        [FromRoute] string templateName)
+        [FromBody] CreateTemplateContract contract)
     {
-        var command = new CreateTemplateCommand(templateName.Trim());
+        var command = new CreateTemplateCommand(
+            contract.TemplateName.Trim(), contract.Values);
         await _mediator.Send(command);
+        
         return Results.Ok();
     }
     

@@ -8,11 +8,11 @@ using TemplateEntity = Translator.Domain.DataModels.Template;
 namespace Translator.Application.Features.Template.Queries.GetTemplate;
 
 
-public class GetFastTranslationsHandler : IRequestHandler<GetTemplateCommand, IEnumerable<TemplateTranslationDto>>
+public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerable<TemplateTranslationDto>>
 {
     private readonly IRepository<TemplateEntity> _templateRepository;
 
-    public GetFastTranslationsHandler(IRepository<TemplateEntity> templateRepository)
+    public GetTemplateHandler(IRepository<TemplateEntity> templateRepository)
     {
         _templateRepository = templateRepository;
     }
@@ -24,13 +24,13 @@ public class GetFastTranslationsHandler : IRequestHandler<GetTemplateCommand, IE
         var template = await (
             from t in _templateRepository
             where t.Hash == hash
-            from tv in t.TemplateValues
+            from tv in t.Values
             from tr in tv.Translations
                 .Where(translation => translation.Language.Code == request.LanguageCode)
             select new TemplateTranslationDto(
                 tv.Key,
-                tr.Value ?? string.Empty)
-        ).ToListAsync(cancellationToken);
+                tr.TranslationValue ?? string.Empty)
+            ).ToArrayAsync(cancellationToken);
         
         return template ?? throw new TemplateNotFoundException(request.TemplateName);
     }
