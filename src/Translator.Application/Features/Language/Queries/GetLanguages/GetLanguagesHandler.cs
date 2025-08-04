@@ -21,9 +21,9 @@ public class GetLanguagesHandler : IRequestHandler<GetLanguagesCommand, IEnumera
             await _repository
                 .AsQueryable()
                 .Select(l => new GetLanguagesResponse(
-                    l.Code, l.Name, l.UnicodeRange
+                    l.Code, l.Name, l.UnicodeRange, l.IsActive
                 ))
                 .ToArrayAsync(cancellationToken);
     }
 }
-public record GetLanguagesResponse(string LanguageCode, string LanguageName, string UnicodeRange);
+public record GetLanguagesResponse(string LanguageCode, string LanguageName, string UnicodeRange, bool IsActive);
