@@ -21,19 +21,22 @@ public class Repository<TEntity> : IRepository<TEntity>
         await _context.AddAsync(entity, cancellationToken);
     }
 
-    public async Task UpdateAsync(TEntity entity)
+    public Task UpdateAsync(TEntity entity)
     {
         ArgumentNullException.ThrowIfNull(entity);
         _dbSet.Update(entity);
+        return Task.CompletedTask;
     }
 
-    public async Task DeleteAsync(TEntity[] entities)
+    public Task DeleteAsync(TEntity[] entities)
     {
         ArgumentNullException.ThrowIfNull(entities);
         foreach (var entity in entities)
         {
             entity.IsActive = false;
         }
+
+        return Task.CompletedTask;
     }
 
     public IQueryable<TEntity> Where(Expression<Func<TEntity, bool>> predicate)
