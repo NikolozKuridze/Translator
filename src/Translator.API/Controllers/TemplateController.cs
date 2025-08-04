@@ -15,7 +15,7 @@ public class TemplateController : ControllerBase
     public TemplateController(IMediator mediator)
         => _mediator = mediator;
     
-    [HttpPost("{templateName}/create")]
+    [HttpPost("/create-template")]
     public async Task<IResult> AddTemplate(
         [FromBody] CreateTemplateContract contract)
     {
@@ -26,17 +26,17 @@ public class TemplateController : ControllerBase
         return Results.Ok();
     }
     
-    [HttpGet("{templateName}/{lang}")]
+    [HttpGet("get-template/{templateName}/{lang?}")]
     public async Task<IResult> GetTemplate(
         [FromRoute] string templateName,
-        [AsParameters] string lang)
+        [FromRoute] string? lang = null)
     {
         var command = new GetTemplateCommand(templateName, lang);
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
     
-    [HttpDelete("{templateName}")]
+    [HttpDelete("delete-template/{templateName}")]
     public async Task<IResult> DeleteTemplate(
         [FromRoute] string templateName)
     {

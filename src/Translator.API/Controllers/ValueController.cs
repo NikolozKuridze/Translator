@@ -14,7 +14,7 @@ public class ValueController : ControllerBase
 
     public ValueController(IMediator mediator) => _mediator = mediator;
 
-    [HttpPost]
+    [HttpPost("add-value")]
     public async Task<IResult> AddValue(
         [FromBody] CreateValueContract contract)
     {
@@ -23,7 +23,7 @@ public class ValueController : ControllerBase
         return Results.Ok();
     }
 
-    [HttpDelete("delete")]
+    [HttpDelete("delete-value")]
     public async Task<IResult> DeleteValue(
         [FromBody] DeleteValueContract contract)
     {
@@ -32,11 +32,12 @@ public class ValueController : ControllerBase
         return Results.NoContent();
     }
 
-    [HttpPost("get-value")]
+    [HttpGet("get-value/{valueName}/{lang?}")]
     public async Task<IResult> GetValue(
-        [FromBody] GetValueContract contract)
+        [FromRoute] string valueName,
+        [FromRoute] string? lang = null)
     {
-        var command = new GetValueCommand(contract.ValueName, contract.LanguageCode);
+        var command = new GetValueCommand(valueName, lang);
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }

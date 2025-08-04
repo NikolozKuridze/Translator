@@ -10,6 +10,7 @@ namespace Translator.Application.Features.Template.Queries.GetTemplate;
 
 public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerable<TemplateTranslationDto>>
 {
+    private const string DefaultLanguageCode = "en";
     private readonly IRepository<TemplateEntity> _templateRepository;
 
     public GetTemplateHandler(IRepository<TemplateEntity> templateRepository)
@@ -19,6 +20,10 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
 
     public async Task<IEnumerable<TemplateTranslationDto>> Handle(GetTemplateCommand request, CancellationToken cancellationToken)
     {
+        var languageCode = string.IsNullOrEmpty(request.LanguageCode) 
+            ? DefaultLanguageCode 
+            : request.LanguageCode;
+        
         var hash = TemplateEntity.HashName(request.TemplateName);
 
         var template = await (
@@ -26,7 +31,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
             where t.Hash == hash
             from tv in t.Values
             from tr in tv.Translations
-                .Where(translation => translation.Language.Code == request.LanguageCode)
+                .Where(translation => translation.Language.Code == languageCode)
             select new TemplateTranslationDto(
                 tv.Key,
                 tr.TranslationValue ?? string.Empty)
