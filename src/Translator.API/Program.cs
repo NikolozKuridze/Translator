@@ -1,7 +1,10 @@
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 using Translator.API.Middlewares;
 using Translator.Application;
 using Translator.Infrastructure;
+using Translator.Infrastructure.Database.Postgres;
+using Translator.Infrastructure.Database.Postgres.SeedData;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -30,4 +33,17 @@ app.MapControllers();
 app.UseHttpsRedirection();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+if (args.Contains("--seed"))
+{
+    using var scope = app.Services.CreateScope();
+    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var seeder = new DatabaseSeeder(context);
+        
+    await context.Database.MigrateAsync();
+    await context.Database.EnsureCreatedAsync();
+        
+    await seeder.SeedTranslationsAsync();
+}
+
 app.Run();
