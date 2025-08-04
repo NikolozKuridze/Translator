@@ -9,7 +9,6 @@ public static class StaticGuidGenerator
     {
         using var md5 = MD5.Create();
         byte[] hash = md5.ComputeHash(Encoding.UTF8.GetBytes(input));
-
         return new Guid(hash);
     }
 }

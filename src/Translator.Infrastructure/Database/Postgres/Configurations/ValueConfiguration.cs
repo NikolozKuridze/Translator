@@ -4,9 +4,9 @@ using Translator.Domain.DataModels;
 
 namespace Translator.Infrastructure.Database.Postgres.Configurations;
 
-public class TemplateValueConfiguration : IEntityTypeConfiguration<TemplateValue>
+public class ValueConfiguration : IEntityTypeConfiguration<Value>
 {
-    public void Configure(EntityTypeBuilder<TemplateValue> templateValueBuilder)
+    public void Configure(EntityTypeBuilder<Value> templateValueBuilder)
     {
         templateValueBuilder
             .HasKey(x => x.Id);
@@ -16,17 +16,15 @@ public class TemplateValueConfiguration : IEntityTypeConfiguration<TemplateValue
         
         templateValueBuilder
             .Property(x => x.Key)
-            .IsRequired();
-        
+            .IsRequired()
+            .HasMaxLength(100);
         templateValueBuilder
-            .HasOne(tv => tv.Template)
-            .WithMany(t => t.TemplateValues)
-            .HasForeignKey(tv => tv.TemplateId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .Property(x => x.Hash)
+            .HasMaxLength(100);
 
         templateValueBuilder
             .HasMany(tv => tv.Translations)
-            .WithOne(t => t.TemplateValue)
+            .WithOne(t => t.Value)
             .HasForeignKey(t => t.TemplateValueId)
             .OnDelete(DeleteBehavior.Cascade);
     }

@@ -6,28 +6,24 @@ namespace Translator.Domain.DataModels;
 public class Template : BaseDataModel
 {
     private const int HashMaxLength = 24;
-    private static readonly SHA256 _hasher = SHA256.Create();
     public string Name { get; private set; }
-    public string? Hash { get; private set; }
-    
+    public string Hash { get; private set; }
     public bool IsActive { get; private set; }
-    public ICollection<TemplateValue> TemplateValues { get; set; }
+    public ICollection<Value> Values { get; init; }
 
     public Template(string name)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Hash = HashName(name);
-        TemplateValues = new List<TemplateValue>();
+        Values = new List<Value>();
         IsActive = true;
     }
 
-    public static string HashName(string name)
+    public static string HashName(string key)
     {
-        var bytes = Encoding.UTF8.GetBytes(name);
-        var hash = _hasher.ComputeHash(bytes);
-        return Convert
-            .ToBase64String(hash)
-            .ToLowerInvariant()
-            [..HashMaxLength];
+        var input = $"{key}";
+        var bytes = Encoding.UTF8.GetBytes(input);
+        var hash = SHA256.HashData(bytes);
+        return Convert.ToBase64String(hash)[..HashMaxLength];
     }
 }

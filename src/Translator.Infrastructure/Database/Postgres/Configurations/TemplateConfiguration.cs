@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 using Translator.Domain.DataModels;
 using Translator.Infrastructure.Database.Postgres.Constants;
 
@@ -22,11 +23,10 @@ public class TemplateConfiguration : IEntityTypeConfiguration<Template>
         templateBuilder
             .Property(x => x.Name)
             .HasMaxLength(TemplateConstants.TEMPLATE_NAME_MAX_LENGTH);
-        
+
         templateBuilder
-            .HasMany(x => x.TemplateValues)
-            .WithOne(x => x.Template)
-            .HasForeignKey(x => x.TemplateId)
-            .OnDelete(DeleteBehavior.Cascade);
+            .HasMany(x => x.Values)
+            .WithMany(x => x.Templates)
+            .UsingEntity(x => x.ToTable("TemplateValues"));
     }
 }

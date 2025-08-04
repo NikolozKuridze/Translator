@@ -1,12 +1,16 @@
-using System.Globalization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
+using Translator.Domain.DataModels;
 using Translator.Infrastructure.Database.Postgres.SeedData;
 
 namespace Translator.Infrastructure.Database.Postgres;
 
 public class ApplicationDbContext : DbContext
 {
+    public DbSet<Template> Templates { get; set; }
+    public DbSet<Language> Languages { get; set; }
+    public DbSet<Translation> Translations { get; set; }
+    public DbSet<Value> Values { get; set; }
+    
     public ApplicationDbContext(DbContextOptions options) 
         : base(options) { }
 
