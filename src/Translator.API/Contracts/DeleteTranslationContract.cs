@@ -1,3 +1,3 @@
 namespace Translator.API.Contracts;
 
-public record DeleteTranslationContract(string Value);
+public record DeleteTranslationContract(string Value, string LanguageCode);

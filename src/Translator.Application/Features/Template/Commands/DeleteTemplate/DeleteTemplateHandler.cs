@@ -18,7 +18,7 @@ public class DeleteTemplateHandler : IRequestHandler<DeleteTemplateCommand>
     {
         var templateNameHash = TemplateEntity.HashName(request.TemplateName);
         var existsTemplate = await _templateRepository
-            .Where(t => t.Hash == templateNameHash)
+            .Where(t => t.Hash == templateNameHash && t.IsActive)
             .SingleOrDefaultAsync(cancellationToken);
         
         if (existsTemplate is null)
