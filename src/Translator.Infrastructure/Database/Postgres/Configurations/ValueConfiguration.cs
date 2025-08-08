@@ -18,6 +18,10 @@ public class ValueConfiguration : IEntityTypeConfiguration<Value>
             .Property(x => x.Key)
             .IsRequired()
             .HasMaxLength(100);
+        
+        templateValueBuilder
+            .HasQueryFilter(x => x.IsActive);
+        
         templateValueBuilder
             .Property(x => x.Hash)
             .HasMaxLength(100);

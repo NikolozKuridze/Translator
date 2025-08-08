@@ -2,6 +2,7 @@
 volumes:
   postgres-db:
   redis_data:
+  easynmt_cache:
 
 services:
   postgres:
@@ -24,3 +25,21 @@ services:
     volumes:
       - redis_data:/data
     restart: always
+
+  easynmt:
+    image: easynmt/api:2.0-cpu     # или easynmt/api:2.0-cuda11.1 для GPU
+    container_name: easynmt
+    restart: unless-stopped
+    ports:
+      - "24080:80"                 # <хост>:<контейнер>
+    environment:
+      # базовая модель Opus-MT (лёгкая, поддерживает грузинский)
+      EASYNMT_MODEL: opus-mt
+      # кеш всех загруженных весов в томе → не качаются заново
+      EASYNMT_CACHE_FOLDER: /cache
+      # примеры тонкой настройки
+      MAX_WORKERS_BACKEND: 4       # параллельных процессов перевода
+      EASYNMT_BATCH_SIZE: 32
+    volumes:
+      - easynmt_cache:/cache       # постоянный кеш моделей
+

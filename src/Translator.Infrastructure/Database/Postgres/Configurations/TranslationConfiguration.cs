@@ -13,6 +13,9 @@ public class TranslationConfiguration : IEntityTypeConfiguration<Translation>
             .HasKey(x => x.Id);
         
         builder
+            .HasQueryFilter(x => x.IsActive);
+        
+        builder
             .Property(x => x.TranslationValue)
             .IsRequired()
             .HasMaxLength(TranslationConstants.VALUE_MAX_LENGTH);
