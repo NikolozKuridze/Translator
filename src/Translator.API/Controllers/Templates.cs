@@ -4,6 +4,7 @@ using Translator.Application.Exceptions;
 using Translator.Application.Features.Template.Queries.GetTemplate;
 
 namespace Translator.API.Controllers;
+[Route("Template")]
 
 public class Templates : Controller
 {

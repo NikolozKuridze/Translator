@@ -24,7 +24,7 @@ public class ValuesController : Controller
     }
 
     [HttpPost("Create")]
-    public async Task<IActionResult> Create([FromQuery] string key, [FromQuery] string value)
+    public async Task<IActionResult> Create([FromForm]string key, [FromForm]string value)
     {
         await _mediator.Send(new CreateValueCommand(key.Trim(), value.Trim()));
         return RedirectToAction("Index");

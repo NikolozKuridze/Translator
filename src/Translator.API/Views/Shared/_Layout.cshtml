@@ -36,27 +36,27 @@
             <h4 class="text-white mb-4">📘 Dictionary Admin</h4>
             <ul class="nav flex-column">
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")" asp-controller="Home" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Home" ? "active" : "")" href="/" asp-controller="Home" asp-action="Index">
                         <i class="fas fa-home me-2"></i>Dashboard
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Template" ? "active" : "")" asp-controller="Template" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Template" ? "active" : "")" href="/template" asp-controller="Template" asp-action="Index">
                         <i class="fas fa-layer-group me-2"></i>Templates
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Value" ? "active" : "")" asp-controller="Value" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Value" ? "active" : "")" href="/values" asp-controller="Value" asp-action="Index">
                         <i class="fas fa-font me-2"></i>Values
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Translation" ? "active" : "")" asp-controller="Translation" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Translation" ? "active" : "")" href="/translations" asp-controller="Translation" asp-action="Index">
                         <i class="fas fa-language me-2"></i>Translations
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Language" ? "active" : "")" asp-controller="Language" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Language" ? "active" : "")" href="/languages" asp-controller="Language" asp-action="Index">
                         <i class="fas fa-globe me-2"></i>Languages
                     </a>
                 </li>
