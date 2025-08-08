@@ -1,0 +1,49 @@
+@model IEnumerable<Translator.Application.Features.Template.Queries.GetTemplate.TemplateDto>
+
+@{
+    ViewBag.Title = "Получение шаблона";
+}
+
+<h2>Получение шаблона</h2>
+
+<form method="get" asp-action="Index">
+    <div class="mb-3">
+        <label for="templateName" class="form-label">Название шаблона</label>
+        <input type="text" id="templateName" name="templateName" class="form-control" value="@Context.Request.Query["templateName"]" required />
+    </div>
+    <div class="mb-3">
+        <label for="lang" class="form-label">Язык (необязательно)</label>
+        <input type="text" id="lang" name="lang" class="form-control" value="@Context.Request.Query["lang"]" placeholder="ru, en, ..." />
+    </div>
+    <button type="submit" class="btn btn-primary">Получить</button>
+</form>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger mt-3">@ViewBag.Error</div>
+}
+
+@if (Model.Any())
+{
+    <table class="table table-bordered mt-3">
+        <thead>
+        <tr>
+            <th>Key</th>
+            <th>Value</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Key</td>
+                <td>@item.Value</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+else if (!string.IsNullOrWhiteSpace((string)Context.Request.Query["templateName"]) && (Model == null || !Model.Any()))
+{
+    <div class="text-muted mt-3">Шаблон не найден или пустой.</div>
+}

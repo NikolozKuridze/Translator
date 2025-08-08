@@ -6,7 +6,7 @@ using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 using Translator.Domain.Contracts;
 using Translator.Infrastructure.GoogleService;
 
-namespace Translator.API.Controllers;
+namespace Translator.API.ApiControllers;
 
 [ApiController]
 public class TranslationController : ControllerBase
@@ -17,7 +17,7 @@ public class TranslationController : ControllerBase
         => _mediator = mediator;
 
     
-    [HttpPost("create-translation")]
+    [HttpPost("api/create-translation")]
     public async Task<IResult> AddTemplateValue(
         [FromBody] CreateTranslationContract contract)
     {
@@ -26,7 +26,7 @@ public class TranslationController : ControllerBase
         return Results.Ok(result);
     }
 
-    [HttpDelete("delete-translation")]
+    [HttpDelete("api/delete-translation")]
     public async Task<IResult> DeleteTemplateValue(
         [FromBody] DeleteTranslationContract contract)
     {
@@ -35,7 +35,7 @@ public class TranslationController : ControllerBase
         return Results.NoContent();
     }
 
-    [HttpPost("translate")]
+    [HttpPost("api/translate")]
     [ProducesResponseType(typeof(TranslateResponse), 200)]
     public async Task<IActionResult> Translate(
         [FromBody] TranslateRequest request,

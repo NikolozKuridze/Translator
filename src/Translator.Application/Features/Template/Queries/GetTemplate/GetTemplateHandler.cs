@@ -8,7 +8,7 @@ using TemplateEntity = Translator.Domain.DataModels.Template;
 namespace Translator.Application.Features.Template.Queries.GetTemplate;
 
 
-public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerable<TemplateTranslationDto>>
+public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerable<TemplateDto>>
 {
     private const string DefaultLanguageCode = "en";
     private readonly IRepository<TemplateEntity> _templateRepository;
@@ -18,7 +18,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
         _templateRepository = templateRepository;
     }
 
-    public async Task<IEnumerable<TemplateTranslationDto>> Handle(GetTemplateCommand request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<TemplateDto>> Handle(GetTemplateCommand request, CancellationToken cancellationToken)
     {
         var languageCode = string.IsNullOrEmpty(request.LanguageCode) 
             ? DefaultLanguageCode 
@@ -32,7 +32,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
             from tv in t.Values
             from tr in tv.Translations
                 .Where(translation => translation.Language.Code == languageCode)
-            select new TemplateTranslationDto(
+            select new TemplateDto(
                 tv.Key,
                 tr.TranslationValue ?? string.Empty)
             ).ToArrayAsync(cancellationToken);
@@ -41,4 +41,4 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
     }
 }
 
-public record TemplateTranslationDto(string Key, string Value);
+public record TemplateDto(string Key, string Value);

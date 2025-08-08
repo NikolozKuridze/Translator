@@ -3,5 +3,5 @@ namespace Translator.Application.Exceptions;
 public class ValueNotFoundException : ApplicationLayerException
 {
     public ValueNotFoundException(string templateValueName)
-        : base(ErrorCodes.NotFound, $"template value '{templateValueName}' not found") { }
+        : base(ErrorCodes.NotFound, $"value '{templateValueName}' not found") { }
 }

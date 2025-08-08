@@ -15,7 +15,7 @@ public class LanguageController : ControllerBase
     public LanguageController(IMediator mediator)
         => _mediator = mediator;
 
-    [HttpPost("language/add")]
+    [HttpPost("api/language/add")]
     public async Task<IResult> Handle(
         [FromBody] AddLanguageContract request)
     {
@@ -24,7 +24,7 @@ public class LanguageController : ControllerBase
         return Results.Ok(result);
     }
 
-    [HttpDelete("language/remove")]
+    [HttpDelete("api/language/remove")]
     public async Task<IResult> Handle(
         [FromBody] DeleteLanguageContract request)
     {
@@ -33,7 +33,7 @@ public class LanguageController : ControllerBase
         return Results.NoContent();
     }
 
-    [HttpGet("languages")]
+    [HttpGet("api/languages")]
     public async Task<IResult> Get()
     {
         var command = new GetLanguagesCommand();

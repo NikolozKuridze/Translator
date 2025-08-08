@@ -5,7 +5,7 @@ using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetTemplate;
 
-namespace Translator.API.Controllers;
+namespace Translator.API.ApiControllers;
 
 [ApiController]
 public class TemplateController : ControllerBase
@@ -15,7 +15,7 @@ public class TemplateController : ControllerBase
     public TemplateController(IMediator mediator)
         => _mediator = mediator;
     
-    [HttpPost("/create-template")]
+    [HttpPost("api/create-template")]
     public async Task<IResult> AddTemplate(
         [FromBody] CreateTemplateContract contract)
     {
@@ -26,7 +26,7 @@ public class TemplateController : ControllerBase
         return Results.Ok();
     }
     
-    [HttpGet("get-template/{templateName}/{lang?}")]
+    [HttpGet("api/get-template/{templateName}/{lang?}")]
     public async Task<IResult> GetTemplate(
         [FromRoute] string templateName,
         [FromRoute] string? lang = null)
@@ -36,7 +36,7 @@ public class TemplateController : ControllerBase
         return Results.Ok(result);
     }
     
-    [HttpDelete("delete-template/{templateName}")]
+    [HttpDelete("api/delete-template/{templateName}")]
     public async Task<IResult> DeleteTemplate(
         [FromRoute] string templateName)
     {
@@ -44,5 +44,4 @@ public class TemplateController : ControllerBase
         await _mediator.Send(command);
         return Results.NoContent();
     }
-
 }

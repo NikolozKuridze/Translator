@@ -5,9 +5,9 @@ using Translator.Application.Features.Values.Commands.CreateValue;
 using Translator.Application.Features.Values.Commands.DeleteValue;
 using Translator.Application.Features.Values.Queries.GetValue;
 
-namespace Translator.API.Controllers;
+namespace Translator.API.ApiControllers;
 
-[Route("values")]
+[Route("api/values")]
 public class ValueController : ControllerBase
 {
     private readonly IMediator _mediator;

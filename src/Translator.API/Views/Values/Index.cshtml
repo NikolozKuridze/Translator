@@ -1,0 +1,83 @@
+@model Translator.Application.Features.Values.Queries.GetValue.GetValueResponse?
+
+@{
+    ViewBag.Title = "Values";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-4">🔍 Search Value</h2>
+
+<div class="card mb-4 shadow">
+    <div class="card-body">
+        @using (Html.BeginForm("Search", "Values", FormMethod.Get, new { @class = "row g-3" }))
+        {
+            <div class="col-md-5">
+                @Html.TextBox("valueName", null, new { @class = "form-control", placeholder = "Value Name", required = "required", id = "valueNameInput" })
+            </div>
+            <div class="col-md-4">
+                @Html.TextBox("lang", null, new { @class = "form-control", placeholder = "Language (optional)", id = "langInput" })
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary w-100" id="searchButton" >Search</button>
+            </div>
+        }
+    </div>
+</div>
+
+@if (Model != null)
+{
+    <div class="card shadow mb-3">
+        <div class="card-body">
+            <h5>Key: <strong>@Model.ValueKey</strong></h5>
+            <h6>Value:</h6>
+            <ul>
+                <li>@Model.ValueTranslation</li>
+            </ul>
+
+            <button type="button" class="btn btn-danger btn-sm" id="deleteButton">
+                <i class="fas fa-trash-alt"></i> Delete
+            </button>
+        </div>
+    </div>
+}
+
+<hr class="my-5" />
+
+<h2 class="mb-4">➕ Create New Value</h2>
+
+<div class="card shadow">
+    <div class="card-body">
+        @using (Html.BeginForm("Create", "Values", FormMethod.Post, new { @class = "row g-3" }))
+        {
+            <div class="col-md-5">
+                @Html.TextBox("key", null, new { @class = "form-control", placeholder = "Key", required = "required" })
+            </div>
+            <div class="col-md-5">
+                @Html.TextBox("value", null, new { @class = "form-control", placeholder = "Value", required = "required" })
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-success w-100">Create</button>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+
+    document.getElementById("deleteButton").addEventListener("click", function () {
+        const valueName = document.getElementById("valueNameInput").value.trim();
+        console.log(valueName)
+        const url = `/Values/Delete?valueName=${encodeURIComponent(valueName)}`;
+        window.location.href = url;
+    });
+
+    document.getElementById("searchButton").addEventListener("click", function () {
+        const valueName = document.getElementById("valueNameInput").value.trim();
+        const lang = document.getElementById("langInput").value.trim();
+
+        const url = `/Values/Search?valueName=${encodeURIComponent(valueName)}&lang=${encodeURIComponent(lang)}`;
+        window.location.href = url;
+    });
+
+
+</script>

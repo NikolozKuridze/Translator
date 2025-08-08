@@ -41,8 +41,7 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, GetValueResponse
         var translation = await _translationRepository
             .Where(
                 t => t.Value.Hash == valueHash && 
-                     t.Language.Code == code &&
-                     t.IsActive)
+                     t.Language.Code == code)
             .Select(t 
                 => new GetValueResponse(t.Value.Key, t.TranslationValue))
             .SingleOrDefaultAsync(cancellationToken);
