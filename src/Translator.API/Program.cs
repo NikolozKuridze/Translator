@@ -8,10 +8,10 @@ using Translator.Infrastructure.Database.Postgres.SeedData;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddInfrastructureDependencies(builder.Configuration);
 builder.Services.AddApplicationDependencies();
 
+builder.Services.AddControllersWithViews(); 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -45,5 +45,9 @@ if (args.Contains("--seed"))
         
     await seeder.SeedTranslationsAsync();
 }
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}");
 
 app.Run();
