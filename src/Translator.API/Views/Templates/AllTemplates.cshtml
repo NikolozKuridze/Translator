@@ -1,14 +1,16 @@
-@model IEnumerable<Translator.Application.Features.Template.Queries.GetTemplate.TemplateDto>
+@model IEnumerable<Translator.Application.Features.Template.Queries.GetAllTemplates.GetAllTemplatesResponse>
 
 @{
-    ViewBag.Title = "Get Templates";
+    ViewBag.Title = "All Templates";
     Layout = "_Layout";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var pageSize = ViewBag.PageSize ?? 10;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Templates</h2>
+    <h2>All Templates</h2>
     <div class="d-flex gap-2">
-        @Html.ActionLink("All Templates", "GetAllTemplates", "Templates", null, new { @class = "btn btn-outline-info" })
+        @Html.ActionLink("Search Templates", "Index", "Templates", null, new { @class = "btn btn-outline-primary" })
         <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createTemplateSection" aria-expanded="false" aria-controls="createTemplateSection">
             <i class="fas fa-plus"></i> Create Template
         </button>
@@ -61,64 +63,125 @@
     </div>
 </div>
 
-<!-- Существующая форма поиска -->
+<!-- Настройки пагинации -->
 <div class="card mb-4">
     <div class="card-header">
-        <h5 class="mb-0">Search Templates</h5>
+        <h5 class="mb-0">Pagination Settings</h5>
     </div>
     <div class="card-body">
-        @using (Html.BeginForm("Index", "Templates", FormMethod.Get))
+        @using (Html.BeginForm("GetAllTemplates", "Templates", FormMethod.Get, new { @class = "row g-3 align-items-end" }))
         {
-            <div class="mb-3">
-                @Html.Label("templateName", "Template Name", new { @class = "form-label" })
-                @Html.TextBox("templateName", Context.Request.Query["templateName"], new { @class = "form-control", required = "required" })
+            <div class="col-md-4">
+                @Html.Label("pageSize", "Page Size", new { @class = "form-label" })
+                @Html.DropDownList("pageSize", new List<SelectListItem>
+                {
+                    new SelectListItem { Text = "5", Value = "5", Selected = pageSize == 5 },
+                    new SelectListItem { Text = "10", Value = "10", Selected = pageSize == 10 },
+                    new SelectListItem { Text = "25", Value = "25", Selected = pageSize == 25 },
+                    new SelectListItem { Text = "50", Value = "50", Selected = pageSize == 50 }
+                }, new { @class = "form-select" })
             </div>
             
-            <div class="mb-3">
-                @Html.Label("lang", "Language (optional)", new { @class = "form-label" })
-                @Html.TextBox("lang", Context.Request.Query["lang"], new { @class = "form-control", placeholder = "ru, en, ..." })
+            <div class="col-md-4">
+                @Html.Label("pageNumber", "Page Number", new { @class = "form-label" })
+                <input type="number" name="pageNumber" value="@currentPage" class="form-control" min="1" />
             </div>
             
-            <button type="submit" class="btn btn-primary">Get</button>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary">Load Templates</button>
+            </div>
         }
     </div>
 </div>
 
-@if (ViewBag.Error != null)
+@if (Model != null && Model.Any())
 {
-    <div class="alert alert-danger mt-3">@ViewBag.Error</div>
-}
-
-@if (Model.Any())
-{
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5>Results for: @Context.Request.Query["templateName"]</h5>
-        <button class="btn btn-danger btn-sm" onclick="showDeleteModal()">
-            <i class="fas fa-trash"></i> Delete Template
-        </button>
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Templates (Page @currentPage)</h5>
+            <small class="text-muted">Page size: @pageSize</small>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Template Name</th>
+                            <th scope="col">Value Count</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int counter = (currentPage - 1) * pageSize + 1; }
+                        @foreach (var template in Model)
+                        {
+                            <tr>
+                                <th scope="row">@counter</th>
+                                <td><span class="badge bg-primary">@template.TemplateName</span></td>
+                                <td><span class="badge bg-secondary">@template.ValueCount values</span></td>
+                                <td>
+                                    @Html.ActionLink("View Details", "Index", "Templates", new { templateName = template.TemplateName }, new { @class = "btn btn-sm btn-outline-primary me-2" })
+                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal('@Html.Raw(Html.Encode(template.TemplateName))')">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </td>
+                            </tr>
+                            counter++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
-    
-    <table class="table table-bordered mt-3">
-        <thead>
-            <tr>
-                <th>Key</th>
-                <th>Value</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var item in Model)
+
+    <!-- Пагинация -->
+    <nav aria-label="Templates pagination" class="mt-4">
+        <ul class="pagination justify-content-center">
+            @if (currentPage > 1)
             {
-                <tr>
-                    <td>@item.Key</td>
-                    <td>@item.Value</td>
-                </tr>
+                <li class="page-item">
+                    @Html.ActionLink("Previous", "GetAllTemplates", "Templates", new { pageNumber = currentPage - 1, pageSize = pageSize }, new { @class = "page-link" })
+                </li>
             }
-        </tbody>
-    </table>
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+            }
+
+            @for (int i = Math.Max(1, currentPage - 2); i <= currentPage + 2; i++)
+            {
+                @if (i == currentPage)
+                {
+                    <li class="page-item active">
+                        <span class="page-link">@i</span>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item">
+                        @Html.ActionLink(i.ToString(), "GetAllTemplates", "Templates", new { pageNumber = i, pageSize = pageSize }, new { @class = "page-link" })
+                    </li>
+                }
+            }
+
+            <li class="page-item">
+                @Html.ActionLink("Next", "GetAllTemplates", "Templates", new { pageNumber = currentPage + 1, pageSize = pageSize }, new { @class = "page-link" })
+            </li>
+        </ul>
+    </nav>
 }
-else if (!string.IsNullOrWhiteSpace((string)Context.Request.Query["templateName"]) && (Model == null || !Model.Any()))
+else
 {
-    <div class="text-muted mt-3">Template not found.</div>
+    <div class="card">
+        <div class="card-body text-center">
+            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No templates found</h5>
+            <p class="text-muted">Try adjusting the page number or create a new template.</p>
+        </div>
+    </div>
 }
 
 <!-- Модальное окно удаления -->
@@ -136,7 +199,6 @@ else if (!string.IsNullOrWhiteSpace((string)Context.Request.Query["templateName"
                     <strong>Warning:</strong> This action cannot be undone!
                 </div>
                 <p><strong>Template Name:</strong> <span id="templateNameToDelete"></span></p>
-                <p><strong>Language:</strong> <span id="templateLangToDelete"></span></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -198,15 +260,10 @@ else if (!string.IsNullOrWhiteSpace((string)Context.Request.Query["templateName"
         updateRemoveButtons();
     }
 
-    function showDeleteModal() {
-        const templateName = '@Context.Request.Query["templateName"]';
-        const lang = '@Context.Request.Query["lang"]' || 'Not specified';
-        
+    function showDeleteModal(templateName) {
         document.getElementById('templateNameToDelete').textContent = templateName;
-        document.getElementById('templateLangToDelete').textContent = lang;
-        
         document.querySelector('#deleteTemplateForm input[name="templateName"]').value = templateName;
-        document.querySelector('#deleteTemplateForm input[name="lang"]').value = '@Context.Request.Query["lang"]';
+        document.querySelector('#deleteTemplateForm input[name="lang"]').value = '';
         
         const modal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
         modal.show();
@@ -234,6 +291,14 @@ else if (!string.IsNullOrWhiteSpace((string)Context.Request.Query["templateName"
     .value-input-group .btn {
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
+    }
+
+    .table th {
+        border-top: none;
+    }
+
+    .badge {
+        font-size: 0.875em;
     }
 
     .gap-2 {

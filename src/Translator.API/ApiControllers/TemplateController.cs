@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Translator.API.Contracts;
 using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
+using Translator.Application.Features.Template.Queries.GetAllTemplates;
 using Translator.Application.Features.Template.Queries.GetTemplate;
 
 namespace Translator.API.ApiControllers;
@@ -32,6 +33,14 @@ public class TemplateController : ControllerBase
         [FromRoute] string? lang = null)
     {
         var command = new GetTemplateCommand(templateName, lang);
+        var result = await _mediator.Send(command);
+        return Results.Ok(result);
+    }
+    
+    [HttpGet("api/get-templates/{pageNumber}/{pageSize}")]
+    public async Task<IResult> GetTemplate(int pageNumber = 1, int pageSize = 10)
+    {
+        var command = new GetAllTemplatesCommand(pageNumber, pageSize);
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }

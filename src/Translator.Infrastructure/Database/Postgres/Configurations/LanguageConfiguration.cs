@@ -35,6 +35,9 @@ public class LanguageConfiguration : IEntityTypeConfiguration<Language>
             .HasDefaultValue(false);
 
         builder
+            .HasQueryFilter(l => l.IsActive);
+        
+        builder
             .HasMany(l => l.Translations)
             .WithOne(t => t.Language)
             .HasForeignKey(t => t.LanguageId)
