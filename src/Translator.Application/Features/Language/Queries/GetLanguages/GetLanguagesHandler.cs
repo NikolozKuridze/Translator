@@ -20,6 +20,7 @@ public class GetLanguagesHandler : IRequestHandler<GetLanguagesCommand, IEnumera
         return
             await _repository
                 .AsQueryable()
+                .IgnoreQueryFilters()
                 .Select(l => new GetLanguagesResponse(
                     l.Code, l.Name, l.UnicodeRange, l.IsActive
                 ))

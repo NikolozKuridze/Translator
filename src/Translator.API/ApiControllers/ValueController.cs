@@ -7,14 +7,24 @@ using Translator.Application.Features.Values.Queries.GetValue;
 
 namespace Translator.API.ApiControllers;
 
-[Route("api/values")]
+[ApiController]
 public class ValueController : ControllerBase
 {
     private readonly IMediator _mediator;
 
     public ValueController(IMediator mediator) => _mediator = mediator;
 
-    [HttpPost("add-value")]
+    [HttpGet("api/get-value/{valueName}/{lang?}")]
+    public async Task<IResult> GetValue(
+        [FromRoute] string valueName,
+        [FromRoute] string? lang = null)
+    {
+        var command = new GetValueCommand(valueName, lang);
+        var result = await _mediator.Send(command);
+        return Results.Ok(result);
+    }       
+    
+    [HttpPost("api/add-value")]
     public async Task<IResult> AddValue(
         [FromBody] CreateValueContract contract)
     {
@@ -23,7 +33,7 @@ public class ValueController : ControllerBase
         return Results.Ok();
     }
 
-    [HttpDelete("delete-value")]
+    [HttpDelete("api/delete-value")]
     public async Task<IResult> DeleteValue(
         [FromBody] DeleteValueContract contract)
     {
@@ -31,14 +41,5 @@ public class ValueController : ControllerBase
         await _mediator.Send(command);
         return Results.NoContent();
     }
-
-    [HttpGet("get-value/{valueName}/{lang?}")]
-    public async Task<IResult> GetValue(
-        [FromRoute] string valueName,
-        [FromRoute] string? lang = null)
-    {
-        var command = new GetValueCommand(valueName, lang);
-        var result = await _mediator.Send(command);
-        return Results.Ok(result);
-    }
+    
 }

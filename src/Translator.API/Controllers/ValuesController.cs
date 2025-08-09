@@ -6,6 +6,7 @@ using Translator.Application.Features.Values.Queries.GetValue;
 
 namespace Translator.API.Controllers;
 
+[ApiExplorerSettings(IgnoreApi = true)]
 [Route("Values")]
 public class ValuesController : Controller
 {

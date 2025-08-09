@@ -28,6 +28,7 @@ public class AddLanguageHandler : IRequestHandler<AddLanguageCommand, AddLanguag
             .Where(x => 
                 x.Code == request.Code
                 && x.IsActive == false)
+            .IgnoreQueryFilters()
             .SingleOrDefaultAsync(cancellationToken);
         
         if (existsLanguage is null)

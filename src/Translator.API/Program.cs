@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using Scalar.AspNetCore;
 using Serilog;
 using Translator.API.Middlewares;
 using Translator.Application;
@@ -14,8 +15,6 @@ builder.Services.AddApplicationDependencies();
 builder.Services.AddControllersWithViews(); 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 builder.Services.AddSerilog(
     Log.Logger = new LoggerConfiguration()
@@ -26,8 +25,13 @@ var app = builder.Build();
 
 app.MapOpenApi();
 
-app.UseSwagger();
-app.UseSwaggerUI();
+app.MapScalarApiReference("/docs", options =>
+{
+    options.Title = "Translator API";
+    options.Theme = ScalarTheme.Mars;
+    options.WithOpenApiRoutePattern("/openapi/v1.json");
+});
+
 
 app.MapControllers();
 app.UseHttpsRedirection();
