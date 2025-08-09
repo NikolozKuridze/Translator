@@ -12,7 +12,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddInfrastructureDependencies(builder.Configuration);
 builder.Services.AddApplicationDependencies();
 
-builder.Services.AddControllersWithViews(); 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
 
@@ -20,6 +19,11 @@ builder.Services.AddSerilog(
     Log.Logger = new LoggerConfiguration()
         .ReadFrom.Configuration(builder.Configuration)
         .CreateLogger());
+
+builder.Services.AddControllersWithViews(o =>
+{
+    o.Filters.Add(new MvcExceptionFilter());
+}); 
 
 var app = builder.Build();
 
