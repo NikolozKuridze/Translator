@@ -1,0 +1,246 @@
+@model IEnumerable<Translator.Application.Features.Language.Queries.GetLanguages.GetLanguagesResponse>
+
+@{
+    ViewBag.Title = "Languages";
+    Layout = "_Layout";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Languages</h2>
+    <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createLanguageSection" aria-expanded="false" aria-controls="createLanguageSection">
+        <i class="fas fa-plus"></i> Add Language
+    </button>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="collapse mb-4" id="createLanguageSection">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Add New Language</h5>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Create", "Languages", FormMethod.Post, new { id = "createLanguageForm" }))
+            {
+                <div class="mb-3">
+                    @Html.Label("code", "Language Code", new { @class = "form-label" })
+                    @Html.TextBox("code", "", new { 
+                        @class = "form-control", 
+                        required = "required", 
+                        placeholder = "e.g. en, ru, de, fr...",
+                        pattern = "[a-z]{2,5}",
+                        title = "Enter 2-5 lowercase letters"
+                    })
+                    <div class="form-text">Enter language code in lowercase (e.g., en, ru, de, fr)</div>
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Add Language</button>
+                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Available Languages</h5>
+            <small class="text-muted">Total: @Model.Count() languages (@Model.Count(l => l.IsActive) active, @Model.Count(l => !l.IsActive) inactive)</small>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">#</th>
+                            <th scope="col">Code</th>
+                            <th scope="col">Name</th>
+                            <th scope="col">Unicode Range</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{ int counter = 1; }
+                        @foreach (var language in Model.OrderByDescending(l => l.IsActive).ThenBy(l => l.LanguageCode))
+                        {
+                            <tr class="@(language.IsActive ? "" : "table-secondary")">
+                                <th scope="row">@counter</th>
+                                <td>
+                                    <span class="badge @(language.IsActive ? "bg-primary" : "bg-secondary")">
+                                        @language.LanguageCode.ToUpper()
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="@(language.IsActive ? "" : "text-muted")">
+                                        <strong>@(string.IsNullOrEmpty(language.LanguageName) ? "N/A" : language.LanguageName)</strong>
+                                    </span>
+                                </td>
+                                <td>
+                                    <code class="text-muted">@(string.IsNullOrEmpty(language.UnicodeRange) ? "N/A" : language.UnicodeRange)</code>
+                                </td>
+                                <td>
+                                    @if (language.IsActive)
+                                    {
+                                        <span class="badge bg-success">
+                                            <i class="fas fa-check-circle"></i> Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">
+                                            <i class="fas fa-times-circle"></i> Inactive
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (language.IsActive)
+                                    {
+                                        <button class="btn btn-sm btn-outline-warning" onclick="showDeactivateModal('@Html.Raw(Html.Encode(language.LanguageCode))', '@Html.Raw(Html.Encode(language.LanguageName))')">
+                                            <i class="fas fa-pause"></i> Deactivate
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">
+                                            <i class="fas fa-ban"></i> Deactivated
+                                        </span>
+                                    }
+                                </td>
+                            </tr>
+                            counter++;
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center">
+            <i class="fas fa-language fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">No languages found</h5>
+            <p class="text-muted">Add your first language using the form above.</p>
+        </div>
+    </div>
+}
+
+<!-- Модальное окно деактивации -->
+<div class="modal fade" id="deactivateLanguageModal" tabindex="-1" aria-labelledby="deactivateLanguageModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deactivateLanguageModalLabel">Deactivate Language</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to deactivate this language?</p>
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> The language will be marked as inactive but not deleted. Existing templates and translations will remain intact.
+                </div>
+                <div class="language-info">
+                    <p><strong>Language Code:</strong> <span id="languageCodeToDeactivate"></span></p>
+                    <p><strong>Language Name:</strong> <span id="languageNameToDeactivate"></span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                @using (Html.BeginForm("Deactivate", "Languages", FormMethod.Post, new { id = "deactivateLanguageForm" }))
+                {
+                    @Html.Hidden("code", "")
+                    <button type="submit" class="btn btn-warning">
+                        <i class="fas fa-pause"></i> Deactivate Language
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function clearForm() {
+        const codeInput = document.querySelector('#createLanguageForm input[name="code"]');
+        if (codeInput) {
+            codeInput.value = '';
+        }
+    }
+
+    function showDeactivateModal(languageCode, languageName) {
+        document.getElementById('languageCodeToDeactivate').textContent = languageCode.toUpperCase();
+        document.getElementById('languageNameToDeactivate').textContent = languageName || 'N/A';
+        document.querySelector('#deactivateLanguageForm input[name="code"]').value = languageCode;
+        
+        const modal = new bootstrap.Modal(document.getElementById('deactivateLanguageModal'));
+        modal.show();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const successAlert = document.querySelector('.alert-success');
+        if (successAlert) {
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(successAlert);
+                alert.close();
+            }, 5000);
+        }
+
+        const form = document.getElementById('createLanguageForm');
+        if (form) {
+            form.addEventListener('submit', function(e) {
+                const codeInput = this.querySelector('input[name="code"]');
+                const code = codeInput.value.trim();
+                
+                if (!/^[a-z]{2,5}$/.test(code)) {
+                    e.preventDefault();
+                    alert('Please enter a valid language code (2-5 lowercase letters)');
+                    codeInput.focus();
+                    return false;
+                }
+            });
+
+            const codeInput = form.querySelector('input[name="code"]');
+            if (codeInput) {
+                codeInput.addEventListener('input', function() {
+                    this.value = this.value.toLowerCase();
+                });
+            }
+        }
+    });
+</script>
+
+<style>
+    .language-info {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #007bff;
+    }
+
+    .table-secondary {
+        --bs-table-bg: #f8f9fa;
+        opacity: 0.7;
+    }
+
+    .badge {
+        font-size: 0.875em;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+
+    code {
+        font-size: 0.875em;
+    }
+</style>

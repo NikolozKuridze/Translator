@@ -18,7 +18,7 @@ public class TranslationController : ControllerBase
 
     
     [HttpPost("api/create-translation")]
-    public async Task<IResult> AddTemplateValue(
+    public async Task<IResult> AddTranslation(
         [FromBody] CreateTranslationContract contract)
     {
         var command = new CreateTranslationCommand(contract.Value.Trim(), contract.Translation, contract.LanguageCode.Trim());        
@@ -27,7 +27,7 @@ public class TranslationController : ControllerBase
     }
 
     [HttpDelete("api/delete-translation")]
-    public async Task<IResult> DeleteTemplateValue(
+    public async Task<IResult> DeleteTranslation(
         [FromBody] DeleteTranslationContract contract)
     {
         var command = new DeleteTranslationCommand(contract.Value, contract.LanguageCode);

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Translator.Domain.DataModels;
 
@@ -13,7 +14,7 @@ public static class LanguageSeeder
 
         var items = JsonSerializer.Deserialize<List<LanguageSeedDto>>(json)!;
 
-        var languages = items.Select(l => new Language(l.code, l.Name, $"{l.hexrange[0]}-{l.hexrange[1]}")
+        var languages = items.Select(l => new Language(l.Code, l.Name, $"{l.HexRange[0]}-{l.HexRange[1]}")
         {
             Id = StaticGuidGenerator.CreateGuidFromString(l.Name),
             IsActive = false
@@ -23,8 +24,13 @@ public static class LanguageSeeder
 
     private class LanguageSeedDto
     {
-        public string code { get; set; } = default!;
+        [JsonPropertyName("code")]
+        public string Code { get; set; } = default!;
+        
+        [JsonPropertyName("name")]
         public string Name { get; set; } = default!;
-        public List<string> hexrange { get; set; } = default!;
+        
+        [JsonPropertyName("hexrange")]
+        public List<string> HexRange { get; set; } = default!;
     }
 }
