@@ -23,7 +23,6 @@ public class GetAllTemplatesHandler : IRequestHandler<GetAllTemplatesCommand, IE
         return await _repository
             .AsQueryable()
             .AsNoTracking()
-            .Where(t => t.IsActive)
             .OrderBy(t => t.Name) 
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)

@@ -31,7 +31,7 @@ public class CreateTemplateHandler : IRequestHandler<CreateTemplateCommand>
         var templateNameHash = TemplateEntity.HashName(request.TemplateName);
         
         var existsTemplate = await _templateRepository
-            .Where(t => t.Hash == templateNameHash && t.IsActive)
+            .Where(t => t.Hash == templateNameHash)
             .SingleOrDefaultAsync(cancellationToken);
 
         if (existsTemplate is not null)
@@ -43,7 +43,7 @@ public class CreateTemplateHandler : IRequestHandler<CreateTemplateCommand>
         {
             var valueHash = TemplateEntity.HashName(value);
             var existsValue = await _valueRepository
-                .Where(v => v.Hash == valueHash && v.IsActive)
+                .Where(v => v.Hash == valueHash)
                 .SingleOrDefaultAsync(cancellationToken);
             if (existsValue is null)
                 throw new ValueNotFoundException(valueHash);

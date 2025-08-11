@@ -21,7 +21,7 @@ public class DeleteValueHandler : IRequestHandler<DeleteValueCommand>
         var valueNameHash = TemplateEntity.HashName(request.ValueName);
         
         var templateValueExists = await _valueRepository
-            .Where(t => t.Hash == valueNameHash && t.IsActive) 
+            .Where(t => t.Hash == valueNameHash) 
             .SingleOrDefaultAsync(cancellationToken);
 
         if (templateValueExists is null)

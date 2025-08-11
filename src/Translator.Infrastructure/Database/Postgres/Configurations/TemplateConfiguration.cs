@@ -17,9 +17,6 @@ public class TemplateConfiguration : IEntityTypeConfiguration<Template>
             .IsUnique();
         
         templateBuilder
-            .HasQueryFilter(x => x.IsActive);
-        
-        templateBuilder
             .Property(x => x.Hash)
             .HasMaxLength(TemplateConstants.TEMPLATE_HASH_MAX_LENGTH);
 

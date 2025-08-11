@@ -16,7 +16,6 @@ public class Translation : BaseDataModel
     {
         TemplateValueId = templateValueId; 
         TranslationValue = value ?? throw new ArgumentNullException(nameof(value));
-        IsActive = true;
         Created = DateTimeOffset.UtcNow;
     }
 }   

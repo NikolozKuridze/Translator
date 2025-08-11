@@ -31,13 +31,13 @@ public class GetDashboardStatisticHandler : IRequestHandler<GetDashboardStatisti
     public async Task<GetDashboardRequestResponse> Handle(GetDashboardStatisticCommand request, CancellationToken cancellationToken)
     {
         var templatesCount = await _templateRepository.AsQueryable()
-            .CountAsync(t => t.IsActive, cancellationToken);
+            .CountAsync(cancellationToken);
             
         var valuesCount = await _valueRepository.AsQueryable()
-            .CountAsync(v => v.IsActive, cancellationToken);
+            .CountAsync(cancellationToken);
             
         var translationsCount = await _translationRepository.AsQueryable()
-            .CountAsync(tr => tr.IsActive, cancellationToken);
+            .CountAsync(cancellationToken);
             
         var languagesCount = await _languageRepository.AsQueryable()
             .CountAsync(l => l.IsActive, cancellationToken);

@@ -14,7 +14,6 @@ public class Value : BaseDataModel
     {
         Key = key ?? throw new ArgumentNullException(nameof(key));
         Hash = Template.HashName(key);
-        IsActive = true;
         CreatedAt = DateTimeOffset.UtcNow;
     }
 }

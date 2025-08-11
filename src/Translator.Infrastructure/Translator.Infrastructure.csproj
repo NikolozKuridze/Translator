@@ -15,6 +15,7 @@
 		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7" />
 		<PackageReference Include="StackExchange.Redis" Version="2.8.58" />
     </ItemGroup>
+    
     <ItemGroup>
       <ProjectReference Include="..\Translator.Domain\Translator.Domain.csproj" />
     </ItemGroup>

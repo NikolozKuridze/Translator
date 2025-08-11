@@ -33,9 +33,8 @@ public class Repository<TEntity> : IRepository<TEntity>
         ArgumentNullException.ThrowIfNull(entities);
         foreach (var entity in entities)
         {
-            entity.IsActive = false;
+            _dbSet.Remove(entity);
         }
-
         return Task.CompletedTask;
     }
 

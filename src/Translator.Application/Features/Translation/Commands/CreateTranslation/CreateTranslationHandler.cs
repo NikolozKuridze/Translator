@@ -56,8 +56,8 @@ public class CreateTranslationHandler : IRequestHandler<CreateTranslationCommand
             throw new LanguageMissMatchException(request.ValueName, request.LanguageCode);
         
         if (value.Translations.Any(
-                x => (x.TranslationValue == request.Translation ||
-                     x.Language.Code == request.LanguageCode) && x.IsActive))
+                x => x.TranslationValue == request.Translation ||
+                     x.Language.Code == request.LanguageCode))
             throw new TranslationAlreadyExistsException(request.ValueName);
         
         var translation = new TranslationEntity(value.Id, request.Translation)

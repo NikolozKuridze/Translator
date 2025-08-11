@@ -20,9 +20,6 @@ public class ValueConfiguration : IEntityTypeConfiguration<Value>
             .HasMaxLength(100);
         
         templateValueBuilder
-            .HasQueryFilter(x => x.IsActive);
-        
-        templateValueBuilder
             .Property(x => x.Hash)
             .HasMaxLength(100);
 

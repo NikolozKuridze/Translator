@@ -58,7 +58,6 @@ public class TranslationDataSeeder
             if (templateNames.Add(name))
                 templates.Add(new Template(name));
         }
-
         return templates;
     }
 

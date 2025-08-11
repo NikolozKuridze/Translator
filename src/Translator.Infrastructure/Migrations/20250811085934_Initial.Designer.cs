@@ -12,7 +12,7 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250810180416_Initial")]
+    [Migration("20250811085934_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

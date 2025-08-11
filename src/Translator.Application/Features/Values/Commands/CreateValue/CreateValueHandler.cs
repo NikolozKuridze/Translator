@@ -32,7 +32,7 @@ public class CreateValueHandler : IRequestHandler<CreateValueCommand>
         var existsTemplateValueHash = TemplateEntity.HashName(request.Key);
         
         var existsValue = await _templateValueRepository
-            .Where(t => t.Hash == existsTemplateValueHash && t.IsActive)
+            .Where(t => t.Hash == existsTemplateValueHash)
             .SingleOrDefaultAsync(cancellationToken);
 
         var languages = await _languageEntityRepository

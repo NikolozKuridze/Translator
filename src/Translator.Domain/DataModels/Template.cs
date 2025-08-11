@@ -8,7 +8,6 @@ public class Template : BaseDataModel
     private const int HashMaxLength = 24;
     public string Name { get; private set; }
     public string Hash { get; private set; }
-    public bool IsActive { get; private set; }
     public ICollection<Value> Values { get; init; }
 
     public Template(string name)
@@ -16,7 +15,6 @@ public class Template : BaseDataModel
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Hash = HashName(name);
         Values = new List<Value>();
-        IsActive = true;
     }
 
     public static string HashName(string key)

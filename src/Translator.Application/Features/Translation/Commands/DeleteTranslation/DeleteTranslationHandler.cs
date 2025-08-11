@@ -30,7 +30,7 @@ public class DeleteTranslationHandler : IRequestHandler<DeleteTranslationCommand
         var translation = await _translationRepository
             .Where(
                 x => x.Value.Hash == valueHash &&
-                x.Language.Code == request.LanguageCode && x.IsActive)
+                x.Language.Code == request.LanguageCode)
             .SingleOrDefaultAsync(cancellationToken);
         
         if (translation is null)

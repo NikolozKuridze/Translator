@@ -5,7 +5,7 @@
         public string Code { get; private set; } = default!; 
         public string Name { get; private set; } = default!;
         public string UnicodeRange { get; private set; } = default!;
-        
+        public bool IsActive { get; set; }
         public ICollection<Translation> Translations { get; set; } = null!;
 
         public Language(string code, string name, string unicodeRange)
