@@ -1,45 +1,187 @@
+@model Translator.Application.Features.Dashboard.Queries.GetDashboardRequestResponse
+
 @{
     ViewData["Title"] = "Dashboard";
     Layout = "_Layout";
 }
 
-<h2 class="mb-4">📊 Dashboard Overview</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+    <small class="text-muted">Last updated: @DateTime.Now.ToString("HH:mm")</small>
+</div>
 
-<div class="row">
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="fas fa-exclamation-triangle"></i>
+        <strong>Warning:</strong> @ViewBag.Error
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row mb-4">
     <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3 shadow">
+        <div class="card text-white bg-primary mb-3 shadow-sm stats-card">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-layer-group"></i> Templates</h5>
-                <p class="card-text">Manage translation templates.</p>
-                <a href="/Templates" class="btn btn-light btn-sm">Go to Templates</a>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-layer-group"></i> Templates
+                        </h5>
+                        <h2 class="fw-bold mt-2">@Model.TemplatesCount</h2>
+                        <p class="card-text small mb-0">Active templates</p>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-layer-group fa-2x opacity-50"></i>
+                    </div>
+                </div>
+                @Html.ActionLink("Manage Templates", "Index", "Templates", null, new { @class = "btn btn-light btn-sm mt-2 w-100" })
             </div>
         </div>
     </div>
+
     <div class="col-md-3">
-        <div class="card text-white bg-success mb-3 shadow">
+        <div class="card text-white bg-success mb-3 shadow-sm stats-card">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-font"></i> Values</h5>
-                <p class="card-text">Define dictionary values.</p>
-                <a href="/Values" class="btn btn-light btn-sm">Go to Values</a>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-font"></i> Values
+                        </h5>
+                        <h2 class="fw-bold mt-2">@Model.ValuesCount</h2>
+                        <p class="card-text small mb-0">Dictionary values</p>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-font fa-2x opacity-50"></i>
+                    </div>
+                </div>
+                @Html.ActionLink("Manage Values", "Index", "Values", null, new { @class = "btn btn-light btn-sm mt-2 w-100" })
             </div>
         </div>
     </div>
+
     <div class="col-md-3">
-        <div class="card text-white bg-info mb-3 shadow">
+        <div class="card text-white bg-info mb-3 shadow-sm stats-card">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-language"></i> Translations</h5>
-                <p class="card-text">Add & edit translations.</p>
-                <a href="/Translations" class="btn btn-light btn-sm">Go to Translations</a>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-language"></i> Translations
+                        </h5>
+                        <h2 class="fw-bold mt-2">@Model.TranslationsCount</h2>
+                        <p class="card-text small mb-0">Active translations</p>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-language fa-2x opacity-50"></i>
+                    </div>
+                </div>
+                @Html.ActionLink("Manage Translations", "Index", "Translations", null, new { @class = "btn btn-light btn-sm mt-2 w-100" })
             </div>
         </div>
     </div>
+
     <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3 shadow">
+        <div class="card text-white bg-warning mb-3 shadow-sm stats-card">
             <div class="card-body">
-                <h5 class="card-title"><i class="fas fa-globe"></i> Languages</h5>
-                <p class="card-text">Manage language list.</p>
-                <a href="/Languages" class="btn btn-light btn-sm">Go to Languages</a>
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-globe"></i> Languages
+                        </h5>
+                        <h2 class="fw-bold mt-2">@Model.LanguagesCount</h2>
+                        <p class="card-text small mb-0">Available languages</p>
+                    </div>
+                    <div class="stats-icon">
+                        <i class="fas fa-globe fa-2x opacity-50"></i>
+                    </div>
+                </div>
+                @Html.ActionLink("Manage Languages", "Index", "Languages", null, new { @class = "btn btn-light btn-sm mt-2 w-100" })
             </div>
         </div>
     </div>
 </div>
+
+<!-- Quick Actions -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        @Html.ActionLink("Create Template", "Index", "Templates", null, new { @class = "btn btn-outline-primary w-100 mb-2" })
+                    </div>
+                    <div class="col-md-3">
+                        @Html.ActionLink("Add Language", "Index", "Languages", null, new { @class = "btn btn-outline-warning w-100 mb-2" })
+                    </div>
+                    <div class="col-md-3">
+                        @Html.ActionLink("Browse All Templates", "GetAllTemplates", "Templates", null, new { @class = "btn btn-outline-info w-100 mb-2" })
+                    </div>
+                    <div class="col-md-3">
+                        <button class="btn btn-outline-secondary w-100 mb-2" onclick="location.reload()">
+                            <i class="fas fa-sync-alt"></i> Refresh Stats
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (ViewBag.Error == null)
+{
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="alert alert-success d-flex align-items-center" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <div>
+                    <strong>System Status:</strong> All services are operational. Dashboard loaded successfully.
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .stats-card {
+        transition: transform 0.2s ease-in-out;
+        cursor: pointer;
+    }
+
+    .stats-card:hover {
+        transform: translateY(-2px);
+    }
+
+    .stats-icon {
+        position: relative;
+    }
+
+    .opacity-50 {
+        opacity: 0.5;
+    }
+
+    .fw-bold {
+        font-weight: 700;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const cards = document.querySelectorAll('.stats-card');
+        
+        cards.forEach(card => {
+            card.addEventListener('click', function() {
+                const link = this.querySelector('a');
+                if (link) {
+                    window.location.href = link.href;
+                }
+            });
+        });
+
+        setTimeout(() => {
+            location.reload();
+        }, 300000); // 5 minutes
+    });
+</script>
