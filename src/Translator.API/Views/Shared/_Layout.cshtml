@@ -41,22 +41,22 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Template" ? "active" : "")" href="/template" asp-controller="Template" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Templates" ? "active" : "")" href="/templates" asp-controller="Template" asp-action="Index">
                         <i class="fas fa-layer-group me-2"></i>Templates
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Value" ? "active" : "")" href="/values" asp-controller="Value" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Values" ? "active" : "")" href="/values" asp-controller="Value" asp-action="Index">
                         <i class="fas fa-font me-2"></i>Values
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Translation" ? "active" : "")" href="/translations" asp-controller="Translation" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Translations" ? "active" : "")" href="/translations" asp-controller="Translation" asp-action="Index">
                         <i class="fas fa-language me-2"></i>Translations
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Language" ? "active" : "")" href="/languages" asp-controller="Language" asp-action="Index">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Languages" ? "active" : "")" href="/languages" asp-controller="Language" asp-action="Index">
                         <i class="fas fa-globe me-2"></i>Languages
                     </a>
                 </li>
@@ -71,7 +71,6 @@
         </div>
     </div>
 
-    <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
