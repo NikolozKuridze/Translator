@@ -133,6 +133,7 @@ namespace Translator.Infrastructure.Migrations
                     { new Guid("33670468-65e4-6591-a4f5-9a1918cb1408"), "zu", "Zulu", "0000-007F" },
                     { new Guid("3393a5d1-e5c7-0562-fed9-bda9da34b201"), "gu", "Gujarati", "0A80-0AFF" },
                     { new Guid("383a4678-5a4a-faa4-d5fa-73e2f506ecfc"), "en", "English", "0000-007F" },
+                    { new Guid("3d75c0ad-6437-d11e-17f7-b999a0ae79a0"), "ka", "Georgian", "10A0-10FF" },
                     { new Guid("3dbe972d-6692-1f14-e879-08a0e213c09f"), "mad", "Madurese", "0000-007F" },
                     { new Guid("41449857-5765-df28-e9c7-cc33e12dfa4c"), "om", "Oromo", "0000-007F" },
                     { new Guid("431f13f8-14da-6541-3f7e-cb1fd144eb6a"), "ug", "Uighur", "0600-06FF" },

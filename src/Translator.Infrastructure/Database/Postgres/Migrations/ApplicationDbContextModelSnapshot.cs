@@ -2,7 +2,6 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Translator.Infrastructure.Database.Postgres;
@@ -12,11 +11,9 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250809174553_Initial")]
-    partial class Initial
+    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
     {
-        /// <inheritdoc />
-        protected override void BuildTargetModel(ModelBuilder modelBuilder)
+        protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -796,6 +793,14 @@ namespace Translator.Infrastructure.Migrations
                             IsActive = false,
                             Name = "Konkani",
                             UnicodeRange = "0900-097F"
+                        },
+                        new
+                        {
+                            Id = new Guid("3d75c0ad-6437-d11e-17f7-b999a0ae79a0"),
+                            Code = "ka",
+                            IsActive = false,
+                            Name = "Georgian",
+                            UnicodeRange = "10A0-10FF"
                         });
                 });
 
