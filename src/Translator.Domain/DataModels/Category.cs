@@ -1,5 +1,3 @@
-using Translator.Domain.Enums;
-
 namespace Translator.Domain.DataModels;
 
 public class Category : BaseDataModel
@@ -10,5 +8,5 @@ public class Category : BaseDataModel
     public string Type { get; private set; }
     
     public Category? Parent { get; private set; }
-    public List<Category> Children { get; private set; } = new List<Category>();
+    public List<Category>? Children { get; private set; } = new();
 }
