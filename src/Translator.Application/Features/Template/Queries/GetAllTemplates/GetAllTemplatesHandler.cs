@@ -20,20 +20,35 @@ public class GetAllTemplatesHandler : IRequestHandler<GetAllTemplatesCommand, IE
         var pageNumber = Math.Max(1, request.PageNumber);
         var pageSize = Math.Min(Math.Max(1, request.PageSize), 100);
 
-        return await _repository
+      
+        var query = _repository
             .AsQueryable()
-            .AsNoTracking()
-            .OrderBy(t => t.Name) 
+            .AsNoTracking();
+        query = request.SortBy.ToLower() switch
+        {
+            "name" => request.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase) 
+                ? query.OrderByDescending(t => t.Name) 
+                : query.OrderBy(t => t.Name),
+            "value" or "valuecount" => request.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase) 
+                ? query.OrderByDescending(t => t.Values.Count) 
+                : query.OrderBy(t => t.Values.Count),
+            _ => query.OrderBy(t => t.Name)
+        };
+        
+        var templateCount = await query.CountAsync(cancellationToken);
+        
+        return await query
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .Select(t => new GetAllTemplatesResponse(
                 t.Name,
-                t.Values.Count
+                t.Values.Count,
+                templateCount
             ))
             .ToListAsync(cancellationToken);
     }
 }
 
 public record GetAllTemplatesResponse(
-    string TemplateName, int ValueCount
+    string TemplateName, int ValueCount, int TemplateCount
 );
