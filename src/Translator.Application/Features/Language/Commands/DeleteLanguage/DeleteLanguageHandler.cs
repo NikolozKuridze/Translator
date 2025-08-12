@@ -31,7 +31,7 @@ public class DeleteLanguageHandler : IRequestHandler<DeleteLanguageCommand>
         if (existsLanguage is null)
             throw new LanguageNotFoundException(request.Code);
         
-        await _repository.DeleteAsync([existsLanguage]);
+        existsLanguage.IsActive = false;
         await _repository.SaveChangesAsync(cancellationToken);
     }
 }
