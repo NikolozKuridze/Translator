@@ -3,86 +3,95 @@
 @{
     ViewBag.Title = "Languages";
     Layout = "_Layout";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var pageSize = ViewBag.PageSize ?? 10;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalCount = ViewBag.TotalCount ?? 0;
+    var filterName = ViewBag.FilterName as string ?? "";
+    var filterActive = ViewBag.FilterActive as bool?;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Languages</h2>
-    <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createLanguageSection" aria-expanded="false" aria-controls="createLanguageSection">
-        <i class="fas fa-plus"></i> Add Language
-    </button>
+    <h2>Languages <small class="text-muted">(@totalCount total)</small></h2>
 </div>
 
 @if (TempData["SuccessMessage"] != null)
 {
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
+    <div class="alert alert-success alert-dismissible fade show">
         @TempData["SuccessMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
-<div class="collapse mb-4" id="createLanguageSection">
-    <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Add New Language</h5>
-        </div>
-        <div class="card-body">
-            @using (Html.BeginForm("Create", "Languages", FormMethod.Post, new { id = "createLanguageForm" }))
-            {
-                <div class="mb-3">
-                    @Html.Label("code", "Language Code", new { @class = "form-label" })
-                    @Html.TextBox("code", "", new { 
-                        @class = "form-control", 
-                        required = "required", 
-                        placeholder = "e.g. en, ru, de, fr...",
-                        pattern = "[a-z]{2,5}",
-                        title = "Enter 2-5 lowercase letters"
-                    })
-                    <div class="form-text">Enter language code in lowercase (e.g., en, ru, de, fr)</div>
-                </div>
-
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-success">Add Language</button>
-                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
-                </div>
-            }
-        </div>
-    </div>
-</div>
-
-@if (Model != null && Model.Any())
+@if (TempData["ErrorMessage"] != null)
 {
-    <div class="card">
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0">Available Languages</h5>
-            <small class="text-muted">Total: @Model.Count() languages (@Model.Count(l => l.IsActive) active, @Model.Count(l => !l.IsActive) inactive)</small>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
-                        <tr>
-                            <th scope="col">#</th>
-                            <th scope="col">Code</th>
-                            <th scope="col">Name</th>
-                            <th scope="col">Unicode Range</th>
-                            <th scope="col">Status</th>
-                            <th scope="col">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @{ int counter = 1; }
-                        @foreach (var language in Model.OrderByDescending(l => l.IsActive).ThenBy(l => l.LanguageCode))
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Languages Table with integrated filters -->
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th scope="col">
+                            Name or Code
+                            @using (Html.BeginForm("Index", "Languages", FormMethod.Get, new { @class = "d-inline" }))
+                            {
+                                @Html.Hidden("pageNumber", 1)
+                                @Html.Hidden("pageSize", pageSize, null)
+                                @Html.Hidden("filterActive", filterActive)
+                                @Html.TextBox("filterName", filterName, new { 
+                                    @class = "form-control form-control-sm mt-1", 
+                                    placeholder = "Search by code or name...",
+                                    style = "width: 200px;",
+                                    onchange = "this.form.submit();" 
+                                })
+                            }
+                        </th>
+                        <th scope="col">Code</th>
+                        <th scope="col">Unicode Range</th>
+                        <th scope="col">
+                            Status
+                            @using (Html.BeginForm("Index", "Languages", FormMethod.Get, new { @class = "d-inline" }))
+                            {
+                                @Html.Hidden("pageNumber", 1)
+                                @Html.Hidden("pageSize", pageSize, null)
+                                @Html.Hidden("filterName", filterName)
+                                @Html.DropDownList("filterActive", new List<SelectListItem>
+                                {
+                                    new SelectListItem { Text = "All", Value = "", Selected = !filterActive.HasValue },
+                                    new SelectListItem { Text = "Active", Value = "true", Selected = filterActive == true },
+                                    new SelectListItem { Text = "Inactive", Value = "false", Selected = filterActive == false }
+                                }, new { 
+                                    @class = "form-select form-select-sm mt-1", 
+                                    style = "width: 120px;",
+                                    onchange = "this.form.submit();" 
+                                })
+                            }
+                        </th>
+                        <th scope="col">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        int counter = (currentPage - 1) * pageSize + 1;
+                        foreach (var language in Model)
                         {
                             <tr class="@(language.IsActive ? "" : "table-secondary")">
-                                <th scope="row">@counter</th>
-                                <td>
-                                    <span class="badge @(language.IsActive ? "bg-primary" : "bg-secondary")">
-                                        @language.LanguageCode.ToUpper()
-                                    </span>
-                                </td>
                                 <td>
                                     <span class="@(language.IsActive ? "" : "text-muted")">
                                         <strong>@(string.IsNullOrEmpty(language.LanguageName) ? "N/A" : language.LanguageName)</strong>
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge @(language.IsActive ? "bg-primary" : "bg-secondary")">
+                                        @language.LanguageCode.ToUpper()
                                     </span>
                                 </td>
                                 <td>
@@ -111,44 +120,183 @@
                                     }
                                     else
                                     {
-                                        <span class="text-muted">
-                                            <i class="fas fa-ban"></i> Deactivated
-                                        </span>
+                                        <button class="btn btn-sm btn-outline-success" onclick="showActivateModal('@Html.Raw(Html.Encode(language.LanguageCode))', '@Html.Raw(Html.Encode(language.LanguageName))')">
+                                            <i class="fas fa-play"></i> Activate
+                                        </button>
                                     }
                                 </td>
                             </tr>
                             counter++;
                         }
-                    </tbody>
-                </table>
-            </div>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fas fa-search fa-3x mb-3"></i>
+                                <div>No languages found matching your filters</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
     </div>
-}
-else
+</div>
+
+<!-- Pagination -->
+@if (Model != null && Model.Any())
 {
-    <div class="card">
-        <div class="card-body text-center">
-            <i class="fas fa-language fa-3x text-muted mb-3"></i>
-            <h5 class="text-muted">No languages found</h5>
-            <p class="text-muted">Add your first language using the form above.</p>
+    <nav class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">
+                Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
+            </small>
+            <small class="text-muted">Page @currentPage of @totalPages</small>
         </div>
+        
+        <ul class="pagination justify-content-center">
+            <!-- First page button -->
+            @if (currentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = 1, 
+                        pageSize, 
+                        filterName,
+                        filterActive 
+                    })" title="First page">
+                        <i class="fas fa-angle-double-left"></i> First
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                </li>
+            }
+
+            <!-- Previous button -->
+            @if (currentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = currentPage - 1, 
+                        pageSize,
+                        filterName,
+                        filterActive 
+                    })">Previous</a>
+                </li>
+            }
+            else 
+            { 
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li> 
+            }
+
+            <!-- Page numbers -->
+            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+            {
+                if (i == currentPage)
+                {
+                    <li class="page-item active">
+                        <span class="page-link">@i</span>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { 
+                            pageNumber = i, 
+                            pageSize,
+                            filterName,
+                            filterActive 
+                        })">@i</a>
+                    </li>
+                }
+            }
+
+            <!-- Next button -->
+            @if (currentPage < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = currentPage + 1, 
+                        pageSize,
+                        filterName,
+                        filterActive 
+                    })">Next</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+            }
+
+            <!-- Last page button -->
+            @if (currentPage < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = totalPages, 
+                        pageSize,
+                        filterName,
+                        filterActive 
+                    })" title="Last page">
+                        Last <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                </li>
+            }
+        </ul>
+    </nav>
+
+    <!-- Page size selector -->
+    <div class="d-flex justify-content-end align-items-center mt-3">
+        @using (Html.BeginForm("Index", "Languages", FormMethod.Get, new { @class = "d-flex align-items-center" }))
+        {
+            @Html.Hidden("pageNumber", 1)
+            @Html.Hidden("filterName", filterName)
+            @Html.Hidden("filterActive", filterActive)
+            
+            <label class="form-label me-2 mb-0">Show:</label>
+            @Html.DropDownList("pageSize", new List<SelectListItem>
+            {
+                new SelectListItem { Text = "5", Value = "5", Selected = pageSize == 5 },
+                new SelectListItem { Text = "10", Value = "10", Selected = pageSize == 10 },
+                new SelectListItem { Text = "25", Value = "25", Selected = pageSize == 25 },
+                new SelectListItem { Text = "50", Value = "50", Selected = pageSize == 50 }
+            }, new { 
+                @class = "form-select form-select-sm", 
+                style = "width: 80px;",
+                onchange = "this.form.submit();" 
+            })
+        }
     </div>
 }
 
-<!-- Модальное окно деактивации -->
-<div class="modal fade" id="deactivateLanguageModal" tabindex="-1" aria-labelledby="deactivateLanguageModalLabel" aria-hidden="true">
+<!-- Deactivate Modal -->
+<div class="modal fade" id="deactivateLanguageModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="deactivateLanguageModalLabel">Deactivate Language</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <h5 class="modal-title">Deactivate Language</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to deactivate this language?</p>
-                <div class="alert alert-info">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Note:</strong> The language will be marked as inactive but not deleted. Existing templates and translations will remain intact.
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> The language will be marked as inactive but not deleted.
                 </div>
                 <div class="language-info">
                     <p><strong>Language Code:</strong> <span id="languageCodeToDeactivate"></span></p>
@@ -161,7 +309,40 @@ else
                 {
                     @Html.Hidden("code", "")
                     <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-pause"></i> Deactivate Language
+                        <i class="fas fa-pause"></i> Deactivate
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activate Modal -->
+<div class="modal fade" id="activateLanguageModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Activate Language</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to activate this language?</p>
+                <div class="alert alert-success">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> The language will be marked as active and available for use.
+                </div>
+                <div class="language-info">
+                    <p><strong>Language Code:</strong> <span id="languageCodeToActivate"></span></p>
+                    <p><strong>Language Name:</strong> <span id="languageNameToActivate"></span></p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                @using (Html.BeginForm("Activate", "Languages", FormMethod.Post, new { id = "activateLanguageForm" }))
+                {
+                    @Html.Hidden("code", "")
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-play"></i> Activate
                     </button>
                 }
             </div>
@@ -170,19 +351,21 @@ else
 </div>
 
 <script>
-    function clearForm() {
-        const codeInput = document.querySelector('#createLanguageForm input[name="code"]');
-        if (codeInput) {
-            codeInput.value = '';
-        }
-    }
-
     function showDeactivateModal(languageCode, languageName) {
         document.getElementById('languageCodeToDeactivate').textContent = languageCode.toUpperCase();
         document.getElementById('languageNameToDeactivate').textContent = languageName || 'N/A';
         document.querySelector('#deactivateLanguageForm input[name="code"]').value = languageCode;
         
         const modal = new bootstrap.Modal(document.getElementById('deactivateLanguageModal'));
+        modal.show();
+    }
+
+    function showActivateModal(languageCode, languageName) {
+        document.getElementById('languageCodeToActivate').textContent = languageCode.toUpperCase();
+        document.getElementById('languageNameToActivate').textContent = languageName || 'N/A';
+        document.querySelector('#activateLanguageForm input[name="code"]').value = languageCode;
+        
+        const modal = new bootstrap.Modal(document.getElementById('activateLanguageModal'));
         modal.show();
     }
 
@@ -195,26 +378,12 @@ else
             }, 5000);
         }
 
-        const form = document.getElementById('createLanguageForm');
-        if (form) {
-            form.addEventListener('submit', function(e) {
-                const codeInput = this.querySelector('input[name="code"]');
-                const code = codeInput.value.trim();
-                
-                if (!/^[a-z]{2,5}$/.test(code)) {
-                    e.preventDefault();
-                    alert('Please enter a valid language code (2-5 lowercase letters)');
-                    codeInput.focus();
-                    return false;
-                }
-            });
-
-            const codeInput = form.querySelector('input[name="code"]');
-            if (codeInput) {
-                codeInput.addEventListener('input', function() {
-                    this.value = this.value.toLowerCase();
-                });
-            }
+        const errorAlert = document.querySelector('.alert-danger');
+        if (errorAlert) {
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(errorAlert);
+                alert.close();
+            }, 5000);
         }
     });
 </script>
@@ -234,10 +403,6 @@ else
 
     .badge {
         font-size: 0.875em;
-    }
-
-    .gap-2 {
-        gap: 0.5rem;
     }
 
     code {
