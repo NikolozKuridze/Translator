@@ -51,11 +51,6 @@
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Translations" ? "active" : "")" href="/translations" asp-controller="Translation" asp-action="Index">
-                        <i class="fas fa-language me-2"></i>Translations
-                    </a>
-                </li>
-                <li class="nav-item mb-2">
                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Languages" ? "active" : "")" href="/languages" asp-controller="Language" asp-action="Index">
                         <i class="fas fa-globe me-2"></i>Languages
                     </a>
