@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Translator.Application.Exceptions;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 
@@ -21,8 +20,7 @@ public class Translations : Controller
     [HttpGet("Index")]
     public async Task<IActionResult> Index()
     { 
-        return View(new List<TranslationDto>());
-        // TODO: add translations view
+        return View();
     }
 
     [HttpPost("Create")]
@@ -44,13 +42,4 @@ public class Translations : Controller
         TempData["SuccessMessage"] = "Translation deleted successfully!";
         return RedirectToAction("Index");
     }
-}
-
-public class TranslationDto
-{
-    public string Value { get; set; }
-    public string Translation { get; set; }
-    public string LanguageCode { get; set; }
-    public string Key { get; set; }
-    public bool IsActive { get; set; }
 }
