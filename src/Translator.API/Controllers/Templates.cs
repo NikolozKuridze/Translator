@@ -1,7 +1,5 @@
-using System.Collections.Immutable;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Translator.Application.Exceptions;
 using Translator.Application.Features.Language.Queries.GetLanguages;
 using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
@@ -46,7 +44,9 @@ namespace Translator.API.Controllers
         }
 
         [HttpGet("Details")]
-        public async Task<IActionResult> Details(string templateName, string? lang)
+        public async Task<IActionResult> Details(
+            string templateName, string? lang,
+            int pageNumber = 1, int pageSize = 10)
         {
             if (string.IsNullOrWhiteSpace(templateName))
                 return RedirectToAction(nameof(Index));
@@ -55,16 +55,29 @@ namespace Translator.API.Controllers
             var availableLanguages = (await _mediator.Send(languagesQuery))
                 .Where(l => l.IsActive)
                 .OrderBy(l => l.LanguageCode)
-                .ToImmutableArray();
+                .ToList();
 
-            var query = new GetTemplateCommand(templateName, lang);
-            var details = await _mediator.Send(query);
+                        var query = new GetTemplateCommand(templateName, lang);
+            var allTemplateData = (await _mediator.Send(query)).ToList();
+            
+            var totalCount = allTemplateData.Count;
+            var totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
+            pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
+
+            var pagedTemplateData = allTemplateData
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToList();
 
             ViewBag.TemplateName = templateName;
             ViewBag.CurrentLanguage = lang ?? "";
             ViewBag.AvailableLanguages = availableLanguages;
+            ViewBag.CurrentPage = pageNumber;
+            ViewBag.PageSize = pageSize;
+            ViewBag.TotalPages = totalPages;
+            ViewBag.TotalCount = totalCount;
 
-            return View(details);
+            return View(pagedTemplateData);
         }
 
         [HttpPost("Create")]
