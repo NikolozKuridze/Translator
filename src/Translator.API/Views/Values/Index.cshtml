@@ -1,73 +1,348 @@
-@model Translator.Application.Features.Values.Queries.GetValue.GetValueResponse?
+@model IEnumerable<Translator.Application.Features.Values.Queries.GetAllValues.GetAllValuesResponse>
 
 @{
-    ViewBag.Title = "Values";
     Layout = "_Layout";
+    ViewBag.Title = "Values";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var pageSize = ViewBag.PageSize ?? 10;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalCount = ViewBag.TotalCount ?? 0;
+    var sortBy = ViewBag.SortBy as string ?? "date";
+    var sortDirection = ViewBag.SortDirection as string ?? "asc";
+    
+    string flipDirection(string dir) => dir == "asc" ? "desc" : "asc";
+    string getSortIcon(string column) => 
+        sortBy == column ? (sortDirection == "asc" ? "fa-sort-up" : "fa-sort-down") : "fa-sort";
 }
 
-<h2 class="mb-4">🔍 Search Value</h2>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Values <small class="text-muted">(@totalCount total)</small></h2>
+    <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createValueSection">
+        <i class="fas fa-plus"></i> Create Value
+    </button>
+</div>
 
-<div class="card mb-4 shadow">
-    <div class="card-body">
-        @using (Html.BeginForm("Search", "Values", FormMethod.Get, new { @class = "row g-3" }))
-        {
-            <div class="col-md-5">
-                @Html.TextBox("valueName", null, new { @class = "form-control", placeholder = "Value Name", required = "required", id = "valueNameInput" })
-            </div>
-            <div class="col-md-4">
-                @Html.TextBox("lang", null, new { @class = "form-control", placeholder = "Language (optional)", id = "langInput" })
-            </div>
-            <div class="col-md-3">
-                <button type="submit" class="btn btn-primary w-100" id="searchButton" >Search</button>
-            </div>
-        }
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Create Value Form -->
+<div class="collapse mb-4" id="createValueSection">
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Create New Value</h5>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Create", "Values", FormMethod.Post, new { id = "createValueForm" }))
+            {
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        @Html.Label("key", "Key", new { @class = "form-label" })
+                        @Html.TextBox("key", "", new { @class = "form-control", required = "required", placeholder = "Enter key..." })
+                    </div>
+                    <div class="col-md-5">
+                        @Html.Label("value", "Value", new { @class = "form-label" })
+                        @Html.TextBox("value", "", new { @class = "form-control", required = "required", placeholder = "Enter value..." })
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success w-100">Create</button>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
 </div>
 
-@if (Model != null)
-{
-    <div class="card shadow mb-3">
-        <div class="card-body">
-            <h5>Key: <strong>@Model.ValueKey</strong></h5>
-            <h6>Value:</h6>
-            <ul>
-                <li>@Model.ValueTranslation</li>
-            </ul>
-
-            <a href="/Values/Delete?valueName=@(Uri.EscapeDataString(Model.ValueKey))" class="btn btn-danger btn-sm">
-                <i class="fas fa-trash-alt"></i> Delete
-            </a>
+<!-- Values Table -->
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>
+                            Key
+                            <a href="@Url.Action("Index", new { 
+                                sortBy = "key", 
+                                sortDirection = flipDirection(sortDirection), 
+                                pageNumber = currentPage, 
+                                pageSize 
+                            })" class="btn btn-link btn-sm p-1 ms-1" title="Sort by key">
+                                <i class="fas @getSortIcon("key")"></i>
+                            </a>
+                        </th>
+                        <th>
+                            Value
+                        </th>
+                        <th>
+                            Created Date
+                            <a href="@Url.Action("Index", new { 
+                                sortBy = "date", 
+                                sortDirection = flipDirection(sortDirection), 
+                                pageNumber = currentPage, 
+                                pageSize 
+                            })" class="btn btn-link btn-sm p-1 ms-1" title="Sort by date">
+                                <i class="fas @getSortIcon("date")"></i>
+                            </a>
+                        </th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var value in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge bg-primary">@value.Key</span>
+                                </td>
+                                <td class="text-truncate" style="max-width: 300px;">
+                                    @value.TranslationsCount
+                                </td>
+                                <td>
+                                    <small class="text-muted">@value.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                </td>
+                                <td>
+                                    @Html.ActionLink("View Details", "Details", "Values", new { valueName = value.Key }, new { @class = "btn btn-sm btn-outline-primary me-2" })
+                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal('@Html.Raw(Html.Encode(value.Key))')">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <div>No values found</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+@if (Model != null && Model.Any())
+{
+    <nav class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">
+                Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
+            </small>
+            <small class="text-muted">Page @currentPage of @totalPages</small>
+        </div>
+        
+        <ul class="pagination justify-content-center">
+            <!-- First page button -->
+            @if (currentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = 1, 
+                        pageSize, 
+                        sortBy, 
+                        sortDirection 
+                    })" title="First page">
+                        <i class="fas fa-angle-double-left"></i> First
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                </li>
+            }
+
+            <!-- Previous button -->
+            @if (currentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = currentPage - 1, 
+                        pageSize, 
+                        sortBy, 
+                        sortDirection 
+                    })">Previous</a>
+                </li>
+            }
+            else 
+            { 
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li> 
+            }
+
+            <!-- Page numbers -->
+            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+            {
+                if (i == currentPage)
+                {
+                    <li class="page-item active">
+                        <span class="page-link">@i</span>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { 
+                            pageNumber = i, 
+                            pageSize, 
+                            sortBy, 
+                            sortDirection 
+                        })">@i</a>
+                    </li>
+                }
+            }
+
+            <!-- Next button -->
+            @if (currentPage < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = currentPage + 1, 
+                        pageSize, 
+                        sortBy, 
+                        sortDirection 
+                    })">Next</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+            }
+
+            <!-- Last page button -->
+            @if (currentPage < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = totalPages, 
+                        pageSize, 
+                        sortBy, 
+                        sortDirection 
+                    })" title="Last page">
+                        Last <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                </li>
+            }
+        </ul>
+    </nav>
+
+    <!-- Page size selector -->
+    <div class="d-flex justify-content-end align-items-center mt-3">
+        @using (Html.BeginForm("Index", "Values", FormMethod.Get, new { @class = "d-flex align-items-center" }))
+        {
+            @Html.Hidden("pageNumber", 1)
+            @Html.Hidden("sortBy", sortBy)
+            @Html.Hidden("sortDirection", sortDirection)
+            
+            <label class="form-label me-2 mb-0">Show:</label>
+            @Html.DropDownList("pageSize", new List<SelectListItem>
+            {
+                new SelectListItem { Text = "5", Value = "5", Selected = pageSize == 5 },
+                new SelectListItem { Text = "10", Value = "10", Selected = pageSize == 10 },
+                new SelectListItem { Text = "25", Value = "25", Selected = pageSize == 25 },
+                new SelectListItem { Text = "50", Value = "50", Selected = pageSize == 50 }
+            }, new { 
+                @class = "form-select form-select-sm", 
+                style = "width: 80px;",
+                onchange = "this.form.submit();" 
+            })
+        }
     </div>
 }
 
-<hr class="my-5" />
-
-<h2 class="mb-4">➕ Create New Value</h2>
-
-<div class="card shadow">
-    <div class="card-body">
-        @using (Html.BeginForm("Create", "Values", FormMethod.Post, new { @class = "row g-3" }))
-        {
-            <div class="col-md-5">
-                @Html.TextBox("key", null, new { @class = "form-control", placeholder = "Key", required = "required", id = "keyInput" })
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteValueModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Value</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <div class="col-md-5">
-                @Html.TextBox("value", null, new { @class = "form-control", placeholder = "Value", required = "required", id = "valueInput" })
+            <div class="modal-body">
+                <p>Are you sure you want to delete value <strong id="valueNameToDelete"></strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This action cannot be undone!
+                </div>
             </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-success w-100" id="createButton">Create</button>
+            <div class="modal-footer">
+                @using (Html.BeginForm("Delete", "Values", FormMethod.Post, new { id = "deleteValueForm" }))
+                {
+                    @Html.Hidden("valueName", "")
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Delete
+                    </button>
+                }
             </div>
-        }
+        </div>
     </div>
 </div>
 
 <script>
-    document.getElementById("searchButton").addEventListener("click", function () {
-        const valueName = document.getElementById("valueNameInput").value.trim();
-        const lang = document.getElementById("langInput").value.trim();
+    function showDeleteModal(valueName) {
+        document.getElementById('valueNameToDelete').textContent = valueName;
+        document.querySelector('#deleteValueForm input[name="valueName"]').value = valueName;
+        const modal = new bootstrap.Modal(document.getElementById('deleteValueModal'));
+        modal.show();
+    }
 
-        const url = `/Values/Search?valueName=${encodeURIComponent(valueName)}&lang=${encodeURIComponent(lang)}`;
-        window.location.href = url;
+    document.addEventListener('DOMContentLoaded', function() {
+        const successAlert = document.querySelector('.alert-success');
+        if (successAlert) {
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(successAlert);
+                alert.close();
+            }, 5000);
+        }
+
+        const errorAlert = document.querySelector('.alert-danger');
+        if (errorAlert) {
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(errorAlert);
+                alert.close();
+            }, 5000);
+        }
     });
 </script>
+
+<style>
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .badge {
+        font-size: 0.875em;
+    }
+</style>

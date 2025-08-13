@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Translator.API.Contracts;
 using Translator.Application.Features.Values.Commands.CreateValue;
 using Translator.Application.Features.Values.Commands.DeleteValue;
+using Translator.Application.Features.Values.Queries.GetAllValues;
 using Translator.Application.Features.Values.Queries.GetValue;
 
 namespace Translator.API.ApiControllers;
@@ -14,15 +15,26 @@ public class ValueController : ControllerBase
 
     public ValueController(IMediator mediator) => _mediator = mediator;
 
-    [HttpGet("api/get-value/{valueName}/{lang?}")]
+    [HttpGet("api/get-value/{valueName}/{allTranslations:bool}/{lang}")]
     public async Task<IResult> GetValue(
         [FromRoute] string valueName,
-        [FromRoute] string? lang = null)
+        [FromRoute] bool allTranslations,
+        [FromRoute] string lang = "")
     {
-        var command = new GetValueCommand(valueName, lang);
+        var command = new GetValueCommand(valueName, lang, allTranslations);
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }       
+
+    [HttpGet("api/get-all-values/")]
+    public async Task<IResult> GetValue(
+        [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10,
+        [FromQuery] string sortBy = "date", [FromQuery] string sortDirection = "asc")
+    {
+        var command = new GetAllValuesCommand(pageNumber, pageSize, sortBy, sortDirection);
+        var result = await _mediator.Send(command);
+        return Results.Ok(result);
+    }
     
     [HttpPost("api/add-value")]
     public async Task<IResult> AddValue(
