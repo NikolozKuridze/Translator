@@ -1,6 +1,8 @@
+using System.Collections.Immutable;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.Application.Exceptions;
+using Translator.Application.Features.Language.Queries.GetLanguages;
 using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetAllTemplates;
@@ -44,15 +46,24 @@ namespace Translator.API.Controllers
         }
 
         [HttpGet("Details")]
-        public async Task<IActionResult> Details(string templateName)
+        public async Task<IActionResult> Details(string templateName, string? lang)
         {
             if (string.IsNullOrWhiteSpace(templateName))
                 return RedirectToAction(nameof(Index));
+            
+            var languagesQuery = new GetLanguagesCommand();
+            var availableLanguages = (await _mediator.Send(languagesQuery))
+                .Where(l => l.IsActive)
+                .OrderBy(l => l.LanguageCode)
+                .ToImmutableArray();
 
-            var query = new GetTemplateCommand(templateName, null);
+            var query = new GetTemplateCommand(templateName, lang);
             var details = await _mediator.Send(query);
 
             ViewBag.TemplateName = templateName;
+            ViewBag.CurrentLanguage = lang ?? "";
+            ViewBag.AvailableLanguages = availableLanguages;
+
             return View(details);
         }
 

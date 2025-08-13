@@ -4,11 +4,50 @@
     Layout = "_Layout";
     ViewBag.Title = "Template details";
     var templateName = ViewBag.TemplateName as string ?? "";
+    var currentLanguage = ViewBag.CurrentLanguage as string ?? "";
+    var availableLanguages = ViewBag.AvailableLanguages as IEnumerable<Translator.Application.Features.Language.Queries.GetLanguages.GetLanguagesResponse> ?? new List<Translator.Application.Features.Language.Queries.GetLanguages.GetLanguagesResponse>();
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Template: <span class="badge bg-primary fs-6">@templateName</span></h2>
-    @Html.ActionLink("Back to list", "Index", "Templates", null, new { @class = "btn btn-outline-secondary" })
+    <div>
+        <h2>Template: <span class="badge bg-primary fs-6">@templateName</span></h2>
+        @if (!string.IsNullOrEmpty(currentLanguage))
+        {
+            <small class="text-muted">Language: <span class="badge bg-secondary">@currentLanguage.ToUpper()</span></small>
+        }
+    </div>
+    <div class="d-flex gap-2 align-items-center">
+        <!-- Language Selector -->
+        @if (availableLanguages.Any())
+        {
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="fas fa-language"></i> 
+                    @(string.IsNullOrEmpty(currentLanguage) ? "Select Language" : currentLanguage.ToUpper())
+                </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a class="dropdown-item @(string.IsNullOrEmpty(currentLanguage) ? "active" : "")" 
+                           href="@Url.Action("Details", new { templateName = templateName })">
+                            <i class="fas fa-globe"></i> All Languages
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    @foreach (var language in availableLanguages)
+                    {
+                        <li>
+                            <a class="dropdown-item @(currentLanguage == language.LanguageCode ? "active" : "")" 
+                               href="@Url.Action("Details", new { templateName = templateName, lang = language.LanguageCode })">
+                                <span class="badge bg-primary me-2">@language.LanguageCode.ToUpper()</span>
+                                @(string.IsNullOrEmpty(language.LanguageName) ? "N/A" : language.LanguageName)
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        }
+        @Html.ActionLink("Back to list", "Index", "Templates", null, new { @class = "btn btn-outline-secondary" })
+    </div>
 </div>
 
 @if (Model != null && Model.Any())
@@ -17,6 +56,10 @@
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="mb-0">
                 <i class="fas fa-list"></i> Template Content
+                @if (!string.IsNullOrEmpty(currentLanguage))
+                {
+                    <small class="text-muted">(@currentLanguage.ToUpper())</small>
+                }
             </h5>
             <span class="badge bg-info">@Model.Count() Elements</span>
         </div>
@@ -53,14 +96,24 @@ else
         <div class="card-body text-center py-5">
             <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
             <h5 class="text-muted">Empty Template</h5>
-            <p class="text-muted">This template is empty</p>
+            <p class="text-muted">
+                @if (!string.IsNullOrEmpty(currentLanguage))
+                {
+                    <span>This template has no translations for language <strong>@currentLanguage.ToUpper()</strong></span>
+                }
+                else
+                {
+                    <span>This template is empty</span>
+                }
+            </p>
             @Html.ActionLink("Return to list", "Index", "Templates", null, new { @class = "btn btn-primary" })
         </div>
     </div>
 }
 
 <div class="mt-4">
-    <div class="d-flex gap-2"><button class="btn btn-danger" onclick="showDeleteModal('@Html.Raw(Html.Encode(templateName))')">
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" onclick="showDeleteModal('@Html.Raw(Html.Encode(templateName))')">
             <i class="fas fa-trash"></i> Delete Template
         </button>
     </div>
@@ -71,7 +124,7 @@ else
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Delete Tempalate</h5>
+                <h5 class="modal-title">Delete Template</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
@@ -85,7 +138,7 @@ else
                 @using (Html.BeginForm("Delete", "Templates", FormMethod.Post, new { id = "deleteTemplateForm" }))
                 {
                     @Html.Hidden("templateName", templateName)
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Delete
                     </button>
@@ -111,4 +164,13 @@ else
         word-break: break-word;
     }
     
+    .dropdown-item.active {
+        background-color: var(--bs-primary);
+        color: white;
+    }
+    
+    .dropdown-item:hover {
+        background-color: var(--bs-primary);
+        color: white;
+    }
 </style>
