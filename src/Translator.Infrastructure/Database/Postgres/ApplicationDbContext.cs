@@ -12,7 +12,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Value> Values { get; set; }
     public DbSet<Category> Categories { get; set; }
     
-    public ApplicationDbContext(DbContextOptions options) 
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
         : base(options) { }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
