@@ -1,11 +1,14 @@
 using Microsoft.EntityFrameworkCore;
 using Scalar.AspNetCore;
 using Serilog;
+using Translator.API.Contracts;
 using Translator.API.Middlewares;
 using Translator.Application;
 using Translator.Infrastructure;
 using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.SeedData;
+
+const int sessionTimeout = 1;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -14,6 +17,19 @@ builder.Services.AddApplicationDependencies();
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+
+builder.Services.Configure<AdminAuthSettings>(
+    builder.Configuration.GetSection(nameof(AdminAuthSettings)));
+
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(sessionTimeout);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+    options.Cookie.Name = "AdminSession";
+});
 
 builder.Services.AddSerilog(
     Log.Logger = new LoggerConfiguration()
@@ -40,6 +56,8 @@ app.MapScalarApiReference("/docs", options =>
 app.MapControllers();
 app.UseHttpsRedirection();
 
+app.UseSession();
+
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
 if (args.Contains("--seed"))
@@ -53,6 +71,7 @@ if (args.Contains("--seed"))
         
     await seeder.SeedTranslationsAsync();
 }
+
 
 app.MapControllerRoute(
     name: "default",
