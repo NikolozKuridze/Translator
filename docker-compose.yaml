@@ -2,7 +2,9 @@
 volumes:
   postgres-db:
   redis_data:
-
+  postgres-logs-db:
+    
+    
 services:
   postgres:
     container_name: PostgresTranslatorDb
@@ -15,7 +17,20 @@ services:
     volumes:
       - postgres-db:/var/lib/postgresql/data
     restart: always
-
+  
+  postgres_logs:
+    container_name: PostgresLogsDb
+    image: postgres:17.3
+    ports:
+      - '5433:5432'  
+    environment:
+      POSTGRES_USER: logs_user
+      POSTGRES_PASSWORD: logs_pass
+      POSTGRES_DB: logs_db
+    volumes:
+      - postgres-logs-db:/var/lib/postgresql/data
+    restart: always
+  
   redis:
     container_name: redis
     image: redis:7
