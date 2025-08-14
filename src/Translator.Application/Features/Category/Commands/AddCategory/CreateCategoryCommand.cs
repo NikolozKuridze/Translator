@@ -4,7 +4,7 @@ namespace Translator.Application.Features.Category.Commands.AddCategory;
 
 public record CreateCategoryCommand(
     string Value,
-    int Order,
     string Type,
+    int? Order,
     Guid? ParentId
 ) : IRequest<Guid>;
