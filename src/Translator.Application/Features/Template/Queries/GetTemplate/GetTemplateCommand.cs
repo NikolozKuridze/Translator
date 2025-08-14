@@ -2,5 +2,5 @@ using MediatR;
 
 namespace Translator.Application.Features.Template.Queries.GetTemplate;
 
-public record GetTemplateCommand(string TemplateName, string? LanguageCode)
+public record GetTemplateCommand(Guid TemplateId, string? LanguageCode, bool AllTranslates)
     : IRequest<IEnumerable<TemplateDto>>;

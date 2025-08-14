@@ -20,25 +20,48 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
 
     public async Task<IEnumerable<TemplateDto>> Handle(GetTemplateCommand request, CancellationToken cancellationToken)
     {
+        if (request.AllTranslates)
+        {
+            var templateWithAllTranslates = await (
+                from t in _templateRepository
+                where t.Id == request.TemplateId
+                from tv in t.Values
+                from tr in tv.Translations
+                select new TemplateDto(
+                    tv.Key,
+                    tr.Value.Id,
+                    tr.TranslationValue ?? string.Empty,
+                    tr.Language.Code)
+            ).ToArrayAsync(cancellationToken);
+
+            if (!templateWithAllTranslates.Any())
+                throw new TemplateNotFoundException(request.TemplateId.ToString());
+
+            return templateWithAllTranslates;
+        }
+
         var languageCode = string.IsNullOrEmpty(request.LanguageCode) 
-            ? DefaultLanguageCode 
+            ? DefaultLanguageCode
             : request.LanguageCode;
-        
-        var hash = TemplateEntity.HashName(request.TemplateName);
 
         var template = await (
             from t in _templateRepository
-            where t.Hash == hash
+            where t.Id == request.TemplateId
             from tv in t.Values
             from tr in tv.Translations
                 .Where(translation => translation.Language.Code == languageCode)
             select new TemplateDto(
                 tv.Key,
-                tr.TranslationValue ?? string.Empty)
-            ).ToArrayAsync(cancellationToken);
+                tr.Value.Id,
+                tr.TranslationValue ?? string.Empty,
+                tr.Language.Code)
+        ).ToArrayAsync(cancellationToken);
         
-        return template ?? throw new TemplateNotFoundException(request.TemplateName);
+        if (!template.Any())
+            throw new TemplateNotFoundException(request.TemplateId.ToString());
+
+        return template;
     }
 }
 
-public record TemplateDto(string Key, string Value);
+public record TemplateDto(string Key, Guid ValueId, string Value, string? LanguageCode);
