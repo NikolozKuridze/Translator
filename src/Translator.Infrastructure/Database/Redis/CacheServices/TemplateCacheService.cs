@@ -17,13 +17,13 @@ public class TemplateCacheService
     private static string GetRedisKey(Guid templateId) =>
         $"{KeyPrefix}{templateId}:values";
 
-    public async Task<TemplateCacheDto> GetTranslationsAsync(Guid templateId)
+    public async Task<TemplateCacheDto?> GetTranslationsAsync(Guid templateId)
     {
         var key = GetRedisKey(templateId);
         var json = await _db.StringGetAsync(key);
 
         if (json.IsNullOrEmpty)
-            return default;
+            return null;
 
         return JsonSerializer.Deserialize<TemplateCacheDto>(json);
     }
@@ -52,4 +52,4 @@ public class TemplateCacheService
     }
 }
 public record TemplateCacheDto(Guid TemplateId, string TemplateName, List<TranslationDto> Translations);
-public record TranslationDto(string Key, string Value, string LanguageCode);
+public record TranslationDto(string Key, string Value, Guid ValueId, string LanguageCode);

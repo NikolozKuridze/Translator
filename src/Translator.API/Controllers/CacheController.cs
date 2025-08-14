@@ -39,6 +39,7 @@ public class CacheController : Controller
             var translations = templateData.Select(t => new TranslationDto(
                 t.Key,
                 t.Value,
+                t.ValueId,
                 t.LanguageCode ?? "en"
             )).ToList();
 
@@ -80,6 +81,7 @@ public class CacheController : Controller
             var translations = valueData.Select(v => new TranslationDto(
                 v.ValueKey,
                 v.ValueTranslation,
+                v.Id,
                 v.LanguageCode
             )).ToList();
 

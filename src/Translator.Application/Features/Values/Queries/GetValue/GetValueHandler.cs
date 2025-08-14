@@ -47,7 +47,7 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
                 .Where(v => v.Id == request.ValueId)
                 .SelectMany(v => v.Translations
                     .Select(t => new GetValueResponse(
-                        t.Value.Key, t.TranslationValue, t.Language.Code
+                        t.Value.Key, t.Value.Id, t.TranslationValue, t.Language.Code
                     )))
                 .ToArrayAsync(cancellationToken);
             
@@ -59,7 +59,7 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
                 t => t.Value.Id == request.ValueId && 
                      t.Language.Code == code)
             .Select(t 
-                => new GetValueResponse(t.Value.Key, t.TranslationValue, t.Language.Code))
+                => new GetValueResponse(t.Value.Key, t.Value.Id, t.TranslationValue, t.Language.Code))
             .SingleOrDefaultAsync(cancellationToken);
         
         if (translation is null)
@@ -69,4 +69,4 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
     }
 }
 
-public record GetValueResponse(string ValueKey, string ValueTranslation, string LanguageCode);
+public record GetValueResponse(string ValueKey, Guid Id, string ValueTranslation, string LanguageCode);
