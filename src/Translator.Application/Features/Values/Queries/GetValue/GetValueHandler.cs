@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres.Repository;
-
+using Translator.Infrastructure.Database.Redis.CacheServices;
 using TemplateEntity = Translator.Domain.DataModels.Template;
 using LanguageEntity = Translator.Domain.DataModels.Language;
 using TranslationEntity = Translator.Domain.DataModels.Translation;
@@ -16,15 +16,18 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
     private readonly IRepository<LanguageEntity> _languageRepository;
     private readonly IRepository<TranslationEntity> _translationRepository;
     private readonly IRepository<ValueEntity> _valueRepository;
+    private readonly ValueCacheService _valueCacheService;
 
     public GetValueHandler(
         IRepository<LanguageEntity> languageRepository,
         IRepository<TranslationEntity> translationRepository,
-        IRepository<ValueEntity> valueRepository)
+        IRepository<ValueEntity> valueRepository,
+        ValueCacheService valueCacheService)
     {
         _languageRepository = languageRepository;
         _translationRepository = translationRepository;
         _valueRepository = valueRepository;
+        _valueCacheService = valueCacheService;
     }
     
     public async Task<IEnumerable<GetValueResponse>> Handle(GetValueCommand request, CancellationToken cancellationToken)
@@ -39,7 +42,20 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
     
         if (existsLanguage is null)
             throw new LanguageNotFoundException(code);
-        
+
+
+        var cachedResult = await _valueCacheService.GetTranslationsAsync(request.ValueId);
+        if (cachedResult != null)
+        {
+            if(request.AllTranslations)
+                return cachedResult.Translations
+                    .Select(t => new GetValueResponse(t.Key, t.ValueId, t.Value, t.LanguageCode));
+            
+            return cachedResult
+                .Translations
+                .Where(t => t.LanguageCode == request.LanguageCode)
+                .Select(t => new GetValueResponse(t.Key, t.ValueId, t.Value, t.LanguageCode));
+        }
         
         if (request.AllTranslations)
         {

@@ -17,13 +17,13 @@ public class ValueCacheService
     private static string GetRedisKey(Guid valueId) =>
         $"{KeyPrefix}{valueId}:translations";
 
-    public async Task<ValueCacheDto> GetTranslationsAsync(Guid valueId)
+    public async Task<ValueCacheDto?> GetTranslationsAsync(Guid valueId)
     {
         var key = GetRedisKey(valueId);
         var json = await _db.StringGetAsync(key);
 
         if (json.IsNullOrEmpty)
-            return default;
+            return null;
 
         return JsonSerializer.Deserialize<ValueCacheDto>(json);
     }
