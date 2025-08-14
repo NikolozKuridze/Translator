@@ -1,0 +1,307 @@
+@model Translator.Application.Features.Logs.Queries.GetLogsResponse
+
+@{
+    Layout = "_Layout";
+    ViewBag.Title = "Log Details";
+    var logTimestamp = ViewBag.LogTimestamp as DateTime? ?? DateTime.Now;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-alt"></i> Log Details</h2>
+    @Html.ActionLink("Back to logs", "Index", "Logs", null, new { @class = "btn btn-outline-secondary" })
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model != null)
+{
+    <!-- Meta info bar -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-3">
+                    <strong>Timestamp:</strong>
+                    <div>
+                        <span class="badge bg-info">@Model.Timestamp.ToString("dd/MM/yyyy HH:mm:ss")</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <strong>Level:</strong>
+                    <div>
+                        @{
+                            var logLevel = GetLogLevel(Model.Message);
+                            var logLevelBadge = GetLogLevelBadge(logLevel);
+                        }
+                        <span class="badge @logLevelBadge">@logLevel</span>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <strong>Has Exception:</strong>
+                    <div>
+                        @if (!string.IsNullOrEmpty(Model.Exception))
+                        {
+                            <span class="badge bg-danger">Yes</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">No</span>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <strong>Has Properties:</strong>
+                    <div>
+                        @if (!string.IsNullOrEmpty(Model.Properties))
+                        {
+                            <span class="badge bg-info">Yes</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">No</span>
+                        }
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-primary btn-sm" onclick="copyLogToClipboard()" title="Copy Log Message">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        
+                        @if (!string.IsNullOrEmpty(Model.Exception))
+                        {
+                            <button class="btn btn-outline-danger btn-sm" onclick="copyExceptionToClipboard()" title="Copy Exception">
+                                <i class="fas fa-bug"></i>
+                            </button>
+                        }
+                        
+                        <a href="@Url.Action("Index", new { 
+                            dateFrom = Model.Timestamp.Date.ToString("yyyy-MM-dd"),
+                            dateTo = Model.Timestamp.Date.ToString("yyyy-MM-dd")
+                        })" class="btn btn-outline-info btn-sm" title="View Same Day Logs">
+                            <i class="fas fa-calendar"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main log message - full width -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-comment-alt"></i> Log Message
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="p-3 bg-light border rounded">
+                <pre class="mb-0 log-content">@Model.Message</pre>
+            </div>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(Model.Properties))
+    {
+        <!-- Properties - full width -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cog"></i> Properties
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="p-3 bg-light border rounded">
+                    <pre class="mb-0 log-content text-info">@Model.Properties</pre>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(Model.Exception))
+    {
+        <!-- Exception - full width -->
+        <div class="card mb-4">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> Exception Details
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded">
+                    <pre class="mb-0 log-content text-danger">@Model.Exception</pre>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Additional info -->
+    <div class="card">
+        <div class="card-header">
+            <h6 class="mb-0"><i class="fas fa-info-circle"></i> Additional Information</h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>UTC Time:</strong><br>
+                    <small class="text-muted">@Model.Timestamp.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss.fff") UTC</small>
+                </div>
+                <div class="col-md-4">
+                    <strong>Local Time:</strong><br>
+                    <small class="text-muted">@Model.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff zzz")</small>
+                </div>
+                <div class="col-md-4">
+                    <strong>Total Logs Count:</strong><br>
+                    <small class="text-muted">@Model.LogsCount total logs in system</small>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-4x text-muted mb-3"></i>
+            <h5 class="text-muted">Log Not Found</h5>
+            <p class="text-muted">The requested log entry could not be found.</p>
+            @Html.ActionLink("Return to logs", "Index", "Logs", null, new { @class = "btn btn-primary" })
+        </div>
+    </div>
+}
+
+@functions {
+    string GetLogLevel(string message)
+    {
+        if (message.Contains("Error", StringComparison.OrdinalIgnoreCase) || 
+            message.Contains("Exception", StringComparison.OrdinalIgnoreCase))
+            return "Error";
+        if (message.Contains("Warning", StringComparison.OrdinalIgnoreCase) || 
+            message.Contains("Warn", StringComparison.OrdinalIgnoreCase))
+            return "Warning";
+        if (message.Contains("Info", StringComparison.OrdinalIgnoreCase))
+            return "Info";
+        return "Debug";
+    }
+
+    string GetLogLevelBadge(string level)
+    {
+        return level switch
+        {
+            "Error" => "bg-danger",
+            "Warning" => "bg-warning text-dark",
+            "Info" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+<script>
+    function copyLogToClipboard() {
+        const logMessage = `@Html.Raw(Model?.Message ?? "")`;
+        navigator.clipboard.writeText(logMessage).then(() => {
+            showToast('Log message copied to clipboard!');
+        });
+    }
+
+    function copyExceptionToClipboard() {
+        const exception = `@Html.Raw(Model?.Exception ?? ""))`;
+        navigator.clipboard.writeText(exception).then(() => {
+            showToast('Exception details copied to clipboard!');
+        });
+    }
+
+    function showToast(message) {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        toast.innerHTML = `
+            <div class="toast show" role="alert">
+                <div class="toast-header">
+                    <i class="fas fa-check-circle text-success me-2"></i>
+                    <strong class="me-auto">Success</strong>
+                    <button type="button" class="btn-close" onclick="this.closest('.position-fixed').remove()"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.parentNode.removeChild(toast);
+            }
+        }, 3000);
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const errorAlert = document.querySelector('.alert-danger');
+        if (errorAlert) {
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(errorAlert);
+                alert.close();
+            }, 5000);
+        }
+    });
+</script>
+
+<style>
+    .log-content {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        word-break: break-word;
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        line-height: 1.4;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow-x: auto; /* Добавляем горизонтальный скролл если нужен */
+    }
+
+    .properties-content {
+        background-color: #e3f2fd;
+        color: #0277bd;
+    }
+
+    .exception-content {
+        background-color: #ffebee;
+        color: #c62828;
+    }
+
+    /* Исправляем контейнеры карточек */
+    .card-body {
+        padding: 1rem;
+        width: 100%;
+    }
+
+    .card {
+        width: 100%;
+        margin-bottom: 1rem;
+    }
+
+    /* Убираем ограничения ширины */
+    .container-fluid, .row, .col-12 {
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    /* Исправляем переполнение текста */
+    pre {
+        white-space: pre-wrap !important;
+        word-wrap: break-word !important;
+        overflow-wrap: break-word !important;
+        max-width: 100% !important;
+        margin: 0;
+    }
+</style>

@@ -1,0 +1,342 @@
+@model IEnumerable<Translator.Application.Features.Logs.Queries.GetLogsResponse>
+
+@{
+    Layout = "_Layout";
+    ViewBag.Title = "System Logs";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var pageSize = ViewBag.PageSize ?? 10;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalCount = ViewBag.TotalCount ?? 0;
+    var dateFrom = ViewBag.DateFrom as string ?? "";
+    var dateTo = ViewBag.DateTo as string ?? "";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-file-alt"></i> System Logs <small class="text-muted">(@totalCount total)</small></h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" onclick="clearFilters()">
+            <i class="fas fa-times"></i> Clear Filters
+        </button>
+        <button class="btn btn-primary" onclick="refreshLogs()">
+            <i class="fas fa-sync-alt"></i> Refresh
+        </button>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Logs Table with integrated filters -->
+<div class="card">
+    <div class="card-body" style="padding:0;">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="15%">
+                            Timestamp
+                            @using (Html.BeginForm("Index", "Logs", FormMethod.Get, new { @class = "d-inline" }))
+                            {
+                                @Html.Hidden("pageNumber", 1)
+                                @Html.Hidden("pageSize", pageSize, null)
+                                @Html.Hidden("dateTo", dateTo)
+                                <div class="mt-1">
+                                    @Html.TextBox("dateFrom", dateFrom, new { 
+                                        @class = "form-control form-control-sm", 
+                                        type = "date",
+                                        onchange = "this.form.submit();",
+                                        title = "Filter from date"
+                                    })
+                                </div>
+                            }
+                        </th>
+                        <th width="10%">
+                            Level
+                        </th>
+                        <th width="45%">Message</th>
+                        <th width="15%">
+                            Until Date
+                            @using (Html.BeginForm("Index", "Logs", FormMethod.Get, new { @class = "d-inline" }))
+                            {
+                                @Html.Hidden("pageNumber", 1)
+                                @Html.Hidden("pageSize", pageSize, null)
+                                @Html.Hidden("dateFrom", dateFrom, null)
+                                <div class="mt-1">
+                                    @Html.TextBox("dateTo", dateTo, new { 
+                                        @class = "form-control form-control-sm", 
+                                        type = "date",
+                                        onchange = "this.form.submit();",
+                                        title = "Filter until date"
+                                    })
+                                </div>
+                            }
+                        </th>
+                        <th width="15%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var log in Model)
+                        {
+                            var logLevel = GetLogLevel(log.Message);
+                            var logLevelBadge = GetLogLevelBadge(logLevel);
+                            
+                            <tr class="@(logLevel == "Error" ? "table-danger" : logLevel == "Warning" ? "table-warning" : "")">
+                                <td>
+                                    <small class="text-muted">
+                                        @log.Timestamp.ToString("dd/MM/yyyy")<br>
+                                        <strong>@log.Timestamp.ToString("HH:mm:ss")</strong>
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge @logLevelBadge">@logLevel</span>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 400px;">
+                                        @log.Message
+                                    </div>
+                                    @if (!string.IsNullOrEmpty(log.Exception))
+                                    {
+                                        <small class="text-danger">
+                                            <i class="fas fa-exclamation-triangle"></i> Has Exception
+                                        </small>
+                                    }
+                                </td>
+                                <td>
+                                    <small class="text-muted">@log.Timestamp.ToString("dd/MM HH:mm")</small>
+                                </td>
+                                <td>
+                                    <a href="@Url.Action("Details", new { logId = 1, timestamp = log.Timestamp })" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-4">
+                                <i class="fas fa-search fa-3x mb-3"></i>
+                                <div>No logs found matching your filters</div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+@if (Model != null && Model.Any())
+{
+    <nav class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted">
+                Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount logs
+            </small>
+            <small class="text-muted">Page @currentPage of @totalPages</small>
+        </div>
+        
+        <ul class="pagination justify-content-center">
+            <!-- First page button -->
+            @if (currentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = 1, 
+                        pageSize, 
+                        dateFrom,
+                        dateTo 
+                    })" title="First page">
+                        <i class="fas fa-angle-double-left"></i> First
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                </li>
+            }
+
+            <!-- Previous button -->
+            @if (currentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = currentPage - 1, 
+                        pageSize,
+                        dateFrom,
+                        dateTo 
+                    })">Previous</a>
+                </li>
+            }
+            else 
+            { 
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li> 
+            }
+
+            <!-- Page numbers -->
+            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+            {
+                if (i == currentPage)
+                {
+                    <li class="page-item active">
+                        <span class="page-link">@i</span>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="@Url.Action("Index", new { 
+                            pageNumber = i, 
+                            pageSize,
+                            dateFrom,
+                            dateTo 
+                        })">@i</a>
+                    </li>
+                }
+            }
+
+            <!-- Next button -->
+            @if (currentPage < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = currentPage + 1, 
+                        pageSize,
+                        dateFrom,
+                        dateTo 
+                    })">Next</a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+            }
+
+            <!-- Last page button -->
+            @if (currentPage < totalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="@Url.Action("Index", new { 
+                        pageNumber = totalPages, 
+                        pageSize,
+                        dateFrom,
+                        dateTo 
+                    })" title="Last page">
+                        Last <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            }
+            else
+            {
+                <li class="page-item disabled">
+                    <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                </li>
+            }
+        </ul>
+    </nav>
+
+    <!-- Page size selector -->
+    <div class="d-flex justify-content-end align-items-center mt-3">
+        @using (Html.BeginForm("Index", "Logs", FormMethod.Get, new { @class = "d-flex align-items-center" }))
+        {
+            @Html.Hidden("pageNumber", 1)
+            @Html.Hidden("dateFrom", dateFrom)
+            @Html.Hidden("dateTo", dateTo)
+            
+            <label class="form-label me-2 mb-0">Show:</label>
+            @Html.DropDownList("pageSize", new List<SelectListItem>
+            {
+                new SelectListItem { Text = "10", Value = "10", Selected = pageSize == 10 },
+                new SelectListItem { Text = "25", Value = "25", Selected = pageSize == 25 },
+                new SelectListItem { Text = "50", Value = "50", Selected = pageSize == 50 },
+                new SelectListItem { Text = "100", Value = "100", Selected = pageSize == 100 }
+            }, new { 
+                @class = "form-select form-select-sm", 
+                style = "width: 80px;",
+                onchange = "this.form.submit();" 
+            })
+        }
+    </div>
+}
+
+@functions {
+    string GetLogLevel(string message)
+    {
+        if (message.Contains("Error", StringComparison.OrdinalIgnoreCase) || 
+            message.Contains("Exception", StringComparison.OrdinalIgnoreCase))
+            return "Error";
+        if (message.Contains("Warning", StringComparison.OrdinalIgnoreCase) || 
+            message.Contains("Warn", StringComparison.OrdinalIgnoreCase))
+            return "Warning";
+        if (message.Contains("Info", StringComparison.OrdinalIgnoreCase))
+            return "Info";
+        return "Debug";
+    }
+
+    string GetLogLevelBadge(string level)
+    {
+        return level switch
+        {
+            "Error" => "bg-danger",
+            "Warning" => "bg-warning text-dark",
+            "Info" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+<script>
+    function clearFilters() {
+        window.location.href = '@Url.Action("Index")';
+    }
+
+    function refreshLogs() {
+        window.location.reload();
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const errorAlert = document.querySelector('.alert-danger');
+        if (errorAlert) {
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(errorAlert);
+                alert.close();
+            }, 5000);
+        }
+    });
+</script>
+
+<style>
+    .text-truncate {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .table-danger {
+        --bs-table-bg: #f8d7da;
+    }
+
+    .table-warning {
+        --bs-table-bg: #fff3cd;
+    }
+
+    .badge {
+        font-size: 0.75em;
+    }
+</style>

@@ -30,7 +30,7 @@ public class TemplateController : ControllerBase
     [HttpGet("api/get-template/{templateName}/{lang?}")]
     public async Task<IResult> GetTemplate(
         [FromRoute] string templateName,
-        [FromRoute] string? lang = null)
+        [FromRoute] string lang = "")
     {
         var command = new GetTemplateCommand(templateName, lang);
         var result = await _mediator.Send(command);

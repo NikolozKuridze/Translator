@@ -5,7 +5,7 @@ using Translator.Application.Features.Language.Commands.AddLanguage;
 using Translator.Application.Features.Language.Commands.DeleteLanguage;
 using Translator.Application.Features.Language.Queries.GetLanguages;
 
-namespace Translator.API.Controllers;
+namespace Translator.API.ApiControllers;
 
 [ApiController]
 public class LanguageController : ControllerBase

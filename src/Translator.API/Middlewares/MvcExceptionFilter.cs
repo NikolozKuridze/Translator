@@ -8,7 +8,9 @@ public class MvcExceptionFilter : IExceptionFilter
 {
     public void OnException(ExceptionContext context)
     {
-
+        if (context.HttpContext.Request.Path.StartsWithSegments("/api"))
+            return;
+        
         var model = new ErrorViewModel
         {
             Title = "Something went wrong",
