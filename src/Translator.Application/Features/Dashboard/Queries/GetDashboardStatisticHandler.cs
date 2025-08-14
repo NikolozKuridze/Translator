@@ -30,24 +30,31 @@ public class GetDashboardStatisticHandler : IRequestHandler<GetDashboardStatisti
     
     public async Task<GetDashboardRequestResponse> Handle(GetDashboardStatisticCommand request, CancellationToken cancellationToken)
     {
-        var templatesCount = await _templateRepository.AsQueryable()
-            .CountAsync(cancellationToken);
-            
-        var valuesCount = await _valueRepository.AsQueryable()
-            .CountAsync(cancellationToken);
-            
-        var translationsCount = await _translationRepository.AsQueryable()
-            .CountAsync(cancellationToken);
-            
-        var languagesCount = await _languageRepository.AsQueryable()
-            .CountAsync(l => l.IsActive, cancellationToken);
+        try
+        {
+            var templatesCount = await _templateRepository.AsQueryable()
+                .CountAsync(cancellationToken);
 
-        return new GetDashboardRequestResponse(
-            templatesCount,
-            valuesCount,
-            translationsCount,
-            languagesCount
-        );
+            var valuesCount = await _valueRepository.AsQueryable()
+                .CountAsync(cancellationToken);
+
+            var translationsCount = await _translationRepository.AsQueryable()
+                .CountAsync(cancellationToken);
+
+            var languagesCount = await _languageRepository.AsQueryable()
+                .CountAsync(l => l.IsActive, cancellationToken);
+
+            return new GetDashboardRequestResponse(
+                templatesCount,
+                valuesCount,
+                translationsCount,
+                languagesCount
+            );
+        }
+        catch
+        {
+            return new GetDashboardRequestResponse(0, 0, 0, 0);
+        }
     }
 }
 
