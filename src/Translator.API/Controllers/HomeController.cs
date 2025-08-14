@@ -1,10 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Attributes;
 using Translator.Application.Features.Dashboard.Queries;
 
 namespace Translator.API.Controllers;
 
 [ApiExplorerSettings(IgnoreApi = true)]
+[AdminAuth]
 public class HomeController : Controller
 {
     private readonly IMediator _mediator;

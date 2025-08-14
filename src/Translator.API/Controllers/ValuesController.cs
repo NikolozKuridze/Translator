@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Attributes;
 using Translator.Application.Features.Values.Commands.CreateValue;
 using Translator.Application.Features.Values.Commands.DeleteValue;
 using Translator.Application.Features.Values.Queries.GetValue;
@@ -10,6 +11,7 @@ using Translator.Application.Features.Language.Queries.GetLanguages;
 
 namespace Translator.API.Controllers;
 
+[AdminAuth]
 [ApiExplorerSettings(IgnoreApi = true)]
 [Route("Values")]
 public class ValuesController : Controller
