@@ -25,9 +25,17 @@ public static class InfrastructureDependencies
                     .UseNpgsql(configuration.GetConnectionString(nameof(Postgres)))
                     .UseSnakeCaseNamingConvention();
             });
+
+        services
+            .AddDbContext<LogsDbContext>(cfg =>
+            {
+                cfg.UseNpgsql(configuration.GetConnectionString("LogsDb"));
+            });
         
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 
+        
+        
         // redis
         services.Configure<RedisConfiguration>(
            configuration.GetSection(nameof(RedisConfiguration)));
