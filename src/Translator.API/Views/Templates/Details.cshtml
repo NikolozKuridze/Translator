@@ -1,4 +1,4 @@
-@model IEnumerable<Translator.Application.Features.Template.Queries.GetTemplate.TemplateDto>
+@model IEnumerable<Translator.Application.Features.Template.Queries.GetTemplate.ValueDto>
 
 @{
     Layout = "_Layout";
@@ -33,6 +33,10 @@
         <br><small class="text-muted">@totalCount values total</small>
     </div>
     <div class="d-flex gap-2 align-items-center">
+        
+        <button class="btn btn-warning" onclick="cacheTemplate('@templateId')" title="Cache Template">
+            <i class="fas fa-database me-1"></i>Cache
+        </button>
         <!-- Language Selector -->
         @if (availableLanguages.Any())
         {
@@ -474,6 +478,36 @@ else
             }, 5000);
         }
     });
+
+    async function cacheTemplate(templateId) {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Caching...';
+
+        try {
+            const response = await fetch(`/Cache/CacheTemplate/${templateId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`${result.message}`, 'success');
+            } else {
+                showToast(`${result.message}`, 'error');
+            }
+        } catch (error) {
+            showToast(`Network error: ${error.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
 </script>
 
 <style>

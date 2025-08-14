@@ -28,6 +28,11 @@
         }
     </div>
     <div class="d-flex gap-2">
+        
+        <button class="btn btn-warning" onclick="cacheValue('@valueId')" title="Cache Value">
+            <i class="fas fa-database me-1"></i>Cache
+        </button>
+        
         <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createTranslationSection">
             <i class="fas fa-plus"></i> Add Translation
         </button>
@@ -289,6 +294,38 @@ else
             }, 5000);
         }
     });
+
+    async function cacheValue(valueId) {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Caching...';
+
+        try {
+            const response = await fetch(`/Cache/CacheValue/${valueId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`${result.message}`, 'success');
+            } else {
+                showToast(`${result.message}`, 'error');
+            }
+        } catch (error) {
+            showToast(`Network error: ${error.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+
 </script>
 
 <style>

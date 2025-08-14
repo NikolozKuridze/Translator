@@ -8,7 +8,7 @@ using TemplateEntity = Translator.Domain.DataModels.Template;
 namespace Translator.Application.Features.Template.Queries.GetTemplate;
 
 
-public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerable<TemplateDto>>
+public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerable<ValueDto>>
 {
     private const string DefaultLanguageCode = "en";
     private readonly IRepository<TemplateEntity> _templateRepository;
@@ -18,7 +18,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
         _templateRepository = templateRepository;
     }
 
-    public async Task<IEnumerable<TemplateDto>> Handle(GetTemplateCommand request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<ValueDto>> Handle(GetTemplateCommand request, CancellationToken cancellationToken)
     {
         if (request.AllTranslates)
         {
@@ -27,7 +27,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
                 where t.Id == request.TemplateId
                 from tv in t.Values
                 from tr in tv.Translations
-                select new TemplateDto(
+                select new ValueDto(
                     tv.Key,
                     tr.Value.Id,
                     tr.TranslationValue ?? string.Empty,
@@ -50,7 +50,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
             from tv in t.Values
             from tr in tv.Translations
                 .Where(translation => translation.Language.Code == languageCode)
-            select new TemplateDto(
+            select new ValueDto(
                 tv.Key,
                 tr.Value.Id,
                 tr.TranslationValue ?? string.Empty,
@@ -64,4 +64,5 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, IEnumerabl
     }
 }
 
-public record TemplateDto(string Key, Guid ValueId, string Value, string? LanguageCode);
+public record TemplateDto(string Name, IList<ValueDto> Values);
+public record ValueDto(string Key, Guid ValueId, string Value, string? LanguageCode);
