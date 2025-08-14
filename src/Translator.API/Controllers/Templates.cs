@@ -21,7 +21,7 @@ public class Templates : Controller
         _mediator = mediator;
     }
 
-    [HttpGet("")]
+   [HttpGet("")]
     public async Task<IActionResult> Index(
         string sortBy = "name",
         string sortDirection = "asc",
@@ -45,12 +45,13 @@ public class Templates : Controller
         return View(templates);
     }
 
-    [HttpGet("Details")]
+    // ТОЛЬКО ЭТОТ МЕТОД изменен на работу с templateId
+    [HttpGet("Details/{templateId:guid}")]
     public async Task<IActionResult> Details(
-        string templateName, string? lang,
+        Guid templateId, string? lang,
         int pageNumber = 1, int pageSize = 10)
     {
-        if (string.IsNullOrWhiteSpace(templateName))
+        if (templateId == Guid.Empty)
             return RedirectToAction(nameof(Index));
         
         var languagesQuery = new GetLanguagesCommand();
@@ -59,7 +60,7 @@ public class Templates : Controller
             .OrderBy(l => l.LanguageCode)
             .ToList();
 
-                    var query = new GetTemplateCommand(templateName, lang);
+        var query = new GetTemplateCommand(templateId, lang, false);
         var allTemplateData = (await _mediator.Send(query)).ToList();
         
         var totalCount = allTemplateData.Count;
@@ -71,6 +72,9 @@ public class Templates : Controller
             .Take(pageSize)
             .ToList();
 
+        var templateName = allTemplateData.FirstOrDefault()?.Key ?? "Unknown";
+
+        ViewBag.TemplateId = templateId;
         ViewBag.TemplateName = templateName;
         ViewBag.CurrentLanguage = lang ?? "";
         ViewBag.AvailableLanguages = availableLanguages;

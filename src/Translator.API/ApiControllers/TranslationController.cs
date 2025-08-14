@@ -10,6 +10,7 @@ using Translator.Infrastructure.GoogleService;
 namespace Translator.API.ApiControllers;
 
 [ApiController]
+[Route("api")]
 public class TranslationController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -17,7 +18,7 @@ public class TranslationController : ControllerBase
     public TranslationController(IMediator mediator) 
         => _mediator = mediator;
     
-    [HttpPost("api/create-translation")]
+    [HttpPost("create-translation")]
     public async Task<IResult> AddTranslation(
         [FromBody] CreateTranslationContract contract)
     {
@@ -26,7 +27,7 @@ public class TranslationController : ControllerBase
         return Results.Ok(result);
     }
 
-    [HttpDelete("api/delete-translation")]
+    [HttpDelete("delete-translation")]
     public async Task<IResult> DeleteTranslation(
         [FromBody] DeleteTranslationContract contract)
     {
@@ -35,7 +36,7 @@ public class TranslationController : ControllerBase
         return Results.NoContent();
     }
 
-    [HttpPost("api/translate")]
+    [HttpPost("translate")]
     [ProducesResponseType(typeof(TranslateResponse), 200)]
     public async Task<IActionResult> Translate(
         [FromBody] TranslateRequest request,

@@ -9,13 +9,14 @@ using Translator.Application.Features.Values.Queries.GetValue;
 namespace Translator.API.ApiControllers;
 
 [ApiController]
+[Route("api")]
 public class ValueController : ControllerBase
 {
     private readonly IMediator _mediator;
 
     public ValueController(IMediator mediator) => _mediator = mediator;
 
-    [HttpGet("api/get-value/")]
+    [HttpGet("get-value/")]
     public async Task<IResult> GetValue(
         [FromQuery] Guid valueId,
         [FromQuery] bool allTranslations,
@@ -26,7 +27,7 @@ public class ValueController : ControllerBase
         return Results.Ok(result);
     }       
 
-    [HttpGet("api/get-all-values/")]
+    [HttpGet("get-all-values/")]
     public async Task<IResult> GetValue(
         [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10,
         [FromQuery] string sortBy = "date", [FromQuery] string sortDirection = "asc")
@@ -36,7 +37,7 @@ public class ValueController : ControllerBase
         return Results.Ok(result);
     }
     
-    [HttpPost("api/add-value")]
+    [HttpPost("add-value")]
     public async Task<IResult> AddValue(
         [FromBody] CreateValueContract contract)
     {
@@ -45,7 +46,7 @@ public class ValueController : ControllerBase
         return Results.Ok();
     }
 
-    [HttpDelete("api/delete-value")]
+    [HttpDelete("delete-value")]
     public async Task<IResult> DeleteValue(
         [FromBody] DeleteValueContract contract)
     {
