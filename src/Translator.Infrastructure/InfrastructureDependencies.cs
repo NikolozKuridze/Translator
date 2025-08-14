@@ -33,7 +33,6 @@ public static class InfrastructureDependencies
             });
         
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-
         
         
         // redis

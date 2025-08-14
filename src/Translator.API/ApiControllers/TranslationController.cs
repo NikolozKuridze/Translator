@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Attributes;
 using Translator.API.Contracts;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
@@ -15,7 +16,6 @@ public class TranslationController : ControllerBase
 
     public TranslationController(IMediator mediator) 
         => _mediator = mediator;
-
     
     [HttpPost("api/create-translation")]
     public async Task<IResult> AddTranslation(
