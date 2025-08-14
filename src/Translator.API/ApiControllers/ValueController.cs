@@ -15,13 +15,13 @@ public class ValueController : ControllerBase
 
     public ValueController(IMediator mediator) => _mediator = mediator;
 
-    [HttpGet("api/get-value/{valueName}/{allTranslations:bool}/{lang}")]
+    [HttpGet("api/get-value/")]
     public async Task<IResult> GetValue(
-        [FromRoute] string valueName,
-        [FromRoute] bool allTranslations,
-        [FromRoute] string lang = "")
+        [FromQuery] Guid valueId,
+        [FromQuery] bool allTranslations,
+        [FromQuery] string lang = "")
     {
-        var command = new GetValueCommand(valueName, lang, allTranslations);
+        var command = new GetValueCommand(valueId, lang, allTranslations);
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }       

@@ -40,12 +40,11 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
         if (existsLanguage is null)
             throw new LanguageNotFoundException(code);
         
-        var valueHash = TemplateEntity.HashName(request.ValueName);
-
+        
         if (request.AllTranslations)
         {
             var result = await _valueRepository
-                .Where(v => v.Hash == valueHash)
+                .Where(v => v.Id == request.ValueId)
                 .SelectMany(v => v.Translations
                     .Select(t => new GetValueResponse(
                         t.Value.Key, t.TranslationValue, t.Language.Code
@@ -57,14 +56,14 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
         
         var translation = await _translationRepository
             .Where(
-                t => t.Value.Hash == valueHash && 
+                t => t.Value.Id == request.ValueId && 
                      t.Language.Code == code)
             .Select(t 
                 => new GetValueResponse(t.Value.Key, t.TranslationValue, t.Language.Code))
             .SingleOrDefaultAsync(cancellationToken);
         
         if (translation is null)
-            throw new ValueNotFoundException(request.ValueName);
+            throw new ValueNotFoundException(request.ValueId.ToString());
         
         return [translation];
     }

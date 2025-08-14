@@ -83,9 +83,7 @@
                                 <i class="fas @getSortIcon("key")"></i>
                             </a>
                         </th>
-                        <th>
-                            Value
-                        </th>
+                        <th>Translations Count</th>
                         <th>
                             Created Date
                             <a href="@Url.Action("Index", new { 
@@ -107,19 +105,32 @@
                         {
                             <tr>
                                 <td>
-                                    <span class="badge bg-primary">@value.Key</span>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary">@value.Key</span>
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                onclick="copyValueId('@value.ValueId')" 
+                                                title="Copy Value ID">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
                                 </td>
-                                <td class="text-truncate" style="max-width: 300px;">
-                                    @value.TranslationsCount
+                                <td>
+                                    <span class="badge bg-info">@value.TranslationsCount</span>
                                 </td>
                                 <td>
                                     <small class="text-muted">@value.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
                                 </td>
                                 <td>
-                                    @Html.ActionLink("View Details", "Details", "Values", new { valueName = value.Key }, new { @class = "btn btn-sm btn-outline-primary me-2" })
-                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteModal('@Html.Raw(Html.Encode(value.Key))')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    <div class="d-flex gap-1">
+                                        <a href="@Url.Action("Details", "Values", new { valueId = value.ValueId })" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> Details
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="showDeleteModal('@Html.Raw(Html.Encode(value.Key))')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -316,6 +327,43 @@
         modal.show();
     }
 
+    async function copyValueId(valueId) {
+        try {
+            await navigator.clipboard.writeText(valueId);
+            showToast(`📋 Value ID copied to clipboard!`, 'success');
+        } catch (error) {
+            console.error('Failed to copy:', error);
+            showToast(`Failed to copy to clipboard`, 'error');
+        }
+    }
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        
+        toast.innerHTML = `
+            <div class="toast show ${bgClass} text-white" role="alert">
+                <div class="toast-header ${bgClass} text-white border-0">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                    <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                    <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const successAlert = document.querySelector('.alert-success');
         if (successAlert) {
@@ -344,5 +392,13 @@
 
     .badge {
         font-size: 0.875em;
+    }
+
+    .gap-1 {
+        gap: 0.25rem;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
     }
 </style>

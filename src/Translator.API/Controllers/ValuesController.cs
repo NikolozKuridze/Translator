@@ -44,13 +44,14 @@ public class ValuesController : Controller
         return View(values);
     }
 
-    [HttpGet("Details")]
-    public async Task<IActionResult> Details(string valueName, string? lang)
+    // ТОЛЬКО ЭТОТ МЕТОД изменен на работу с ID
+    [HttpGet("Details/{valueId:guid}")]
+    public async Task<IActionResult> Details(Guid valueId, string? lang)
     {
-        if (string.IsNullOrWhiteSpace(valueName)) 
+        if (valueId == Guid.Empty) 
             return RedirectToAction(nameof(Index));
         
-        var command = new GetValueCommand(valueName.Trim(), lang?.Trim(), true);
+        var command = new GetValueCommand(valueId, lang?.Trim(), true);
         var result = await _mediator.Send(command);
         
         var languagesQuery = new GetLanguagesCommand();
@@ -59,13 +60,14 @@ public class ValuesController : Controller
             .OrderBy(l => l.LanguageCode)
             .ToList();
 
-        ViewBag.ValueName = valueName;
+        ViewBag.ValueId = valueId;
         ViewBag.CurrentLanguage = lang ?? "";
         ViewBag.AvailableLanguages = availableLanguages;
         
         return View(result);
     }
 
+    // ВСЕ ОСТАЛЬНЫЕ МЕТОДЫ ОСТАЮТСЯ С КЛЮЧАМИ!
     [HttpPost("Create")]
     public async Task<IActionResult> Create(string key, string value)
     {
@@ -145,4 +147,3 @@ public class ValuesController : Controller
         return RedirectToAction("Details", new { valueName = value });
     }
 }
-
