@@ -42,19 +42,18 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
     
         if (existsLanguage is null)
             throw new LanguageNotFoundException(code);
-
-
+        
         var cachedResult = await _valueCacheService.GetTranslationsAsync(request.ValueId);
         if (cachedResult != null)
         {
             if(request.AllTranslations)
                 return cachedResult.Translations
-                    .Select(t => new GetValueResponse(t.Key, t.ValueId, t.Value, t.LanguageCode));
+                    .Select(t => new GetValueResponse(t.Key, request.ValueId, t.Value, t.LanguageCode));
             
             return cachedResult
                 .Translations
                 .Where(t => t.LanguageCode == request.LanguageCode)
-                .Select(t => new GetValueResponse(t.Key, t.ValueId, t.Value, t.LanguageCode));
+                .Select(t => new GetValueResponse(t.Key, request.ValueId, t.Value, t.LanguageCode));
         }
         
         if (request.AllTranslations)
@@ -63,7 +62,7 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
                 .Where(v => v.Id == request.ValueId)
                 .SelectMany(v => v.Translations
                     .Select(t => new GetValueResponse(
-                        t.Value.Key, t.Value.Id, t.TranslationValue, t.Language.Code
+                        v.Key, v.Id, t.TranslationValue, t.Language.Code
                     )))
                 .ToArrayAsync(cancellationToken);
             
@@ -75,7 +74,7 @@ public class GetValueHandler : IRequestHandler<GetValueCommand, IEnumerable<GetV
                 t => t.Value.Id == request.ValueId && 
                      t.Language.Code == code)
             .Select(t 
-                => new GetValueResponse(t.Value.Key, t.Value.Id, t.TranslationValue, t.Language.Code))
+                => new GetValueResponse(t.Value.Key, request.ValueId, t.TranslationValue, t.Language.Code))
             .SingleOrDefaultAsync(cancellationToken);
         
         if (translation is null)
