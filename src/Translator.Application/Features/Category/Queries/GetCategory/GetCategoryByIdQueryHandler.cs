@@ -1,16 +1,18 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Infrastructure.Database.Postgres;
+using Translator.Infrastructure.Database.Postgres.Repository;
 using CategoryEntity = Translator.Domain.DataModels.Category;
 
 namespace Translator.Application.Features.Category.Queries.GetCategory;
 
-public class GetCategoryByIdQueryHandler(ApplicationDbContext context)
+public class GetCategoryByIdQueryHandler(IRepository<CategoryEntity> _categoryRepository)
     : IRequestHandler<GetCategoryByIdQuery, CategoryReadDto?>
 {
     public async Task<CategoryReadDto?> Handle(GetCategoryByIdQuery request, CancellationToken cancellationToken)
     {
-        var category = await context.Categories
+        var category = await _categoryRepository
+            .AsQueryable()
             .Include(c => c.Children)
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
 
