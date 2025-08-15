@@ -43,8 +43,7 @@ public class ValuesController : Controller
 
         return View(values);
     }
-
-    // ТОЛЬКО ЭТОТ МЕТОД изменен на работу с ID
+    
     [HttpGet("Details/{valueId:guid}")]
     public async Task<IActionResult> Details(Guid valueId, string? lang)
     {
@@ -67,7 +66,6 @@ public class ValuesController : Controller
         return View(result);
     }
 
-    // ВСЕ ОСТАЛЬНЫЕ МЕТОДЫ ОСТАЮТСЯ С КЛЮЧАМИ!
     [HttpPost("Create")]
     public async Task<IActionResult> Create(string key, string value)
     {

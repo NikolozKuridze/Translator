@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.Extensions.Logging;
 using Translator.Infrastructure.Database.Redis.CacheServices;
 
 namespace Translator.Application.Features.Caching.Commands.CacheTemplate;
