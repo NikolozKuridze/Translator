@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.Application.Features.Category.Commands.AddCategory;
-using Translator.Application.Features.Category.Queries;
 using Translator.Application.Features.Category.Queries.GetCategory;
 
 namespace Translator.API.ApiControllers;
@@ -23,12 +22,9 @@ public class CategoryController : ControllerBase
     
     
     [HttpGet("api/category/{categoryId}")]
-    public async Task<ActionResult<GetCategoryResponse>> GetCategory(Guid categoryId)
+    public async Task<ActionResult<CategoryReadDto>> GetCategory(Guid categoryId)
     {
         var category = await _mediator.Send(new GetCategoryByIdQuery(categoryId));
-        
-        if(category is null)
-            return NotFound();
         
         return Ok(category);
     }
