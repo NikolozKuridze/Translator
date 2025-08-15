@@ -9,6 +9,18 @@ public class CreateCategoryCommandHandler(ApplicationDbContext context) : IReque
 {
     public async Task<Guid> Handle(CreateCategoryCommand request, CancellationToken cancellationToken)
     {
+        await CheckSiblings(request, cancellationToken);
+        await CheckAncestors(request, cancellationToken);
+
+        var category = new CategoryEntity(request.Value, request.Type, request.Order, request.ParentId);
+
+        await context.Categories.AddAsync(category, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
+        return category.Id;
+    }
+    
+    private async Task CheckAncestors(CreateCategoryCommand request, CancellationToken cancellationToken)
+    {
         var tempParentId = request.ParentId;
 
         while (tempParentId != null)
@@ -29,11 +41,19 @@ public class CreateCategoryCommandHandler(ApplicationDbContext context) : IReque
 
             tempParentId = parent.ParentId;
         }
+    }
+    private async Task CheckSiblings(CreateCategoryCommand request, CancellationToken cancellationToken)
+    {
+        var parent = await context.Categories
+            .Include(category => category.Children)
+            .FirstOrDefaultAsync(p => p.Id == request.ParentId, cancellationToken);
 
-        var category = new CategoryEntity(request.Value, request.Type, request.Order, request.ParentId);
-
-        await context.Categories.AddAsync(category, cancellationToken);
-        await context.SaveChangesAsync(cancellationToken);
-        return category.Id;
+        if (parent != null && parent.Children != null)
+            if (parent.Children.Any(child => child.Type.ToLower() == request.Type.ToLower() &&
+                                             child.Value.ToLower() == request.Value.ToLower()))
+            {
+                throw new InvalidOperationException(
+                    "Sibling category already exists with same value and type");
+            }
     }
 }
