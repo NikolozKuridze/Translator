@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres;
 using CategoryEntity = Translator.Domain.DataModels.Category;
 
@@ -18,7 +19,7 @@ public class CreateCategoryCommandHandler(ApplicationDbContext context) : IReque
         await context.SaveChangesAsync(cancellationToken);
         return category.Id;
     }
-    
+
     private async Task CheckAncestors(CreateCategoryCommand request, CancellationToken cancellationToken)
     {
         var tempParentId = request.ParentId;
@@ -30,18 +31,18 @@ public class CreateCategoryCommandHandler(ApplicationDbContext context) : IReque
 
             if (parent == null)
             {
-                throw new InvalidOperationException($"Parent category with ID {tempParentId} not found");
+                throw new CategoryNotFoundException(tempParentId.ToString());
             }
 
             if (request.Type.ToLower() == parent.Type.ToLower())
             {
-                throw new InvalidOperationException(
-                    $"Category type '{request.Type}' already exists in ancestor hierarchy");
+                throw new CategoryAlreadyExistsException();
             }
 
             tempParentId = parent.ParentId;
         }
     }
+
     private async Task CheckSiblings(CreateCategoryCommand request, CancellationToken cancellationToken)
     {
         var parent = await context.Categories
@@ -52,8 +53,7 @@ public class CreateCategoryCommandHandler(ApplicationDbContext context) : IReque
             if (parent.Children.Any(child => child.Type.ToLower() == request.Type.ToLower() &&
                                              child.Value.ToLower() == request.Value.ToLower()))
             {
-                throw new InvalidOperationException(
-                    "Sibling category already exists with same value and type");
+                throw new CategoryAlreadyExistsException();
             }
     }
 }
