@@ -19,7 +19,7 @@ public class GetCategoryByIdQueryHandler(ApplicationDbContext context)
 
     private CategoryReadDto MapToReadDto(CategoryEntity category)
     {
-        var dto = new CategoryReadDto(category.Id, category.Value, category.Type, category.Order, category.ParentId );
+        var dto = new CategoryReadDto(category.Id, category.Value, category.Type, category.Order, category.ParentId);
         
         if (category.Children is not null)
         {
@@ -30,12 +30,7 @@ public class GetCategoryByIdQueryHandler(ApplicationDbContext context)
     }
 }
 
-public class CategoryReadDto(Guid id, string value, string type, int? order, Guid? parentId)
+public record CategoryReadDto(Guid Id, string Value, string Type, int? Order, Guid? ParentId)
 {
-    public Guid Id { get; set; } = id;
-    public string Value { get; set; } = value;
-    public string Type { get; set; } = type;
-    public int? Order { get; set; } = order;
-    public Guid? ParentId { get; set; } = parentId;
     public List<CategoryReadDto> Children { get; set; } = [];
 }
