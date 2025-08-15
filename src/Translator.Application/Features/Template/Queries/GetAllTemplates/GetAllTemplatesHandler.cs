@@ -42,6 +42,7 @@ public class GetAllTemplatesHandler : IRequestHandler<GetAllTemplatesCommand, IE
             .Take(pageSize)
             .Select(t => new GetAllTemplatesResponse(
                 t.Name,
+                t.Id,
                 t.Values.Count,
                 templateCount
             ))
@@ -50,5 +51,5 @@ public class GetAllTemplatesHandler : IRequestHandler<GetAllTemplatesCommand, IE
 }
 
 public record GetAllTemplatesResponse(
-    string TemplateName, int ValueCount, int TemplateCount
+    string TemplateName, Guid TemplateId, int ValueCount, int TemplateCount
 );

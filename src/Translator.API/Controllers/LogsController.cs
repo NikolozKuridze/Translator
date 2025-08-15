@@ -1,9 +1,11 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Attributes;
 using Translator.Application.Features.Logs.Queries;
 
 namespace Translator.API.Controllers;
 
+[AdminAuth]
 [Route("Logs")]
 [ApiExplorerSettings(IgnoreApi = true)]
 public class LogsController : Controller

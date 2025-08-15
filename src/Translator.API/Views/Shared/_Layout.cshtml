@@ -63,6 +63,16 @@
                         <i class="fas fa-file-alt me-2"></i>System Logs
                     </a>
                 </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Migrations" ? "active" : "")" href="/migrations" asp-controller="Migrations" asp-action="Index">
+                        <i class="fas fa-database me-2"></i>Migrations
+                    </a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Cache" ? "active" : "")" href="/cache" asp-controller="Cache" asp-action="Index">
+                        <i class="fas fa-database me-2"></i>Cache Management
+                    </a>
+                </li>
             </ul>
         </nav>
 

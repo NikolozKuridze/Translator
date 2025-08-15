@@ -3,20 +3,36 @@
 @{
     Layout = "_Layout";
     ViewBag.Title = "Value Details";
-    var valueName = ViewBag.ValueName as string ?? "";
+    var valueId = ViewBag.ValueId as Guid? ?? Guid.Empty;
     var currentLanguage = ViewBag.CurrentLanguage as string ?? "";
     var availableLanguages = ViewBag.AvailableLanguages as IEnumerable<Translator.Application.Features.Language.Queries.GetLanguages.GetLanguagesResponse> ?? new List<Translator.Application.Features.Language.Queries.GetLanguages.GetLanguagesResponse>();
+    var firstValue = Model?.FirstOrDefault();
+    var valueName = firstValue?.ValueKey ?? "Unknown";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <h2>Value: <span class="badge bg-primary fs-6">@valueName</span></h2>
+        <div class="d-flex align-items-center gap-2 mt-2">
+            <small class="text-muted">Value ID:</small>
+            <code class="bg-light p-1 rounded">@valueId</code>
+            <button class="btn btn-sm btn-outline-secondary" 
+                    onclick="copyValueId('@valueId')" 
+                    title="Copy Value ID">
+                <i class="fas fa-copy"></i>
+            </button>
+        </div>
         @if (!string.IsNullOrEmpty(currentLanguage))
         {
             <small class="text-muted">Language: <span class="badge bg-secondary">@currentLanguage.ToUpper()</span></small>
         }
     </div>
     <div class="d-flex gap-2">
+        
+        <button class="btn btn-warning" onclick="cacheValue('@valueId')" title="Cache Value">
+            <i class="fas fa-database me-1"></i>Cache
+        </button>
+        
         <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createTranslationSection">
             <i class="fas fa-plus"></i> Add Translation
         </button>
@@ -224,6 +240,43 @@ else
         modal.show();
     }
 
+    async function copyValueId(valueId) {
+        try {
+            await navigator.clipboard.writeText(valueId);
+            showToast(`Value ID copied to clipboard!`, 'success');
+        } catch (error) {
+            console.error('Failed to copy:', error);
+            showToast(`Failed to copy to clipboard`, 'error');
+        }
+    }
+
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        
+        toast.innerHTML = `
+            <div class="toast show ${bgClass} text-white" role="alert">
+                <div class="toast-header ${bgClass} text-white border-0">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                    <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                    <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         const successAlert = document.querySelector('.alert-success');
         if (successAlert) {
@@ -241,6 +294,38 @@ else
             }, 5000);
         }
     });
+
+    async function cacheValue(valueId) {
+        const btn = event.target.closest('button');
+        const originalText = btn.innerHTML;
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Caching...';
+
+        try {
+            const response = await fetch(`/Cache/CacheValue/${valueId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(`${result.message}`, 'success');
+            } else {
+                showToast(`${result.message}`, 'error');
+            }
+        } catch (error) {
+            showToast(`Network error: ${error.message}`, 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
+        }
+    }
+
+
 </script>
 
 <style>
@@ -257,5 +342,9 @@ else
         padding: 15px;
         border-radius: 5px;
         border-left: 4px solid #007bff;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
     }
 </style>

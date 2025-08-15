@@ -1,10 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Attributes;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 
 namespace Translator.API.Controllers;
 
+[AdminAuth]
 [Route("Translations")]
 [ApiExplorerSettings(IgnoreApi = true)]
 public class Translations : Controller

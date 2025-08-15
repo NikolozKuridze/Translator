@@ -8,6 +8,7 @@ using Translator.Infrastructure.Configurations;
 using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using Translator.Infrastructure.Database.Redis;
+using Translator.Infrastructure.Database.Redis.CacheServices;
 using Translator.Infrastructure.GoogleService;
 
 namespace Translator.Infrastructure;
@@ -33,7 +34,6 @@ public static class InfrastructureDependencies
             });
         
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-
         
         
         // redis
@@ -48,6 +48,9 @@ public static class InfrastructureDependencies
             return ConnectionMultiplexer.Connect(redisConfig.ConnectionString);
         });
 
+        services.AddSingleton<TemplateCacheService>();
+        services.AddSingleton<ValueCacheService>();
+        
         // google translate
         services.AddSingleton<TranslationClient>(sp
             => TranslationClient.Create());

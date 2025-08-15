@@ -33,6 +33,7 @@ public class GetAllValuesHandler :  IRequestHandler<GetAllValuesCommand, IEnumer
             .Take(request.PageSize)
             .Select(t => new GetAllValuesResponse(
                 t.Key, 
+                t.Id,
                 t.Translations.Count, 
                 t.CreatedAt,
                 totalCount))
@@ -40,4 +41,4 @@ public class GetAllValuesHandler :  IRequestHandler<GetAllValuesCommand, IEnumer
     }
 }
 
-public record GetAllValuesResponse(string Key, int TranslationsCount, DateTimeOffset CreatedAt, int TotalCount);
+public record GetAllValuesResponse(string Key, Guid ValueId, int TranslationsCount, DateTimeOffset CreatedAt, int TotalCount);

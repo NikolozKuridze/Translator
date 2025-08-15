@@ -8,6 +8,7 @@ using Translator.Application.Features.Language.Queries.GetLanguages;
 namespace Translator.API.ApiControllers;
 
 [ApiController]
+[Route("api")]
 public class LanguageController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -15,7 +16,7 @@ public class LanguageController : ControllerBase
     public LanguageController(IMediator mediator)
         => _mediator = mediator;
 
-    [HttpPost("api/language/add")]
+    [HttpPost("language/add")]
     public async Task<IResult> Handle(
         [FromBody] AddLanguageContract request)
     {
@@ -24,7 +25,7 @@ public class LanguageController : ControllerBase
         return Results.Ok(result);
     }
 
-    [HttpDelete("api/language/remove")]
+    [HttpDelete("language/remove")]
     public async Task<IResult> Handle(
         [FromBody] DeleteLanguageContract request)
     {
@@ -33,7 +34,7 @@ public class LanguageController : ControllerBase
         return Results.NoContent();
     }
 
-    [HttpGet("api/languages")]
+    [HttpGet("languages")]
     public async Task<IResult> Get()
     {
         var command = new GetLanguagesCommand();
