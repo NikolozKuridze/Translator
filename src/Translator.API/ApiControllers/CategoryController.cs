@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Contracts;
 using Translator.Application.Features.Category.Commands.AddCategory;
 using Translator.Application.Features.Category.Queries.GetCategory;
 
@@ -14,8 +15,9 @@ public class CategoryController : ControllerBase
         => _mediator = mediator;
     
     [HttpPost("api/category/add")]
-    public async Task<ActionResult<Guid>> CreateCategory(CreateCategoryCommand command)
+    public async Task<ActionResult<Guid>> CreateCategory(CreateCategoryContract contract)
     {
+        var command = new CreateCategoryCommand(contract.Value.ToLower().Trim(), contract.Type.ToLower().Trim(), contract.Order, contract.ParentId);
         var categoryId = await _mediator.Send(command);
         return Ok(categoryId);
     }
