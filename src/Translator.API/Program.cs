@@ -43,6 +43,7 @@ builder.Services.AddControllersWithViews(o =>
 
 var app = builder.Build();
 
+
 app.MapOpenApi();
 
 app.MapScalarApiReference("/docs", options =>
@@ -59,6 +60,9 @@ app.UseHttpsRedirection();
 app.UseSession();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
+
+
+
 
 if (args.Contains("--seed"))
 {
