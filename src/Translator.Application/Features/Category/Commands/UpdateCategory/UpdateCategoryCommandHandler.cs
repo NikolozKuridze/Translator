@@ -41,7 +41,7 @@ public class UpdateCategoryCommandHandler(IRepository<CategoryEntity> _categoryR
         var children = await _categoryRepository
             .AsQueryable()
             .Where(c => c.ParentId == categoryId)
-            .ToListAsync(cancellationToken);
+            .ToArrayAsync(cancellationToken);
 
         foreach (var child in children)
         {

@@ -23,21 +23,17 @@ public class LogsController : Controller
     {
         try
         {
-            // Обработка параметра lastHours
             if (lastHours.HasValue && lastHours.Value > 0)
             {
-                dateFrom = DateTime.UtcNow.AddHours(-lastHours.Value);
-                dateTo = DateTime.UtcNow.AddMinutes(1); 
+                dateFrom = DateTime.UtcNow; 
+                dateTo = DateTime.UtcNow.AddHours(lastHours.Value);
             }
 
             var skip = (pageNumber - 1) * pageSize;
         
-            // Передаем dateFrom и dateTo в команду
             var command = new GetLogsCommand(skip, pageSize, dateFrom, dateTo);
-            var logs = (await _mediator.Send(command)).ToList();
+            var logs = await _mediator.Send(command);
 
-            // Убираем фильтрацию в контроллере, так как она уже происходит в хандлере
-            var pagedLogs = logs;
 
             var totalCount = logs.FirstOrDefault()?.LogsCount ?? 0;
             var totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
@@ -51,7 +47,7 @@ public class LogsController : Controller
             ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd") ?? "";
             ViewBag.LastHours = lastHours?.ToString() ?? "";
 
-            return View(pagedLogs);
+            return View(logs);
         }
         catch (Exception ex)
         {

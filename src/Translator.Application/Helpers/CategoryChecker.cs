@@ -31,11 +31,10 @@ public class CategoryChecker(IRepository<Category> _categoryRepository)
         CancellationToken cancellationToken)
     {
       var siblingsQuery = _categoryRepository.AsQueryable();
-      
-      if(parentId.HasValue)
-          siblingsQuery = siblingsQuery.Where(c => c.ParentId == parentId);
-      else
-          siblingsQuery = siblingsQuery.Where(c => c.ParentId == null);
+
+      siblingsQuery = parentId.HasValue 
+          ? siblingsQuery.Where(c => c.ParentId == parentId) 
+          : siblingsQuery.Where(c => c.ParentId == null);
       
       var siblingWithConflict = await siblingsQuery
           .FirstOrDefaultAsync(c => (currentCategoryId == null || c.Id != currentCategoryId) &&
@@ -43,7 +42,7 @@ public class CategoryChecker(IRepository<Category> _categoryRepository)
                                     c.Type.ToLower() == type.ToLower(),
               cancellationToken);
       
-      if(siblingWithConflict != null)
+      if (siblingWithConflict != null)
           throw new CategoryAlreadyExistsException();
     }
 }

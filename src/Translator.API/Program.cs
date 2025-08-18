@@ -75,7 +75,6 @@ if (args.Contains("--seed"))
     await seeder.SeedTranslationsAsync();
 }
 
-
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}");
