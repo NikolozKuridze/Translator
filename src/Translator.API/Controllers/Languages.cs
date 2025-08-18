@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
-using Translator.Application.Exceptions;
 using Translator.Application.Features.Language.Queries.GetLanguages;
 using Translator.Application.Features.Language.Commands.AddLanguage;
 using Translator.Application.Features.Language.Commands.DeleteLanguage;

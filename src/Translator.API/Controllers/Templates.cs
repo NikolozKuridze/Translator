@@ -45,7 +45,6 @@ public class Templates : Controller
         return View(templates);
     }
 
-    // ТОЛЬКО ЭТОТ МЕТОД изменен на работу с templateId
     [HttpGet("Details/{templateId:guid}")]
     public async Task<IActionResult> Details(
         Guid templateId, string? lang,
