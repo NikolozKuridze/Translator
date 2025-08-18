@@ -6,10 +6,10 @@ using CategoryEntity = Translator.Domain.DataModels.Category;
 
 namespace Translator.Application.Features.Category.Queries.GetCategory;
 
-public class GetCategoryByIdQueryHandler(IRepository<CategoryEntity> _categoryRepository)
-    : IRequestHandler<GetCategoryByIdQuery, CategoryReadDto?>
+public class GetCategoryHandler(IRepository<CategoryEntity> _categoryRepository)
+    : IRequestHandler<GetCategoryQuery, CategoryReadDto?>
 {
-    public async Task<CategoryReadDto?> Handle(GetCategoryByIdQuery request, CancellationToken cancellationToken)
+    public async Task<CategoryReadDto?> Handle(GetCategoryQuery request, CancellationToken cancellationToken)
     {
         var category = await _categoryRepository
             .AsQueryable()
@@ -24,9 +24,7 @@ public class GetCategoryByIdQueryHandler(IRepository<CategoryEntity> _categoryRe
         var dto = new CategoryReadDto(category.Id, category.Value, category.Type, category.Order, category.ParentId);
         
         if (category.Children is not null)
-        {
             dto.Children = category.Children.Select(c => MapToReadDto(c)).ToList();
-        }
 
         return dto;
     }
