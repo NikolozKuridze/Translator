@@ -31,4 +31,8 @@
       <ProjectReference Include="..\Translator.Infrastructure\Translator.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Views\Categories\" />
+    </ItemGroup>
+
 </Project>
