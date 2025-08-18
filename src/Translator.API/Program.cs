@@ -54,14 +54,12 @@ app.MapScalarApiReference("/docs", options =>
     options.WithOpenApiRoutePattern("/openapi/v1.json");
 });
 
-
 app.MapControllers();
 app.UseHttpsRedirection();
 
 app.UseSession();
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
-
 
 if (args.Contains("--seed"))
 {
@@ -74,7 +72,6 @@ if (args.Contains("--seed"))
         
     await seeder.SeedTranslationsAsync();
 }
-
 
 app.MapControllerRoute(
     name: "default",

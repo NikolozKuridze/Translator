@@ -1,6 +1,10 @@
 namespace Translator.Domain.DataModels;
 
-public class Category(string value, string type, int? order = null, Guid? parentId = null) : BaseDataModel
+public class Category(
+    string value,
+    string type, 
+    int? order = null,
+    Guid? parentId = null) : BaseDataModel
 {
     public string Value { get; set; } = value;
     public string Type { get; set; } = type;

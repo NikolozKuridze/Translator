@@ -2,11 +2,11 @@
 
     public class Language : BaseDataModel
     {
-        public string Code { get; private set; } = default!; 
-        public string Name { get; private set; } = default!;
-        public string UnicodeRange { get; private set; } = default!;
+        public string Code { get; private set; } = string.Empty; 
+        public string Name { get; private set; } = string.Empty;
+        public string UnicodeRange { get; private set; } = string.Empty;
         public bool IsActive { get; set; }
-        public ICollection<Translation> Translations { get; set; } = null!;
+        public ICollection<Translation> Translations { get; init; } = null!;
 
         public Language(string code, string name, string unicodeRange)
         {

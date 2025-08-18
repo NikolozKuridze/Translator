@@ -9,39 +9,27 @@ using ValueEntity = Translator.Domain.DataModels.Value;
 
 namespace Translator.Application.Features.Dashboard.Queries;
 
-public class GetDashboardStatisticHandler : IRequestHandler<GetDashboardStatisticCommand, GetDashboardRequestResponse>
+public class GetDashboardStatisticHandler(
+    IRepository<TemplateEntity> templateRepository,
+    IRepository<LanguageEntity> languageRepository,
+    IRepository<ValueEntity> valueRepository,
+    IRepository<TranslationEntity> translationRepository)
+    : IRequestHandler<GetDashboardStatisticCommand, GetDashboardRequestResponse>
 {
-    private readonly IRepository<TemplateEntity> _templateRepository;
-    private readonly IRepository<LanguageEntity> _languageRepository;
-    private readonly IRepository<ValueEntity> _valueRepository;
-    private readonly IRepository<TranslationEntity> _translationRepository;
-
-    public GetDashboardStatisticHandler(
-        IRepository<TemplateEntity> templateRepository,
-        IRepository<LanguageEntity> languageRepository,
-        IRepository<ValueEntity> valueRepository,
-        IRepository<TranslationEntity> translationRepository)
-    {
-        _templateRepository = templateRepository;
-        _languageRepository = languageRepository;
-        _valueRepository = valueRepository;
-        _translationRepository = translationRepository;
-    }
-    
     public async Task<GetDashboardRequestResponse> Handle(GetDashboardStatisticCommand request, CancellationToken cancellationToken)
     {
         try
         {
-            var templatesCount = await _templateRepository.AsQueryable()
+            var templatesCount = await templateRepository.AsQueryable()
                 .CountAsync(cancellationToken);
 
-            var valuesCount = await _valueRepository.AsQueryable()
+            var valuesCount = await valueRepository.AsQueryable()
                 .CountAsync(cancellationToken);
 
-            var translationsCount = await _translationRepository.AsQueryable()
+            var translationsCount = await translationRepository.AsQueryable()
                 .CountAsync(cancellationToken);
 
-            var languagesCount = await _languageRepository.AsQueryable()
+            var languagesCount = await languageRepository.AsQueryable()
                 .CountAsync(l => l.IsActive, cancellationToken);
 
             return new GetDashboardRequestResponse(

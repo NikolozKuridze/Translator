@@ -9,6 +9,7 @@ using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using Translator.Infrastructure.Database.Redis;
 using Translator.Infrastructure.Database.Redis.CacheServices;
+using Translator.Infrastructure.Database.Redis.Rudiment;
 using Translator.Infrastructure.GoogleService;
 
 namespace Translator.Infrastructure;
@@ -55,7 +56,5 @@ public static class InfrastructureDependencies
         services.AddSingleton<TranslationClient>(sp
             => TranslationClient.Create());
         services.AddSingleton<ITranslationService, GoogleTranslationService>();
-
-
     }
 }

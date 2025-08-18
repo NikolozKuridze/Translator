@@ -14,7 +14,6 @@ public class GetLanguagesHandler : IRequestHandler<GetLanguagesCommand, IEnumera
     public GetLanguagesHandler(IRepository<LanguageEntity> repository) 
         => _repository = repository;
     
-    
     public async Task<IEnumerable<GetLanguagesResponse>> Handle(GetLanguagesCommand request, CancellationToken cancellationToken)
     {
         return

@@ -61,7 +61,8 @@ public class ValueCacheService
 
         foreach (var key in valueKeys)
         {
-            if (key.IsNullOrEmpty) continue;
+            if (key.IsNullOrEmpty) 
+                continue;
             
             var json = await _db.StringGetAsync(key.ToString());
             if (!json.IsNullOrEmpty)
@@ -77,7 +78,6 @@ public class ValueCacheService
                 }
             }
         }
-
         return result;
     }
 

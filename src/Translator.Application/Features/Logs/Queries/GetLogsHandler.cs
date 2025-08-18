@@ -28,7 +28,7 @@ public class GetLogsHandler : IRequestHandler<GetLogsCommand, IEnumerable<GetLog
         var results = await query
             .OrderByDescending(t => t.Timestamp)
             .Skip(request.Skip)
-            .Take(request.Page)
+            .Take(request.PageSize)
             .Select(t => new GetLogsResponse(
                 t.Message, 
                 t.Timestamp, 

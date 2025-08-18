@@ -7,11 +7,11 @@ using Translator.Application.Features.Category.Commands.UpdateCategory;
 using Translator.Application.Features.Category.Queries.GetCategory;
 using Translator.Application.Features.Category.Queries.GetCategoryTree;
 using Translator.Application.Features.Category.Queries.GetRootCategories;
-using Translator.Domain.DataModels;
 
 namespace Translator.API.ApiControllers;
 
 [ApiController]
+[Route("api/category")]
 public class CategoryController : ControllerBase
 {
     private readonly IMediator _mediator;
@@ -19,7 +19,7 @@ public class CategoryController : ControllerBase
     public CategoryController(IMediator mediator)
         => _mediator = mediator;
     
-    [HttpPost("api/category/add")]
+    [HttpPost("add")]
     public async Task<ActionResult<Guid>> CreateCategory(CreateCategoryContract contract)
     {
         var command = new CreateCategoryCommand(contract.Value.ToLower().Trim(), contract.Type.ToLower().Trim(), contract.Order, contract.ParentId);
@@ -27,14 +27,14 @@ public class CategoryController : ControllerBase
         return Ok(categoryId);
     }
     
-    [HttpGet("api/category/{categoryId}")]
+    [HttpGet("{categoryId}")]
     public async Task<ActionResult<CategoryReadDto>> GetCategory(Guid categoryId)
     {
         var category = await _mediator.Send(new GetCategoryQuery(categoryId));
         
         return Ok(category);
     }
-    [HttpGet("api/category/get-tree/{categoryId}")]
+    [HttpGet("get-tree/{categoryId}")]
     public async Task<ActionResult<CategoryReadDto>> GetCategoryTree(Guid categoryId)
     {
         var category = await _mediator.Send(new GetCategoryTreeCommand(categoryId));
@@ -42,7 +42,7 @@ public class CategoryController : ControllerBase
         return Ok(category);
     }
     
-    [HttpGet("api/category/roots")]
+    [HttpGet("roots")]
     public async Task<ActionResult<IEnumerable<RootCategoryDto>>> GetRootCategories()
     {
         var categories = await _mediator.Send(new GetRootCategoriesQuery());
@@ -50,7 +50,7 @@ public class CategoryController : ControllerBase
         return Ok(categories);
     }
 
-    [HttpDelete("api/category")]
+    [HttpDelete]
     public async Task<ActionResult> DeleteCategory(DeleteCategoryContract contract)
     {
         var command = new DeleteCategoryCommand(contract.Id);
@@ -59,7 +59,7 @@ public class CategoryController : ControllerBase
         return  NoContent();
     }
 
-    [HttpPut("api/category")]
+    [HttpPut]
     public async Task<ActionResult> UpdateCategory(UpdateCategoryContract contract)
     {
         var command = new UpdateCategoryCommand(contract.Id, contract.Type?.ToLower().Trim(), contract.Value?.ToLower().Trim(), contract.Order, contract.ParentId);

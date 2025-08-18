@@ -2,11 +2,10 @@
 
 namespace Translator.Domain.Enums;
 
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
 public enum SupportedLanguage
 {
-    ka,
-    en,
-    ru
+    None = 0,
+    Ka = 1,
+    En = 2,
+    Ru = 3
 }

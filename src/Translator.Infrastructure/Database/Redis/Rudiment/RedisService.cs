@@ -2,12 +2,11 @@
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
-namespace Translator.Infrastructure.Database.Redis
+namespace Translator.Infrastructure.Database.Redis.Rudiment
 {
     public class RedisService : IRedisService
     {
         private readonly IDatabase _cacheDb;
-        private readonly RedisConfiguration _configuration;
         private readonly TimeSpan _defaultExpiration;
 
         public RedisService(
@@ -15,8 +14,8 @@ namespace Translator.Infrastructure.Database.Redis
             IOptions<RedisConfiguration> configuration)
         {
             _cacheDb = redis.GetDatabase();
-            _configuration = configuration.Value;
-            _defaultExpiration = TimeSpan.FromSeconds(_configuration.DefaultCacheExpirationMinutes);
+            var configurationValue = configuration.Value;
+            _defaultExpiration = TimeSpan.FromSeconds(configurationValue.DefaultCacheExpirationMinutes);
         }
 
         public async Task<T?> GetAsync<T>(string key)

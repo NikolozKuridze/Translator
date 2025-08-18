@@ -17,7 +17,7 @@ public class CategoryChecker(IRepository<Category> _categoryRepository)
                 .AsQueryable()
                 .FirstOrDefaultAsync(p => p.Id == tempParentId, cancellationToken);
             
-            if(parent is null)
+            if (parent is null)
                 throw new CategoryNotFoundException(tempParentId);
             
             if (type.Equals(parent.Type, StringComparison.OrdinalIgnoreCase))
@@ -32,11 +32,11 @@ public class CategoryChecker(IRepository<Category> _categoryRepository)
     {
       var siblingsQuery = _categoryRepository.AsQueryable();
       
-      if(parentId.HasValue)
-          siblingsQuery = siblingsQuery.Where(c => c.ParentId == parentId);
-      else
-          siblingsQuery = siblingsQuery.Where(c => c.ParentId == null);
       
+      siblingsQuery = siblingsQuery.Where(c
+          => (parentId.HasValue && c.ParentId == parentId) 
+             || c.ParentId == null); 
+       
       var siblingWithConflict = await siblingsQuery
           .FirstOrDefaultAsync(c => (currentCategoryId == null || c.Id != currentCategoryId) &&
                                     c.Value.ToLower() == value.ToLower() &&
