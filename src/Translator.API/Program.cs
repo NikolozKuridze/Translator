@@ -4,6 +4,7 @@ using Serilog;
 using Translator.API.Contracts;
 using Translator.API.Middlewares;
 using Translator.Application;
+using Translator.Application.Helpers;
 using Translator.Infrastructure;
 using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.SeedData;
@@ -17,6 +18,7 @@ builder.Services.AddApplicationDependencies();
 
 builder.Services.AddOpenApi();
 builder.Services.AddControllers();
+builder.Services.AddScoped<CategoryChecker>();
 
 builder.Services.Configure<AdminAuthSettings>(
     builder.Configuration.GetSection(nameof(AdminAuthSettings)));
