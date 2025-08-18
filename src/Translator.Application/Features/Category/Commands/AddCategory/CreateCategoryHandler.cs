@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
-using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using CategoryEntity = Translator.Domain.DataModels.Category;
 
@@ -31,14 +30,10 @@ public class CreateCategoryCommandHandler(IRepository<CategoryEntity> _categoryR
                 .FirstOrDefaultAsync(p => p.Id == tempParentId, cancellationToken);
 
             if (parent == null)
-            {
-                throw new CategoryNotFoundException(tempParentId.ToString());
-            }
+                throw new CategoryNotFoundException(tempParentId);
 
             if (request.Type.ToLower() == parent.Type.ToLower())
-            {
                 throw new CategoryAlreadyExistsException();
-            }
 
             tempParentId = parent.ParentId;
         }

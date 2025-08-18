@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Translator.API.Contracts;
 using Translator.Application.Features.Category.Commands.AddCategory;
 using Translator.Application.Features.Category.Queries.GetCategory;
+using Translator.Application.Features.Category.Queries.GetCategoryTree;
 
 namespace Translator.API.ApiControllers;
 
@@ -26,7 +27,14 @@ public class CategoryController : ControllerBase
     [HttpGet("api/category/{categoryId}")]
     public async Task<ActionResult<CategoryReadDto>> GetCategory(Guid categoryId)
     {
-        var category = await _mediator.Send(new GetCategoryByIdQuery(categoryId));
+        var category = await _mediator.Send(new GetCategoryQuery(categoryId));
+        
+        return Ok(category);
+    }
+    [HttpGet("api/category/get-all/{categoryId}")]
+    public async Task<ActionResult<CategoryReadDto>> GetAllCategories(Guid categoryId)
+    {
+        var category = await _mediator.Send(new GetCategoryTreeCommand(categoryId));
         
         return Ok(category);
     }
