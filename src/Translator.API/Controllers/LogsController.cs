@@ -13,37 +13,32 @@ public class LogsController : Controller
     private readonly IMediator _mediator;
 
     public LogsController(IMediator mediator) => _mediator = mediator;
-
     [HttpGet("")]
     public async Task<IActionResult> Index(
         DateTime? dateFrom = null,
         DateTime? dateTo = null,
         int pageNumber = 1,
-        int pageSize = 10)
+        int pageSize = 10,
+        int? lastHours = null)
     {
         try
         {
-            // Конвертируем pageNumber в skip для API
+            // Обработка параметра lastHours
+            if (lastHours.HasValue && lastHours.Value > 0)
+            {
+                dateFrom = DateTime.UtcNow.AddHours(-lastHours.Value);
+                dateTo = DateTime.UtcNow.AddMinutes(1); 
+            }
+
             var skip = (pageNumber - 1) * pageSize;
-            var command = new GetLogsCommand(skip, pageSize);
+        
+            // Передаем dateFrom и dateTo в команду
+            var command = new GetLogsCommand(skip, pageSize, dateFrom, dateTo);
             var logs = (await _mediator.Send(command)).ToList();
 
-            // Фильтрация по дате в памяти (если нужно)
-            var filteredLogs = logs.AsEnumerable();
-            
-            if (dateFrom.HasValue)
-            {
-                filteredLogs = filteredLogs.Where(l => l.Timestamp.Date >= dateFrom.Value.Date);
-            }
-            
-            if (dateTo.HasValue)
-            {
-                filteredLogs = filteredLogs.Where(l => l.Timestamp.Date <= dateTo.Value.Date);
-            }
+            // Убираем фильтрацию в контроллере, так как она уже происходит в хандлере
+            var pagedLogs = logs;
 
-            var pagedLogs = filteredLogs.ToList();
-
-            // Получаем общее количество из первого элемента
             var totalCount = logs.FirstOrDefault()?.LogsCount ?? 0;
             var totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
             pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
@@ -54,6 +49,7 @@ public class LogsController : Controller
             ViewBag.TotalCount = totalCount;
             ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd") ?? "";
             ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd") ?? "";
+            ViewBag.LastHours = lastHours?.ToString() ?? "";
 
             return View(pagedLogs);
         }
@@ -69,11 +65,9 @@ public class LogsController : Controller
     {
         try
         {
-            // Для детального просмотра получаем логи вокруг указанного времени
-            var command = new GetLogsCommand(0, 100); // Берем больше для поиска
+            var command = new GetLogsCommand(0, 100);
             var allLogs = await _mediator.Send(command);
             
-            // Ищем конкретный лог по timestamp (приблизительно)
             var targetLog = allLogs.FirstOrDefault(l => 
                 Math.Abs((l.Timestamp - timestamp).TotalSeconds) < 1);
 

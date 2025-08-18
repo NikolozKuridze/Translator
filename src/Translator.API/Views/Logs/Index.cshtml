@@ -9,6 +9,7 @@
     var totalCount = ViewBag.TotalCount ?? 0;
     var dateFrom = ViewBag.DateFrom as string ?? "";
     var dateTo = ViewBag.DateTo as string ?? "";
+    var selectedLastHours = ViewBag.LastHours as string ?? "";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -20,6 +21,22 @@
         <button class="btn btn-primary" onclick="refreshLogs()">
             <i class="fas fa-sync-alt"></i> Refresh
         </button>
+        
+        <!-- Quick Hours Filter -->
+        <form id="lastHoursForm" method="get" action="@Url.Action("Index", "Logs")" class="ms-2">
+            <div class="input-group">
+                <select name="lastHours" id="lastHoursSelect" class="form-select form-select-sm" onchange="submitLastHours()" style="min-width: 180px;">
+                    <option value="">Show logs for period...</option>
+                    <option value="1" @(selectedLastHours == "1" ? "selected" : "")>Last 1 hour</option>
+                    <option value="3" @(selectedLastHours == "3" ? "selected" : "")>Last 3 hours</option>
+                    <option value="6" @(selectedLastHours == "6" ? "selected" : "")>Last 6 hours</option>
+                    <option value="12" @(selectedLastHours == "12" ? "selected" : "")>Last 12 hours</option>
+                    <option value="24" @(selectedLastHours == "24" ? "selected" : "")>Last 24 hours</option>
+                </select>
+            </div>
+            <input type="hidden" name="pageSize" value="@pageSize" />
+            <input type="hidden" name="pageNumber" value="1" />
+        </form>
     </div>
 </div>
 
@@ -45,6 +62,7 @@
                                 @Html.Hidden("pageNumber", 1)
                                 @Html.Hidden("pageSize", pageSize, null)
                                 @Html.Hidden("dateTo", dateTo)
+                                @Html.Hidden("lastHours", selectedLastHours)
                                 <div class="mt-1">
                                     @Html.TextBox("dateFrom", dateFrom, new { 
                                         @class = "form-control form-control-sm", 
@@ -55,9 +73,7 @@
                                 </div>
                             }
                         </th>
-                        <th width="10%">
-                            Level
-                        </th>
+                        <th width="10%">Level</th>
                         <th width="45%">Message</th>
                         <th width="15%">
                             Until Date
@@ -66,6 +82,7 @@
                                 @Html.Hidden("pageNumber", 1)
                                 @Html.Hidden("pageSize", pageSize, null)
                                 @Html.Hidden("dateFrom", dateFrom, null)
+                                @Html.Hidden("lastHours", selectedLastHours)
                                 <div class="mt-1">
                                     @Html.TextBox("dateTo", dateTo, new { 
                                         @class = "form-control form-control-sm", 
@@ -155,7 +172,8 @@
                         pageNumber = 1, 
                         pageSize, 
                         dateFrom,
-                        dateTo 
+                        dateTo,
+                        lastHours = selectedLastHours
                     })" title="First page">
                         <i class="fas fa-angle-double-left"></i> First
                     </a>
@@ -176,7 +194,8 @@
                         pageNumber = currentPage - 1, 
                         pageSize,
                         dateFrom,
-                        dateTo 
+                        dateTo,
+                        lastHours = selectedLastHours
                     })">Previous</a>
                 </li>
             }
@@ -203,7 +222,8 @@
                             pageNumber = i, 
                             pageSize,
                             dateFrom,
-                            dateTo 
+                            dateTo,
+                            lastHours = selectedLastHours
                         })">@i</a>
                     </li>
                 }
@@ -217,7 +237,8 @@
                         pageNumber = currentPage + 1, 
                         pageSize,
                         dateFrom,
-                        dateTo 
+                        dateTo,
+                        lastHours = selectedLastHours
                     })">Next</a>
                 </li>
             }
@@ -236,7 +257,8 @@
                         pageNumber = totalPages, 
                         pageSize,
                         dateFrom,
-                        dateTo 
+                        dateTo,
+                        lastHours = selectedLastHours
                     })" title="Last page">
                         Last <i class="fas fa-angle-double-right"></i>
                     </a>
@@ -258,6 +280,7 @@
             @Html.Hidden("pageNumber", 1)
             @Html.Hidden("dateFrom", dateFrom)
             @Html.Hidden("dateTo", dateTo)
+            @Html.Hidden("lastHours", selectedLastHours)
             
             <label class="form-label me-2 mb-0">Show:</label>
             @Html.DropDownList("pageSize", new List<SelectListItem>
@@ -308,6 +331,10 @@
 
     function refreshLogs() {
         window.location.reload();
+    }
+
+    function submitLastHours() {
+        document.getElementById('lastHoursForm').submit();
     }
 
     document.addEventListener('DOMContentLoaded', function() {

@@ -15,16 +15,30 @@ public class GetLogsHandler : IRequestHandler<GetLogsCommand, IEnumerable<GetLog
     
     public async Task<IEnumerable<GetLogsResponse>> Handle(GetLogsCommand request, CancellationToken cancellationToken)
     {
-       var logsCount = await _dbContext.Logs.CountAsync(cancellationToken); 
-        
-        return await _dbContext
-            .Logs
+        var query = _dbContext.Logs.AsQueryable();
+    
+        if (request.DateFrom.HasValue)
+            query = query.Where(l => l.Timestamp >= request.DateFrom.Value);
+    
+        if (request.DateTo.HasValue)
+            query = query.Where(l => l.Timestamp <= request.DateTo.Value);
+    
+        var logsCount = await query.CountAsync(cancellationToken);
+    
+        var results = await query
+            .OrderByDescending(t => t.Timestamp)
             .Skip(request.Skip)
             .Take(request.Page)
             .Select(t => new GetLogsResponse(
-                    t.Message, t.Timestamp, t.Exception, t.LogEvent, logsCount
-                ))
+                t.Message, 
+                t.Timestamp, 
+                t.Exception, 
+                t.LogEvent, 
+                logsCount
+            ))
             .ToArrayAsync(cancellationToken);
+    
+        return results;
     }
 }
 
