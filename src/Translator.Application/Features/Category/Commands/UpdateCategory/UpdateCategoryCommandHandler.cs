@@ -16,7 +16,7 @@ public class UpdateCategoryCommandHandler(IRepository<CategoryEntity> _categoryR
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
         
         if (categoryToUpdate is null)
-            throw new CategoryNotFoundException(request.Id.ToString());
+            throw new CategoryNotFoundException(request.Id);
 
         var proposedValue = request.Value ?? categoryToUpdate.Value;
         var proposedType = request.Type ?? categoryToUpdate.Type;

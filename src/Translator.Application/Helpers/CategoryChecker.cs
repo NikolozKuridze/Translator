@@ -18,7 +18,7 @@ public class CategoryChecker(IRepository<Category> _categoryRepository)
                 .FirstOrDefaultAsync(p => p.Id == tempParentId, cancellationToken);
             
             if(parent is null)
-                throw new CategoryNotFoundException(tempParentId.ToString());
+                throw new CategoryNotFoundException(tempParentId);
             
             if (type.Equals(parent.Type, StringComparison.OrdinalIgnoreCase))
                 throw new CategoryAlreadyExistsException();
