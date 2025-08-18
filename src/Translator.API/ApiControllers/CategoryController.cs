@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Translator.API.Contracts;
 using Translator.Application.Features.Category.Commands.AddCategory;
 using Translator.Application.Features.Category.Commands.DeleteCategory;
+using Translator.Application.Features.Category.Commands.UpdateCategory;
 using Translator.Application.Features.Category.Queries.GetCategory;
 
 namespace Translator.API.ApiControllers;
@@ -38,5 +39,14 @@ public class CategoryController : ControllerBase
         await _mediator.Send(command);
         
         return  NoContent();
+    }
+
+    [HttpPut("api/category")]
+    public async Task<ActionResult> UpdateCategory(UpdateCategoryContract contract)
+    {
+        var command = new UpdateCategoryCommand(contract.Id, contract.Type?.ToLower().Trim(), contract.Value?.ToLower().Trim(), contract.Order, contract.ParentId);
+        await _mediator.Send(command);
+        
+        return NoContent();
     }
 }
