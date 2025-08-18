@@ -15,7 +15,7 @@ public class DeleteCategoryCommandHandler(IRepository<CategoryEntity> _categoryR
             .FirstOrDefaultAsync(category => category.Id == request.Id);
 
         if (categoryExists is null)
-            throw new CategoryNotFoundException(request.Id.ToString());
+            throw new CategoryNotFoundException(request.Id);
 
         await _categoryRepository.DeleteAsync([categoryExists]);
         await _categoryRepository.SaveChangesAsync(cancellationToken);
