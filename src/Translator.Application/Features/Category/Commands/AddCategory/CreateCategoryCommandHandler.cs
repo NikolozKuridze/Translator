@@ -1,6 +1,4 @@
 using MediatR;
-using Microsoft.EntityFrameworkCore;
-using Translator.Application.Exceptions;
 using Translator.Application.Helpers;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using CategoryEntity = Translator.Domain.DataModels.Category;

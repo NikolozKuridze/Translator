@@ -6,6 +6,8 @@ using Translator.Application.Features.Category.Commands.DeleteCategory;
 using Translator.Application.Features.Category.Commands.UpdateCategory;
 using Translator.Application.Features.Category.Queries.GetCategory;
 using Translator.Application.Features.Category.Queries.GetCategoryTree;
+using Translator.Application.Features.Category.Queries.GetRootCategories;
+using Translator.Domain.DataModels;
 
 namespace Translator.API.ApiControllers;
 
@@ -32,12 +34,20 @@ public class CategoryController : ControllerBase
         
         return Ok(category);
     }
-    [HttpGet("api/category/get-all/{categoryId}")]
-    public async Task<ActionResult<CategoryReadDto>> GetAllCategories(Guid categoryId)
+    [HttpGet("api/category/get-tree/{categoryId}")]
+    public async Task<ActionResult<CategoryReadDto>> GetCategoryTree(Guid categoryId)
     {
         var category = await _mediator.Send(new GetCategoryTreeCommand(categoryId));
         
         return Ok(category);
+    }
+    
+    [HttpGet("api/category/roots")]
+    public async Task<ActionResult<IEnumerable<RootCategoryDto>>> GetRootCategories()
+    {
+        var categories = await _mediator.Send(new GetRootCategoriesQuery());
+        
+        return Ok(categories);
     }
 
     [HttpDelete("api/category")]
