@@ -5,24 +5,19 @@ using CategoryEntity = Translator.Domain.DataModels.Category;
 
 namespace Translator.Application.Features.Category.Queries.GetCategoryTree;
 
-public class GetCategoryTreeHandler : IRequestHandler<GetCategoryTreeCommand, IEnumerable<CategoryEntity>>
+public class GetCategoryTreeHandler(ApplicationDbContext context)
+    : IRequestHandler<GetCategoryTreeCommand, IEnumerable<GetCategoryTreeResponse>>
 {
-    private readonly ApplicationDbContext _context;
-
-    public GetCategoryTreeHandler(ApplicationDbContext context)
-    {
-        _context = context;
-    }
-
-    public async Task<IEnumerable<CategoryEntity>> Handle(GetCategoryTreeCommand request, CancellationToken cancellationToken)
+    public async Task<IEnumerable<GetCategoryTreeResponse>> Handle(GetCategoryTreeCommand request, CancellationToken cancellationToken)
     {
         var tree = await GetSubtreeAsync(request.Id);
-        return tree;
+
+        return tree.Select(MapToReadDto);
     }
-    
-    public async Task<List<CategoryEntity>> GetSubtreeAsync(Guid parentId)
+
+    private async Task<List<CategoryEntity>> GetSubtreeAsync(Guid parentId)
     {
-        var subtree = await _context.Categories
+        var subtree = await context.Categories
             .FromSql($@"
                 WITH RECURSIVE tree AS (
                 SELECT * FROM ""categories"" WHERE ""id"" = {parentId}
@@ -37,49 +32,25 @@ public class GetCategoryTreeHandler : IRequestHandler<GetCategoryTreeCommand, IE
 
         return BuildTree(subtree);
     }
-    
-    private async Task<List<CategoryEntity>> GetTreeAsync()
-    {
-        var all = await _context.Categories
-            .OrderBy(c => c.Order)
-            .ToListAsync();
 
-        foreach (var cat in all)
+    private static List<CategoryEntity> BuildTree(List<CategoryEntity> flat)
+    {
+        foreach (var cat in flat)
         {
             cat.Children = new List<CategoryEntity>();
             cat.Parent = null;
         }
 
-        var lookup = all.ToDictionary(c => c.Id);
-        List<CategoryEntity> roots = new();
-
-        foreach (var cat in all)
-        {
-            if (cat.ParentId is Guid pid && lookup.TryGetValue(pid, out var parent))
-            {
-                parent.Children.Add(cat);
-                cat.Parent = parent;
-            }
-            else
-                roots.Add(cat);
-        }
-        return roots;
-    }
-    
-    List<CategoryEntity> BuildTree(List<CategoryEntity> flat)
-    {
-        foreach (var cat in flat)
-        {
-            cat.Children = new List<CategoryEntity>();
-            cat.Parent = null; 
-        }
         var lookup = flat.ToDictionary(c => c.Id);
         List<CategoryEntity> roots = new();
 
         foreach (var cat in flat)
         {
             if (cat.ParentId is Guid pid && lookup.TryGetValue(pid, out var parent))
-                parent.Children.Add(cat);
+            {
+                parent.Children?.Add(cat);
+                cat.Parent = parent;
+            }
             else
                 roots.Add(cat);
         }
@@ -88,16 +59,21 @@ public class GetCategoryTreeHandler : IRequestHandler<GetCategoryTreeCommand, IE
     }
     private GetCategoryTreeResponse MapToReadDto(CategoryEntity category)
     {
-        var dto = new GetCategoryTreeResponse(category.Id, category.Value, category.Type, category.Order, category.ParentId);
+        var dto = new GetCategoryTreeResponse(
+            category.Id, 
+            category.Value, 
+            category.Type, 
+            category.Order
+        );
         
         if (category.Children is not null)
-            dto.Children = category.Children.Select(c => MapToReadDto(c)).ToList();
+            dto.Children = category.Children.Select(MapToReadDto).ToList();
 
         return dto;
     }
 }
 
-public record GetCategoryTreeResponse(Guid Id, string Value, string Type, int? Order, Guid? ParentId)
+public record GetCategoryTreeResponse(Guid Id, string Value, string Type, int? Order)
 {
     public List<GetCategoryTreeResponse> Children { get; set; } = [];
 }
