@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Contracts;
 using Translator.Application.Features.Category.Commands.AddCategory;
+using Translator.Application.Features.Category.Commands.DeleteCategory;
+using Translator.Application.Features.Category.Commands.UpdateCategory;
 using Translator.Application.Features.Category.Queries.GetCategory;
 using Translator.Application.Features.Category.Queries.GetCategoryTree;
 
@@ -23,7 +25,6 @@ public class CategoryController : ControllerBase
         return Ok(categoryId);
     }
     
-    
     [HttpGet("api/category/{categoryId}")]
     public async Task<ActionResult<CategoryReadDto>> GetCategory(Guid categoryId)
     {
@@ -37,5 +38,23 @@ public class CategoryController : ControllerBase
         var category = await _mediator.Send(new GetCategoryTreeCommand(categoryId));
         
         return Ok(category);
+    }
+
+    [HttpDelete("api/category")]
+    public async Task<ActionResult> DeleteCategory(DeleteCategoryContract contract)
+    {
+        var command = new DeleteCategoryCommand(contract.Id);
+        await _mediator.Send(command);
+        
+        return  NoContent();
+    }
+
+    [HttpPut("api/category")]
+    public async Task<ActionResult> UpdateCategory(UpdateCategoryContract contract)
+    {
+        var command = new UpdateCategoryCommand(contract.Id, contract.Type?.ToLower().Trim(), contract.Value?.ToLower().Trim(), contract.Order, contract.ParentId);
+        await _mediator.Send(command);
+        
+        return NoContent();
     }
 }
