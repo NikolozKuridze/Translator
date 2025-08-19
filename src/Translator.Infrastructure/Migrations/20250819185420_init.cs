@@ -18,7 +18,7 @@ namespace Translator.Infrastructure.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    type = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
+                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -254,9 +254,9 @@ namespace Translator.Infrastructure.Migrations
                 column: "type_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_category_types_type",
+                name: "ix_category_types_name",
                 table: "category_types",
-                column: "type",
+                column: "name",
                 unique: true);
 
             migrationBuilder.CreateIndex(

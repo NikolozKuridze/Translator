@@ -85,18 +85,18 @@ namespace Translator.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<string>("Type")
+                    b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)")
-                        .HasColumnName("type");
+                        .HasColumnName("name");
 
                     b.HasKey("Id")
                         .HasName("pk_category_types");
 
-                    b.HasIndex("Type")
+                    b.HasIndex("Name")
                         .IsUnique()
-                        .HasDatabaseName("ix_category_types_type");
+                        .HasDatabaseName("ix_category_types_name");
 
                     b.ToTable("category_types", (string)null);
                 });
