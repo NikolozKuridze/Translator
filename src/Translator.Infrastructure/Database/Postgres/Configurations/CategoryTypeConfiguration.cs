@@ -11,11 +11,11 @@ public class CategoryTypeConfiguration : IEntityTypeConfiguration<CategoryType>
     {
         builder.HasKey(ct => ct.Id);
 
-        builder.Property(ct => ct.Type)
+        builder.Property(ct => ct.Name)
             .IsRequired()
             .HasMaxLength(100);
 
-        builder.HasIndex(ct => ct.Type)
+        builder.HasIndex(ct => ct.Name)
             .IsUnique();
     }
 }
