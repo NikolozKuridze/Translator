@@ -14,7 +14,7 @@ namespace Translator.API.ApiControllers;
 [Route("api/category")]
 public class CategoryController(IMediator mediator) : ControllerBase
 {
-    [HttpPost("add")]
+    [HttpPost]
     public async Task<ActionResult<Guid>> CreateCategory(CreateCategoryContract contract)
     {
         var command = new CreateCategoryCommand(contract.Value.ToLower().Trim(), contract.Type.ToLower().Trim(), contract.Order, contract.ParentId);
@@ -57,7 +57,7 @@ public class CategoryController(IMediator mediator) : ControllerBase
     [HttpPut]
     public async Task<ActionResult> UpdateCategory(UpdateCategoryContract contract)
     {
-        var command = new UpdateCategoryCommand(contract.Id, contract.Type?.ToLower().Trim(), contract.Value?.ToLower().Trim(), contract.Order, contract.ParentId);
+        var command = new UpdateCategoryCommand(contract.Id, contract.Type?.ToLower().Trim(), contract.Value?.ToLower().Trim(), contract.Order);
         await mediator.Send(command);
         
         return NoContent();
