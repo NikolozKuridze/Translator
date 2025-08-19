@@ -11,6 +11,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Translation> Translations { get; set; }
     public DbSet<Value> Values { get; set; }
     public DbSet<Category> Categories { get; set; }
+    public DbSet<CategoryType> CategoryTypes { get; set; }
     
     public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) 
         : base(options) { }
