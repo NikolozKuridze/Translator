@@ -1,7 +1,7 @@
 namespace Translator.Domain.DataModels;
 
-public class CategoryType(string type) : BaseDataModel
+public class CategoryType(string name) : BaseDataModel
 {
-    public string Type { get; init; } = type;
+    public string Name { get; set; } = name; 
     public List<Category> Categories { get; set; } = [];
 }
