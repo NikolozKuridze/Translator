@@ -11,10 +11,10 @@ public class DeleteCategoryTypeCommandHandler(IRepository<CategoryType> typeRepo
     public async Task Handle(DeleteCategoryTypeCommand request, CancellationToken cancellationToken)
     {
         var typeExists = await typeRepository.AsQueryable()
-            .FirstOrDefaultAsync(t => t.Type == request.Type, cancellationToken: cancellationToken);
+            .FirstOrDefaultAsync(t => t.Name == request.TypeName, cancellationToken: cancellationToken);
         
         if(typeExists is null)
-            throw new TypeNotFoundException(request.Type);
+            throw new TypeNotFoundException(request.TypeName);
 
         await typeRepository.DeleteAsync([typeExists]);
         await typeRepository.SaveChangesAsync(cancellationToken);

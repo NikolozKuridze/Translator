@@ -1,3 +1,3 @@
 namespace Translator.API.Contracts;
 
-public record DeleteCategoryTypeContract(string Type);
+public record DeleteCategoryTypeContract(string TypeName);
