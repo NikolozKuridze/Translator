@@ -1,5 +1,5 @@
 using FluentValidation;
-using Translator.Infrastructure.Database.Postgres.Constants;
+using Translator.Infrastructure.Database.Postgres.Configurations.Constants;
 
 namespace Translator.Application.Features.Language.Commands.DeleteLanguage;
 
@@ -10,7 +10,7 @@ public class DeleteLanguageCommandValidator : AbstractValidator<DeleteLanguageCo
         RuleFor(c => c.Code)
             .NotEmpty()
             .WithMessage("Code is required.")
-            .Length(2, LanguageConstants.CODE_MAX_LENGTH)
-            .WithMessage($"Code length must be between 2 and {LanguageConstants.CODE_MAX_LENGTH}");
+            .Length(2, DatabaseConstants.Language.CODE_MAX_LENGTH)
+            .WithMessage($"Code length must be between 2 and {DatabaseConstants.Language.CODE_MAX_LENGTH}");
     }
 }

@@ -1,5 +1,5 @@
 using FluentValidation;
-using Translator.Infrastructure.Database.Postgres.Constants;
+using Translator.Infrastructure.Database.Postgres.Configurations.Constants;
 
 namespace Translator.Application.Features.Language.Commands.AddLanguage;
 
@@ -10,7 +10,7 @@ public class AddLanguageCommandValidator : AbstractValidator<AddLanguageCommand>
         RuleFor(c => c.Code)
             .NotEmpty()
             .WithMessage("Code cannot be empty.")
-            .Length(1, LanguageConstants.CODE_MAX_LENGTH)
-            .WithMessage($"Code cannot be longer than {LanguageConstants.CODE_MAX_LENGTH} characters.");
+            .Length(1, DatabaseConstants.Language.CODE_MAX_LENGTH)
+            .WithMessage($"Code cannot be longer than {DatabaseConstants.Language.CODE_MAX_LENGTH} characters.");
     }
 }

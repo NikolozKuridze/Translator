@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Translator.Domain.DataModels;
-using Translator.Infrastructure.Database.Postgres.Constants;
+using Translator.Infrastructure.Database.Postgres.Configurations.Constants;
 
 namespace Translator.Infrastructure.Database.Postgres.Configurations;
 
@@ -18,17 +18,17 @@ public class LanguageConfiguration : IEntityTypeConfiguration<Language>
         builder
             .Property(l => l.Code)
             .IsRequired()
-            .HasMaxLength(LanguageConstants.CODE_MAX_LENGTH);
+            .HasMaxLength(DatabaseConstants.Language.CODE_MAX_LENGTH);
 
         builder
             .Property(l => l.Name)
             .IsRequired()
-            .HasMaxLength(LanguageConstants.NAME_MAX_LENGTH);
+            .HasMaxLength(DatabaseConstants.Language.NAME_MAX_LENGTH);
 
         builder
             .Property(l => l.UnicodeRange)
             .IsRequired()
-            .HasMaxLength(LanguageConstants.UNICDDE_MAX_LENGTH);
+            .HasMaxLength(DatabaseConstants.Language.UNICDDE_MAX_LENGTH);
 
         builder
             .Property(l => l.IsActive)

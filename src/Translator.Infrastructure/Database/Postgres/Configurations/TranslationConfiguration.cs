@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Translator.Domain.DataModels;
-using Translator.Infrastructure.Database.Postgres.Constants;
+using Translator.Infrastructure.Database.Postgres.Configurations.Constants;
 
 namespace Translator.Infrastructure.Database.Postgres.Configurations;
 
@@ -15,6 +15,6 @@ public class TranslationConfiguration : IEntityTypeConfiguration<Translation>
         builder
             .Property(x => x.TranslationValue)
             .IsRequired()
-            .HasMaxLength(TranslationConstants.VALUE_MAX_LENGTH);
+            .HasMaxLength(DatabaseConstants.Translation.VALUE_MAX_LENGTH);
     }
 }

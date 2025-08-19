@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Translator.Domain.DataModels;
+using Translator.Infrastructure.Database.Postgres.Configurations.Constants;
 
 namespace Translator.Infrastructure.Database.Postgres.Configurations;
 
@@ -17,11 +18,11 @@ public class ValueConfiguration : IEntityTypeConfiguration<Value>
         templateValueBuilder
             .Property(x => x.Key)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(DatabaseConstants.Value.KEY_MAX_LENGTH);
         
         templateValueBuilder
             .Property(x => x.Hash)
-            .HasMaxLength(100);
+            .HasMaxLength(DatabaseConstants.Value.HASH_MAX_LENGTH);
 
         templateValueBuilder
             .HasMany(tv => tv.Translations)
