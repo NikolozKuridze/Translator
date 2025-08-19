@@ -31,7 +31,7 @@ public class CreateCategoryCommandHandler(
         var typeExists = await _typeRepository.AsQueryable()
             .FirstOrDefaultAsync(t => t.Type.ToLower() == request.Type.ToLower(),
                 cancellationToken);
-
+        return Guid.Empty;
         // if (typeExists is null)
         // {
         //     var newType = new CategoryType(request.Type);
