@@ -83,6 +83,5 @@ public class TemplateCacheService
 }
 
 public record CachedTemplateInfo(Guid TemplateId, string TemplateName, int ValuesCount, long TemplatesCount);
-
 public record TemplateCacheDto(Guid TemplateId, string TemplateName, List<TranslationDto> Translations);
 public record TranslationDto(string Key, string Value, Guid ValueId, string LanguageCode);

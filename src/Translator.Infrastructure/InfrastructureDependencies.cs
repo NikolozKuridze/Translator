@@ -8,10 +8,8 @@ using Translator.Domain;
 using Translator.Infrastructure.Configurations;
 using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
-using Translator.Infrastructure.Database.Redis;
 using Translator.Infrastructure.Database.Redis.CacheServices;
 using Translator.Infrastructure.Database.Redis.Rudiment;
-using Translator.Infrastructure.GoogleService;
 
 namespace Translator.Infrastructure;
 
@@ -43,8 +41,7 @@ public static class InfrastructureDependencies
         services.AddSingleton<TemplateCacheService>();
         services.AddSingleton<ValueCacheService>();
         services.AddSingleton<TranslationClient>(sp
-            => TranslationClient.Create());
-        services.AddSingleton<ITranslationService, GoogleTranslationService>();
+            => TranslationClient.Create()); 
     }
 
     private static void AddScopedServices(this IServiceCollection services, IConfiguration configuration)
