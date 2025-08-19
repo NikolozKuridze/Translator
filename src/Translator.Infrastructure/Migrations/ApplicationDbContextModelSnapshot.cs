@@ -995,7 +995,7 @@ namespace Translator.Infrastructure.Migrations
                     b.HasOne("Translator.Domain.DataModels.CategoryType", "Type")
                         .WithMany("Categories")
                         .HasForeignKey("TypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_categories_category_types_type_id");
 

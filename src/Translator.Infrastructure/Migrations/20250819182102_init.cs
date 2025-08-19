@@ -92,7 +92,7 @@ namespace Translator.Infrastructure.Migrations
                         column: x => x.type_id,
                         principalTable: "category_types",
                         principalColumn: "id",
-                        onDelete: ReferentialAction.Restrict);
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(

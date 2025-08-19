@@ -12,7 +12,7 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250819104916_init")]
+    [Migration("20250819182102_init")]
     partial class init
     {
         /// <inheritdoc />
@@ -998,7 +998,7 @@ namespace Translator.Infrastructure.Migrations
                     b.HasOne("Translator.Domain.DataModels.CategoryType", "Type")
                         .WithMany("Categories")
                         .HasForeignKey("TypeId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_categories_category_types_type_id");
 
