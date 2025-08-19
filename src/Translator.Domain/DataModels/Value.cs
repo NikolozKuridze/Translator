@@ -7,8 +7,11 @@ public class Value : BaseDataModel
     public string Hash { get; private set; } = null!;
     public DateTimeOffset CreatedAt { get; private set; }
     
-    public ICollection<Template>? Templates  { get; set; }
-    public ICollection<Translation> Translations { get; set; }
+    private List<Template>? _templates = new();
+    public ICollection<Template>? Templates => _templates?.AsReadOnly();
+    
+    private List<Translation>? _translations = new();
+    public ICollection<Translation>? Translations => _translations?.AsReadOnly();
 
     public Value(string key)
     {

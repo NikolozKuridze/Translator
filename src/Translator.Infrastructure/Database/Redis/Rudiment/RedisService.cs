@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
 
-namespace Translator.Infrastructure.Database.Redis
+namespace Translator.Infrastructure.Database.Redis.Rudiment
 {
     public class RedisService : IRedisService
     {
@@ -32,7 +32,7 @@ namespace Translator.Infrastructure.Database.Redis
         public async Task SetAsync<T>(string key, T value)
         {
             var jsonValue = JsonSerializer.Serialize(value);
-            var isTrue = await _cacheDb.StringSetAsync(key, jsonValue, _defaultExpiration);
+            await _cacheDb.StringSetAsync(key, jsonValue, _defaultExpiration);
         }
 
         public async Task RemoveAsync(string key)

@@ -7,7 +7,7 @@ public class ValueCacheService
 {
     private readonly IDatabase _db;
     private const string KeyPrefix = "global-dict:value:";
-    private const string ValueKeysList = "value:keys"; // список всех закэшированных value ключей
+    private const string ValueKeysList = "value:keys";
     private const int Ttl = 21;
     
     public ValueCacheService(IConnectionMultiplexer redis)

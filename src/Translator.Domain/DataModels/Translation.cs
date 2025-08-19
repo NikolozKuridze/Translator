@@ -8,7 +8,7 @@ public class Translation : BaseDataModel
     public DateTimeOffset Created { get; private set; }
     public Language Language { get; set; }
     public Value Value { get; set; }
-
+    
     private Translation() { }
     
     public Translation(

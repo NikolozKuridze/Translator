@@ -1,6 +1,7 @@
 ﻿using Google.Cloud.Translation.V2;
 using Translator.Domain.Contracts;
 using Translator.Infrastructure.Database.Redis;
+using Translator.Infrastructure.Database.Redis.Rudiment;
 
 namespace Translator.Infrastructure.GoogleService
 {

@@ -1,4 +1,4 @@
-﻿namespace Translator.Infrastructure.Database.Redis;
+﻿namespace Translator.Infrastructure.Database.Redis.Rudiment;
 
 public interface IRedisService
 {

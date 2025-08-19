@@ -37,22 +37,20 @@ public class GetCategoryTreeHandler(ApplicationDbContext context)
     {
         foreach (var cat in flat)
         {
-            cat.Children = new List<CategoryEntity>();
             cat.Parent = null;
         }
 
         var lookup = flat.ToDictionary(c => c.Id);
         List<CategoryEntity> roots = new();
 
-        foreach (var cat in flat)
+        foreach (var category in flat)
         {
-            if (cat.ParentId is Guid pid && lookup.TryGetValue(pid, out var parent))
+            if (category.ParentId is { } pid && lookup.TryGetValue(pid, out var parent))
             {
-                parent.Children?.Add(cat);
-                cat.Parent = parent;
+                category.Parent = parent;
             }
             else
-                roots.Add(cat);
+                roots.Add(category);
         }
 
         return roots;
@@ -68,7 +66,7 @@ public class GetCategoryTreeHandler(ApplicationDbContext context)
         
         if (category.Children is not null)
             dto.Children = category.Children.Select(MapToReadDto).ToList();
-
+        
         return dto;
     }
 }
