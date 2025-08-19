@@ -1,5 +1,5 @@
-// using MediatR;
-//
-// namespace Translator.Application.Features.Category.Queries.GetRootCategories;
-//
-// public record GetRootCategoriesQuery : IRequest<IEnumerable<RootCategoryDto>>;
+using MediatR;
+
+namespace Translator.Application.Features.Category.Queries.GetRootCategories;
+
+public sealed record GetRootCategoriesQuery : IRequest<IEnumerable<RootCategoryDto>>;
