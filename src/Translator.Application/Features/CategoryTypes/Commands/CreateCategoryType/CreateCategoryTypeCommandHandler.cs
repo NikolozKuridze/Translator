@@ -12,12 +12,12 @@ public class CreateCategoryTypeCommandHandler(
     public async Task<Guid> Handle(CreateCategoryTypeCommand request, CancellationToken cancellationToken)
     {
         var typeExists = await typeRepository.AsQueryable()
-            .FirstOrDefaultAsync(t => t.Type == request.Type, cancellationToken: cancellationToken);
+            .FirstOrDefaultAsync(t => t.Name == request.TypeName, cancellationToken: cancellationToken);
         
         if(typeExists is not null)
-            throw new TypeAlreadyExistsException(request.Type);
+            throw new TypeAlreadyExistsException(request.TypeName);
         
-        var type = new CategoryType(request.Type);
+        var type = new CategoryType(request.TypeName);
         await typeRepository.AddAsync(type, cancellationToken);
         await typeRepository.SaveChangesAsync(cancellationToken);
         

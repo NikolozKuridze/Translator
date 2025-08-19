@@ -1,3 +1,3 @@
 namespace Translator.API.Contracts;
 
-public record CreateCategoryTypeContract(string Type);
+public record CreateCategoryTypeContract(string TypeName);
