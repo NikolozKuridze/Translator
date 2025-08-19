@@ -1,11 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Translator.API.Attributes;
 using Translator.API.Contracts;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
-using Translator.Domain.Contracts;
-using Translator.Infrastructure.GoogleService;
 
 namespace Translator.API.ApiControllers;
 
@@ -34,15 +31,5 @@ public class TranslationController : ControllerBase
         var command = new DeleteTranslationCommand(contract.Value, contract.LanguageCode);
         await _mediator.Send(command);
         return Results.NoContent();
-    }
-
-    [HttpPost("translate")]
-    [ProducesResponseType(typeof(TranslateResponse), 200)]
-    public async Task<IActionResult> Translate(
-        [FromBody] TranslateRequest request,
-        [FromServices] ITranslationService translationService)
-    {
-        var response = await translationService.TranslateTextAsync(request);
-        return Ok(response);
     }
 }
