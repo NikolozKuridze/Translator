@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
-using Translator.Application.Features.Migrations.Commands;
+using Translator.Application.Features.Migrations.Commands.ApplyMigrations;
 
 namespace Translator.API.Controllers;
 

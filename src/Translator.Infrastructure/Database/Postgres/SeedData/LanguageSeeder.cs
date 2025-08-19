@@ -1,15 +1,24 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Translator.Domain.DataModels;
+using Translator.Infrastructure.Configurations;
 
 namespace Translator.Infrastructure.Database.Postgres.SeedData;
 
-public static class LanguageSeeder
+public class LanguageSeeder
 {
-    public static void Seed(ModelBuilder modelBuilder)
+    private readonly LanguageSeedingConfiguration _languageSeedingConfiguration;
+
+    public LanguageSeeder(LanguageSeedingConfiguration languageSeedingConfiguration)
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "Database", "Postgres", "SeedData", "languages.json");
+        _languageSeedingConfiguration = languageSeedingConfiguration;
+    }
+    public Task Seed(ApplicationDbContext dbContext)
+    {
+        //Database/Postgres/SeedData/languages.json
+        var path = Path.Combine(AppContext.BaseDirectory, _languageSeedingConfiguration.Path);
         var json = File.ReadAllText(path);
 
         var items = JsonSerializer.Deserialize<List<LanguageSeedDto>>(json)!;
@@ -19,7 +28,8 @@ public static class LanguageSeeder
             Id = StaticGuidGenerator.CreateGuidFromString(l.Name),
             IsActive = false
         });
-        modelBuilder.Entity<Language>().HasData(languages);
+        dbContext.Languages.AddRangeAsync(languages);
+        return dbContext.SaveChangesAsync();
     }
 
     private class LanguageSeedDto

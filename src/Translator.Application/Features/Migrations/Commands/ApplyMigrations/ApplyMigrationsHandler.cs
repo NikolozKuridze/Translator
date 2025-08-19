@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Infrastructure.Database.Postgres;
 
-namespace Translator.Application.Features.Migrations.Commands;
+namespace Translator.Application.Features.Migrations.Commands.ApplyMigrations;
 
 public class ApplyMigrationsHandler : IRequestHandler<ApplyMigrationsCommand>
 {

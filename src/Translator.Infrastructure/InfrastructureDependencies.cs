@@ -64,4 +64,10 @@ public static class InfrastructureDependencies
         
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
     }
+
+    private static void AddConfigurations(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.Configure<LanguageSeedingConfiguration>
+            (configuration.GetSection(nameof(LanguageSeedingConfiguration)));
+    }
 }
