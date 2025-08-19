@@ -22,6 +22,7 @@ public static class InfrastructureDependencies
         AddScopedServices(services, configuration);
         AddRedisConfiguration(services, configuration);
         AddSingletonDependencies(services);
+        AddConfigurations(services, configuration);
     }
 
     private static void AddRedisConfiguration(this IServiceCollection services, IConfiguration configuration)

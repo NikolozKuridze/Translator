@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
 using Translator.Application.Features.Migrations.Commands.ApplyMigrations;
+using Translator.Application.Features.Migrations.Commands.SeedLanguages;
+using Translator.Application.Features.Migrations.Commands.SeedFakeData;
 
 namespace Translator.API.Controllers;
 
@@ -29,12 +31,42 @@ public class MigrationsController : Controller
             var command = new ApplyMigrationsCommand();
             await _mediator.Send(command);
             
-            TempData["SuccessMessage"] = "Migrations applied successfully!";
             return Results.Ok(new { success = true, message = "Migrations applied successfully!" });
         }
         catch (Exception ex)
         {
-            TempData["ErrorMessage"] = $"Failed to apply migrations: {ex.Message}";
+            return Results.BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IResult> SeedLanguages()
+    {
+        try
+        {
+            var command = new SeedLanguagesCommand();
+            await _mediator.Send(command);
+            
+            return Results.Ok(new { success = true, message = "Languages seeded successfully!" });
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IResult> SeedFakeData()
+    {
+        try
+        {
+            var command = new SeedLanguagesCommand();
+            await _mediator.Send(command);
+            
+            return Results.Ok(new { success = true, message = "Fake data seeded successfully!" });
+        }
+        catch (Exception ex)
+        {
             return Results.BadRequest(new { success = false, message = ex.Message });
         }
     }
