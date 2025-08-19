@@ -1,0 +1,66 @@
+using Scalar.AspNetCore;
+using Serilog;
+using Translator.API.Contracts;
+using Translator.API.Middlewares;
+using Translator.Application.Helpers;
+
+namespace Translator.API;
+
+public static class ApiDependencies
+{
+    const int sessionTimeout = 1;
+    
+    public static void AddApiDependencies(this WebApplicationBuilder builder)
+    {
+        
+        builder.Services.AddOpenApi();
+        builder.Services.AddControllers();
+        builder.Services.AddScoped<CategoryChecker>();
+
+        builder.Services.Configure<AdminAuthSettings>(
+            builder.Configuration.GetSection(nameof(AdminAuthSettings)));
+
+        builder.Services.AddDistributedMemoryCache();
+
+        builder.Services.AddSession(options =>
+        {
+            options.IdleTimeout = TimeSpan.FromHours(sessionTimeout);
+            options.Cookie.HttpOnly = true;
+            options.Cookie.IsEssential = true;
+            options.Cookie.Name = "AdminSession";
+        });
+
+        builder.Services.AddSerilog(
+            Log.Logger = new LoggerConfiguration()
+                .ReadFrom.Configuration(builder.Configuration)
+                .CreateLogger());
+
+        builder.Services.AddControllersWithViews(o =>
+        {
+            o.Filters.Add(new MvcExceptionFilter());
+        }); 
+        
+    }
+
+    public static void UseApiDependencies(this WebApplication app)
+    {
+        app.MapOpenApi();
+
+        app.MapScalarApiReference("/docs", options =>
+        {
+            options.Title = "Translator API";
+            options.Theme = ScalarTheme.Mars;
+            options.WithOpenApiRoutePattern("/openapi/v1.json");
+        });
+        app.MapControllers();
+        app.UseHttpsRedirection();
+
+        app.UseSession();
+
+        app.UseMiddleware<ErrorHandlingMiddleware>();
+        
+        app.MapControllerRoute(
+            name: "default",
+            pattern: "{controller=Home}/{action=Index}");
+    }
+}
