@@ -2,7 +2,7 @@ using MediatR;
 
 namespace Translator.Application.Features.Category.Commands.AddCategory;
 
-public record CreateCategoryCommand(
+public sealed record CreateCategoryCommand(
     string Value,
     string TypeName,
     int? Order = null,
