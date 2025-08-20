@@ -73,7 +73,7 @@ namespace Translator.Infrastructure.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    value = table.Column<string>(type: "character varying(200)", maxLength: 200, nullable: false),
+                    value = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     type_id = table.Column<Guid>(type: "uuid", nullable: false),
                     order = table.Column<int>(type: "integer", nullable: true),
                     parent_id = table.Column<Guid>(type: "uuid", nullable: true)
