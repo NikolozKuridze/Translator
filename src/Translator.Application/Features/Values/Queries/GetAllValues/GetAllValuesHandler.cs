@@ -1,44 +1,57 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using ValueEntity = Translator.Domain.DataModels.Value;
 
 namespace Translator.Application.Features.Values.Queries.GetAllValues;
 
-public class GetAllValuesHandler :  IRequestHandler<GetAllValuesCommand, IEnumerable<GetAllValuesResponse>>
+public class GetAllValuesHandler : IRequestHandler<GetAllValuesCommand, PaginatedResponse<GetAllValuesResponse>>
 {
     private readonly IRepository<ValueEntity> _valueRepository;
 
-    public GetAllValuesHandler(
-        IRepository<ValueEntity> valueRepository)
+    public GetAllValuesHandler(IRepository<ValueEntity> valueRepository)
     {
         _valueRepository = valueRepository;
     }
     
-    public async Task<IEnumerable<GetAllValuesResponse>> Handle(GetAllValuesCommand request, CancellationToken cancellationToken)
+    public async Task<PaginatedResponse<GetAllValuesResponse>> Handle(GetAllValuesCommand request, CancellationToken cancellationToken)
     {
         var query = _valueRepository
             .AsQueryable()
             .AsNoTracking();
-
+        
         var totalCount = await query.CountAsync(cancellationToken);
         
-        if (request.SortBy.ToLower() == "date")
-            query = request.SortDirection.ToLower() == "desc"
+        if (request.Pagination.SortBy.ToLower() == "date")
+            query = request.Pagination.SortDirection.ToLower() == "desc"
                 ? query.OrderByDescending(v => v.CreatedAt)
                 : query.OrderBy(v => v.CreatedAt);
-        
-        return await query
-            .Skip((request.PageNumber - 1) * request.PageSize)
-            .Take(request.PageSize)
+        else if (request.Pagination.SortBy.ToLower() == "key")
+            query = request.Pagination.SortDirection.ToLower() == "desc"
+                ? query.OrderByDescending(v => v.Key)
+                : query.OrderBy(v => v.Key);
+
+        var items = await query
+            .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
+            .Take(request.Pagination.PageSize)
             .Select(t => new GetAllValuesResponse(
                 t.Key, 
                 t.Id,
                 t.Translations.Count, 
-                t.CreatedAt,
-                totalCount))
+                t.CreatedAt))
             .ToArrayAsync(cancellationToken);
+
+        return new PaginatedResponse<GetAllValuesResponse>
+        {
+            Page = request.Pagination.Page,
+            PageSize = request.Pagination.PageSize,
+            TotalItems = totalCount,
+            HasNextPage = (request.Pagination.Page * request.Pagination.PageSize) < totalCount,
+            HasPreviousPage = request.Pagination.Page > 1,
+            Items = items
+        };
     }
 }
 
-public record GetAllValuesResponse(string Key, Guid ValueId, int TranslationsCount, DateTimeOffset CreatedAt, int TotalCount);
+public record GetAllValuesResponse(string Key, Guid ValueId, int TranslationsCount, DateTimeOffset CreatedAt);
