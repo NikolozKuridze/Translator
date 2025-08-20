@@ -5,6 +5,7 @@ using Translator.Application.Features.Values.Commands.CreateValue;
 using Translator.Application.Features.Values.Commands.DeleteValue;
 using Translator.Application.Features.Values.Queries.GetAllValues;
 using Translator.Application.Features.Values.Queries.GetValue;
+using Translator.Application.Features.Values.Queries.SearchValue;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
@@ -39,6 +40,17 @@ public class ValueController : ControllerBase
                 pageSize,
                 sortBy: sortBy,
                 sortDirection: sortDirection));
+        var result = await _mediator.Send(command);
+        return Results.Ok(result);
+    }
+
+    [HttpGet("search-value")]
+    public async Task<IResult> SearchValue(
+        [FromQuery] string valueKey,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var command = new SearchValueCommand(valueKey, new PaginationRequest(page, pageSize));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
