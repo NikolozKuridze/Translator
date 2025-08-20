@@ -1,8 +1,8 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Options;
 using StackExchange.Redis;
-using Translator.Infrastructure.Database.Redis.Rudiment;
 
+namespace Translator.Infrastructure.Database.Redis.Rudiment;
 
 public class RedisService : IRedisService
 {
@@ -16,16 +16,26 @@ public class RedisService : IRedisService
     {
         _cacheDb = redis.GetDatabase();
         _configuration = configuration.Value;
-        _defaultExpiration = TimeSpan.FromSeconds(_configuration.DefaultCacheExpirationMinutes);
+        _defaultExpiration = TimeSpan.FromMinutes(_configuration.DefaultCacheExpirationMinutes); // 🔧 ИСПРАВЛЕНО: Minutes, не Seconds
+    }
+
+    public async Task<T?> GetAsync<T>(string key)
+    {
+        var value = await _cacheDb.StringGetAsync(key);
+        
+        if (!value.HasValue)
+            return default;
+        
+        return JsonSerializer.Deserialize<T>(value);
     }
 
     public async Task<string> GetAsync(string key)
     {
         var value = await _cacheDb.StringGetAsync(key);
         
-        return !value.IsNullOrEmpty 
-            ? string.Empty
-            : value.ToString();
+        return value.HasValue 
+            ? value.ToString()
+            : string.Empty; 
     }
 
     public async Task SetAsync<T>(string key, T value)
@@ -39,7 +49,6 @@ public class RedisService : IRedisService
         await _cacheDb.KeyDeleteAsync(key);
     }
 
-    // Новые методы для списков
     public async Task ListPushAsync(string key, string value)
     {
         await _cacheDb.ListRightPushAsync(key, value);
