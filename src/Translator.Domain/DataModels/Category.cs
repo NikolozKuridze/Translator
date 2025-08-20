@@ -8,7 +8,7 @@ public class Category(
 {
     public string Value { get; set; } = value;
     public Guid TypeId { get; init; } = typeId;
-    public CategoryType Type { get; init; }
+    public CategoryType? Type { get; init; }
     public int? Order { get; set; } = order;
     public Guid? ParentId { get; init; } = parentId;
     public Category? Parent { get; init; }

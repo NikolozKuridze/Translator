@@ -18,8 +18,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(c => c.TypeId)
             .IsRequired();
 
-        builder.Property(c => c.Order)
-            .IsRequired(false);
+        builder.Property(c => c.Order);
 
         builder.HasOne(c => c.Type)
             .WithMany(ct => ct.Categories)
