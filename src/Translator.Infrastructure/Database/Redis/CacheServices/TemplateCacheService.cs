@@ -1,18 +1,16 @@
-using System.Text.Json;
-using StackExchange.Redis;
+using Translator.Infrastructure.Database.Redis.Rudiment;
 
 namespace Translator.Infrastructure.Database.Redis.CacheServices;
 
 public class TemplateCacheService
 {
-    private readonly IDatabase _db;
+    private readonly IRedisService _redisService;
     private const string KeyPrefix = "global-dict:template:";
-    private const string TemplateKeysList = "template:keys";
-    private const int Ttl = 21;
+    private const string TemplateKeysList = "templates:keys:list";
 
-    public TemplateCacheService(IConnectionMultiplexer redis)
+    public TemplateCacheService(IRedisService redisService)
     {
-        _db = redis.GetDatabase();
+        _redisService = redisService;
     }
 
     private static string GetRedisKey(Guid templateId) =>
@@ -21,67 +19,76 @@ public class TemplateCacheService
     public async Task<TemplateCacheDto?> GetTranslationsAsync(Guid templateId)
     {
         var key = GetRedisKey(templateId);
-        var json = await _db.StringGetAsync(key);
-
-        if (json.IsNullOrEmpty)
-            return null;
-
-        return JsonSerializer.Deserialize<TemplateCacheDto>(json);
+        return await _redisService.GetAsync<TemplateCacheDto>(key);
     }
 
     public async Task SetTemplateAsync(Guid templateId, string templateName, List<TranslationDto> translations)
     {
         var key = GetRedisKey(templateId);
         var dto = new TemplateCacheDto(templateId, templateName, translations);
-        var json = JsonSerializer.Serialize(dto);
         
-        await _db.StringSetAsync(key, json, TimeSpan.FromDays(Ttl));
-        await _db.ListRightPushAsync(TemplateKeysList, key); 
+        await _redisService.SetAsync(key, dto);
+        
+        var keysList = await _redisService.GetAsync<List<string>>(TemplateKeysList) ?? new List<string>();
+        if (!keysList.Contains(key))
+        {
+            keysList.Add(key);
+            await _redisService.SetAsync(TemplateKeysList, keysList);
+        }
     }
-    
-    
+
     public async Task DeleteTemplateAsync(Guid templateId)
     {
         var key = GetRedisKey(templateId);
-        await _db.KeyDeleteAsync(key);
+        
+        await _redisService.RemoveAsync(key);
+        
+        var keysList = await _redisService.GetAsync<List<string>>(TemplateKeysList) ?? new List<string>();
+        if (keysList.Contains(key))
+        {
+            keysList.Remove(key);
+            await _redisService.SetAsync(TemplateKeysList, keysList);
+        }
     }
-    
+
     public async Task<List<CachedTemplateInfo>> GetCachedTemplatesAsync(int skip = 0, int take = 50)
     {
-        var templateKeys = await _db.ListRangeAsync(TemplateKeysList, skip, skip + take - 1);
-        var templateCount = await _db.ListLengthAsync(TemplateKeysList);
+        var keysList = await _redisService.GetAsync<List<string>>(TemplateKeysList) ?? new List<string>();
         
-        var result = new List<CachedTemplateInfo>();
-
-        foreach (var key in templateKeys)
-        {
-            if (key.IsNullOrEmpty) continue;
-            
-            var json = await _db.StringGetAsync(key.ToString());
-            if (!json.IsNullOrEmpty)
+        var pagedKeys = keysList
+            .Skip(skip)
+            .Take(take)
+            .ToList();
+        
+        var tasks = pagedKeys
+            .Where(key => !string.IsNullOrEmpty(key))
+            .Select(async key =>
             {
-                var template = JsonSerializer.Deserialize<TemplateCacheDto>(json);
+                var template = await _redisService.GetAsync<TemplateCacheDto>(key);
                 
                 if (template != null)
                 {
-                    result.Add(new CachedTemplateInfo(
+                    return new CachedTemplateInfo(
                         template.TemplateId, 
                         template.TemplateName,
-                        template.Translations.Count,
-                        await GetCachedTemplatesCountAsync()));
+                        template.Translations.Count
+                    );
                 }
-            }
-        }
+                return null;
+            }).ToArray();
 
-        return result;
+        var templateInfos = await Task.WhenAll(tasks);
+        
+        return templateInfos.Where(t => t != null).ToList()!;
     }
 
-    private async Task<long> GetCachedTemplatesCountAsync()
+    public async Task<long> GetCachedTemplatesCountAsync()
     {
-        return await _db.ListLengthAsync(TemplateKeysList);
+        var keysList = await _redisService.GetAsync<List<string>>(TemplateKeysList) ?? new List<string>();
+        return keysList.Count;
     }
 }
 
-public record CachedTemplateInfo(Guid TemplateId, string TemplateName, int ValuesCount, long TemplatesCount);
+public record CachedTemplateInfo(Guid TemplateId, string TemplateName, int ValuesCount);
 public record TemplateCacheDto(Guid TemplateId, string TemplateName, List<TranslationDto> Translations);
 public record TranslationDto(string Key, string Value, Guid ValueId, string LanguageCode);

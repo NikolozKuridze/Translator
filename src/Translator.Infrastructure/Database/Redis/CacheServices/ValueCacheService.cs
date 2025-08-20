@@ -1,18 +1,16 @@
-using System.Text.Json;
-using StackExchange.Redis;
+using Translator.Infrastructure.Database.Redis.Rudiment;
 
 namespace Translator.Infrastructure.Database.Redis.CacheServices;
 
 public class ValueCacheService
 {
-    private readonly IDatabase _db;
+    private readonly IRedisService _redisService;
     private const string KeyPrefix = "global-dict:value:";
-    private const string ValueKeysList = "value:keys";
-    private const int Ttl = 21;
+    private const string ValueKeysList = "values:keys:list";
     
-    public ValueCacheService(IConnectionMultiplexer redis)
+    public ValueCacheService(IRedisService redisService)
     {
-        _db = redis.GetDatabase();
+        _redisService = redisService;
     }
 
     private static string GetRedisKey(Guid valueId) =>
@@ -21,12 +19,7 @@ public class ValueCacheService
     public async Task<ValueCacheDto?> GetTranslationsAsync(Guid valueId)
     {
         var key = GetRedisKey(valueId);
-        var json = await _db.StringGetAsync(key);
-
-        if (json.IsNullOrEmpty)
-            return null;
-
-        return JsonSerializer.Deserialize<ValueCacheDto>(json);
+        return await _redisService.GetAsync<ValueCacheDto>(key);
     }
 
     public async Task SetTranslationsAsync(Guid valueId, string valueKey, List<TranslationDto> translations)
@@ -34,59 +27,80 @@ public class ValueCacheService
         var key = GetRedisKey(valueId);
         var valueCacheDto = new ValueCacheDto(valueId, valueKey, translations);
         
-        var json = JsonSerializer.Serialize(valueCacheDto);
-        await _db.StringSetAsync(key, json, TimeSpan.FromDays(Ttl));
         
-        await _db.ListRightPushAsync(ValueKeysList, key);
+        await _redisService.SetAsync(key, valueCacheDto);
+        
+        var keysList = await _redisService.GetAsync<List<string>>(ValueKeysList) ?? new List<string>();
+        if (!keysList.Contains(key))
+        {
+            keysList.Add(key);
+            await _redisService.SetAsync(ValueKeysList, keysList);
+        }
     }
 
     public async Task<List<TranslationDto>> GetValueByLanguageAsync(Guid valueId, string languageCode)
     {
         var values = await GetTranslationsAsync(valueId);
-        return values
-            .Translations
+        return values?.Translations
             .Where(t => t.LanguageCode.Equals(languageCode, StringComparison.OrdinalIgnoreCase))
-            .ToList();
+            .ToList() ?? new List<TranslationDto>();
     }
 
     public async Task DeleteValueTranslationsAsync(Guid valueId)
     {
         var key = GetRedisKey(valueId);
-        await _db.KeyDeleteAsync(key);
+        
+        await _redisService.RemoveAsync(key);
+        
+        var keysList = await _redisService.GetAsync<List<string>>(ValueKeysList) ?? new List<string>();
+        if (keysList.Contains(key))
+        {
+            keysList.Remove(key);
+            await _redisService.SetAsync(ValueKeysList, keysList);
+        }
     }
+
     public async Task<List<CachedValueInfo>> GetCachedValuesAsync(int skip = 0, int take = 50)
     {
-        var valueKeys = await _db.ListRangeAsync(ValueKeysList, skip, skip + take - 1);
-        var result = new List<CachedValueInfo>();
-
-        foreach (var key in valueKeys)
-        {
-            if (key.IsNullOrEmpty) continue;
-            
-            var json = await _db.StringGetAsync(key.ToString());
-            if (!json.IsNullOrEmpty)
+        var keysList = await _redisService.GetAsync<List<string>>(ValueKeysList) ?? new List<string>();
+        
+        var pagedKeys = keysList.Skip(skip).Take(take).ToList();
+        
+        var tasks = pagedKeys
+            .Where(key => !string.IsNullOrEmpty(key))
+            .Select(async key =>
             {
-                var value = JsonSerializer.Deserialize<ValueCacheDto>(json);
-                if (value != null)
+                try
                 {
-                    result.Add(new CachedValueInfo(
-                        value.Id, 
-                        value.Key,
-                        value.Translations.Count,
-                        await GetCachedValuesCountAsync()));
+                    var value = await _redisService.GetAsync<ValueCacheDto>(key);
+                    
+                    if (value != null)
+                    {
+                        return new CachedValueInfo(
+                            value.Id, 
+                            value.Key,
+                            value.Translations.Count
+                        );
+                    }
                 }
-            }
-        }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error getting value for key {key}: {ex.Message}");
+                }
+                return null;
+            }).ToArray();
 
-        return result;
+        var valueInfos = await Task.WhenAll(tasks);
+        
+        return valueInfos.Where(v => v != null).ToList()!;
     }
 
     public async Task<long> GetCachedValuesCountAsync()
     {
-        return await _db.ListLengthAsync(ValueKeysList);
+        var keysList = await _redisService.GetAsync<List<string>>(ValueKeysList) ?? new List<string>();
+        return keysList.Count;
     }
 }
 
-public record CachedValueInfo(Guid ValueId, string ValueKey, int TranslationsCount, long ValuesCount);
-
+public record CachedValueInfo(Guid ValueId, string ValueKey, int TranslationsCount);
 public record ValueCacheDto(Guid Id, string Key, List<TranslationDto> Translations);
