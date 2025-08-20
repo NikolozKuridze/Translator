@@ -16,7 +16,6 @@ public static class ApiDependencies
         
         builder.Services.AddOpenApi();
         builder.Services.AddControllers();
-        builder.Services.AddScoped<CategoryChecker>();
 
         builder.Services.Configure<AdminAuthSettings>(
             builder.Configuration.GetSection(nameof(AdminAuthSettings)));
