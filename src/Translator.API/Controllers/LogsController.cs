@@ -32,10 +32,12 @@ public class LogsController : Controller
         
             var command = new GetLogsCommand(
                 new PaginationRequest(
-                    pageNumber,
-                    pageSize,
+                    page: pageNumber,
+                    pageSize: pageSize,
                     dateFrom: dateFrom,
-                    dateTo: dateFrom ));
+                    dateTo: dateFrom,
+                    null,
+                    null));
             var logs = await _mediator.Send(command);
 
 
@@ -61,11 +63,11 @@ public class LogsController : Controller
     }
 
     [HttpGet("Details")]
-    public async Task<IActionResult> Details(int logId, DateTime timestamp)
+    public async Task<IActionResult> Details(DateTime timestamp)
     {
         try
         {
-            var command = new GetLogsCommand(new PaginationRequest(0, 100));
+            var command = new GetLogsCommand(new PaginationRequest(0, 100000000, null, null, null, null));
             var allLogs = await _mediator.Send(command);
             
             var targetLog = allLogs.Items.FirstOrDefault(l => 

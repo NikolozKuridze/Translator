@@ -2,11 +2,11 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Application.Helpers;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 using Translator.Infrastructure.Database.Postgres.Repository;
-using TemplateEntity = Translator.Domain.DataModels.Template;
-using TranslationEntity = Translator.Domain.DataModels.Translation;
-using LanguageEntity = Translator.Domain.DataModels.Language;
+using TemplateEntity = Translator.Domain.Entities.Template;
+using TranslationEntity = Translator.Domain.Entities.Translation;
+using LanguageEntity = Translator.Domain.Entities.Language;
 
 
 namespace Translator.Application.Features.Values.Commands.CreateValue;

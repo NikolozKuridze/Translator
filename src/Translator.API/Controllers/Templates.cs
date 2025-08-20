@@ -33,8 +33,11 @@ public class Templates : Controller
             new PaginationRequest(
                 pageNumber, 
                 pageSize,
-                sortBy:sortBy,
-                sortDirection:sortDirection));
+                null, 
+                null,
+                null,
+                sortBy,
+                sortDirection));
         
         var templates = await _mediator.Send(command);
 
@@ -70,7 +73,7 @@ public class Templates : Controller
             templateId, 
             lang,
             false,
-            new PaginationRequest(pageNumber, pageSize));
+            new PaginationRequest(pageNumber, pageSize, null, null, null, null));
         var allTemplateData = await _mediator.Send(query);
         
         var totalCount = allTemplateData.TotalItems;

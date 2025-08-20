@@ -16,17 +16,17 @@ public class RedisService : IRedisService
     {
         _cacheDb = redis.GetDatabase();
         _configuration = configuration.Value;
-        _defaultExpiration = TimeSpan.FromMinutes(_configuration.DefaultCacheExpirationMinutes); // 🔧 ИСПРАВЛЕНО: Minutes, не Seconds
+        _defaultExpiration = TimeSpan.FromDays(_configuration.DefaultCacheExpirationDays); 
     }
 
     public async Task<T?> GetAsync<T>(string key)
     {
         var value = await _cacheDb.StringGetAsync(key);
-        
+
         if (!value.HasValue)
             return default;
         
-        return JsonSerializer.Deserialize<T>(value);
+        return JsonSerializer.Deserialize<T>(value!);
     }
 
     public async Task<string> GetAsync(string key)

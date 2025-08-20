@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 using Translator.Infrastructure.Database.Postgres.Repository;
 
 namespace Translator.Application.Features.CategoryTypes.Commands.DeleteCategoryType;

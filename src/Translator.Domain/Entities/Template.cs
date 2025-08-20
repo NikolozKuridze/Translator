@@ -1,9 +1,9 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace Translator.Domain.DataModels;
+namespace Translator.Domain.Entities;
 
-public class Template : BaseDataModel
+public class Template : BaseEntity
 {
     private const int HashMaxLength = 24;
     public string Name { get; private set; }

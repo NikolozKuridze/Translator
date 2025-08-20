@@ -20,7 +20,7 @@ public class LogController : ControllerBase
         [FromQuery] int skip = 1, 
         [FromQuery] int page = 10)
     {
-        var request = new GetLogsCommand(new PaginationRequest(skip, page));
-        return await _mediator.Send(new GetLogsCommand(new PaginationRequest(skip, page)));
+        var request = new GetLogsCommand(new PaginationRequest(skip, page,  null, null, null, null));
+        return await _mediator.Send(new GetLogsCommand(new PaginationRequest(skip, page, null, null, null, null)));
     }
 }

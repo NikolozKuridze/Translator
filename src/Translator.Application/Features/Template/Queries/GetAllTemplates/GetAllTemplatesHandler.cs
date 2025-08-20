@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Postgres.Repository;
 
-using TemplateEntity = Translator.Domain.DataModels.Template;
+using TemplateEntity = Translator.Domain.Entities.Template;
 
 namespace Translator.Application.Features.Template.Queries.GetAllTemplates;
 
@@ -20,14 +20,19 @@ public class GetAllTemplatesHandler : IRequestHandler<GetAllTemplatesCommand, Pa
             .AsQueryable()
             .AsNoTracking();
 
-        query = request.Pagination.SortBy?.ToLower() switch
+        var sortBy = request.Pagination.SortBy?.ToLower();
+        var sortDirection = request.Pagination.SortDirection;
+
+        query = sortBy switch
         {
-            "name" => request.Pagination.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase) 
-                ? query.OrderByDescending(t => t.Name) 
+            "name" => string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase)
+                ? query.OrderByDescending(t => t.Name)
                 : query.OrderBy(t => t.Name),
-            "value" or "valuecount" => request.Pagination.SortDirection.Equals("desc", StringComparison.OrdinalIgnoreCase) 
-                ? query.OrderByDescending(t => t.Values.Count) 
+
+            "value" or "valuecount" => string.Equals(sortDirection, "desc", StringComparison.OrdinalIgnoreCase)
+                ? query.OrderByDescending(t => t.Values.Count)
                 : query.OrderBy(t => t.Values.Count),
+
             _ => query.OrderBy(t => t.Name)
         };
         

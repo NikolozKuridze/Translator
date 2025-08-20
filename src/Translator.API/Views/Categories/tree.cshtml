@@ -623,7 +623,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
         <div class="tree-content">
             <!-- Root Category -->
-            @Html.Partial("_CategoryNode", Model)
+            @await Html.PartialAsync("_CategoryNode", Model)
         </div>
     </div>
 </div>

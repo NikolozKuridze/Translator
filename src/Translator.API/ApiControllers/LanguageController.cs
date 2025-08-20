@@ -20,7 +20,7 @@ public class LanguageController : ControllerBase
     public async Task<IResult> Handle(
         [FromBody] AddLanguageContract request)
     {
-        var command = new AddLanguageCommand(request.Code.ToLower().Trim());
+        var command = new AddLanguage.AddLanguageCommand(request.Code.ToLower().Trim());
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }

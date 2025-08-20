@@ -30,7 +30,7 @@ public class ValuesController : Controller
         int pageSize = 10)
     {   try
         {
-            var paginationRequest = new PaginationRequest(pageNumber, pageSize, sortBy: sortBy, sortDirection: sortDirection);
+            var paginationRequest = new PaginationRequest(pageNumber, pageSize, null, null, null, sortBy, sortDirection);
 
             var command = new GetAllValuesCommand(paginationRequest);
             var result = await _mediator.Send(command);
@@ -83,7 +83,7 @@ public class ValuesController : Controller
     {
         try
         {
-            var paginationRequest = new PaginationRequest(pageNumber, pageSize);
+            var paginationRequest = new PaginationRequest(pageNumber, pageSize, null, null, null, null);
             var command = new SearchValueCommand(valueKey, paginationRequest);
             var result = await _mediator.Send(command);
 

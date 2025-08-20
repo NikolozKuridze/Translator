@@ -2,7 +2,7 @@ using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Infrastructure.Database.Postgres.Repository;
-using CategoryEntity = Translator.Domain.DataModels.Category;
+using CategoryEntity = Translator.Domain.Entities.Category;
 
 namespace Translator.Application.Features.Category.Queries.GetRootCategories;
 

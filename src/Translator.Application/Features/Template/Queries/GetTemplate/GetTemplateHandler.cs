@@ -4,7 +4,7 @@ using Translator.Application.Exceptions;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using Translator.Infrastructure.Database.Redis.CacheServices;
-using TemplateEntity = Translator.Domain.DataModels.Template;
+using TemplateEntity = Translator.Domain.Entities.Template;
 
 namespace Translator.Application.Features.Template.Queries.GetTemplate;
 
@@ -32,7 +32,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
         return await HandleDatabaseQuery(request, cancellationToken);
     }
 
-    private async Task<PaginatedResponse<ValueDto>> HandleCachedResult(
+    private Task<PaginatedResponse<ValueDto>> HandleCachedResult(
         TemplateCacheDto cachedResult, 
         GetTemplateCommand request)
     {
@@ -50,22 +50,24 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
                 .Select(t => new ValueDto(t.Key, t.ValueId, t.Value, t.LanguageCode));
         }
 
-        if (!string.IsNullOrEmpty(request.Pagination.Search))
+        if (!string.IsNullOrEmpty(request.Pagination?.Search))
         {
             translations = translations.Where(t =>
                 t.Key.Contains(request.Pagination.Search, StringComparison.OrdinalIgnoreCase) ||
                 t.Value.Contains(request.Pagination.Search, StringComparison.OrdinalIgnoreCase));
         }
 
-        translations = ApplySorting(translations, request.Pagination);
-
+        
+        translations = ApplySorting(translations, request.Pagination!)
+            .ToList();
+        
         var totalItems = translations.Count();
         var pagedItems = translations
-            .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
+            .Skip((request.Pagination!.Page - 1) * request.Pagination.PageSize)
             .Take(request.Pagination.PageSize)
             .ToList();
 
-        return new PaginatedResponse<ValueDto>
+        return Task.FromResult(new PaginatedResponse<ValueDto>
         {
             Page = request.Pagination.Page,
             PageSize = request.Pagination.PageSize,
@@ -73,7 +75,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
             HasNextPage = request.Pagination.Page * request.Pagination.PageSize < totalItems,
             HasPreviousPage = request.Pagination.Page > 1,
             Items = pagedItems
-        };
+        });
     }
 
     private async Task<PaginatedResponse<ValueDto>> HandleDatabaseQuery(
@@ -112,7 +114,7 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
                         tr.Language.Code);
         }
 
-        if (!string.IsNullOrEmpty(request.Pagination.Search))
+        if (!string.IsNullOrEmpty(request.Pagination?.Search))
         {
             query = query.Where(v => 
                 v.Key.Contains(request.Pagination.Search) ||
@@ -121,14 +123,14 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
 
         var allItems = await query.ToListAsync(cancellationToken);
 
-        if (!allItems.Any())
+        if (allItems.Count == 0)
             throw new TemplateNotFoundException(request.TemplateId.ToString());
 
-        var sortedItems = ApplySorting(allItems, request.Pagination);
+        var sortedItems = ApplySorting(allItems, request.Pagination!).ToArray();
 
-        var totalItems = sortedItems.Count();
+        var totalItems = sortedItems.Length;
         var pagedItems = sortedItems
-            .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
+            .Skip((request.Pagination!.Page - 1) * request.Pagination.PageSize)
             .Take(request.Pagination.PageSize)
             .ToList();
 

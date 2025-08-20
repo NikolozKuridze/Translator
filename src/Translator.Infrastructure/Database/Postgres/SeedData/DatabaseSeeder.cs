@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 
 namespace Translator.Infrastructure.Database.Postgres.SeedData;
 

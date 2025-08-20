@@ -3,10 +3,10 @@ using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using Translator.Infrastructure.Database.Redis.CacheServices;
-using TemplateEntity = Translator.Domain.DataModels.Template;
-using LanguageEntity = Translator.Domain.DataModels.Language;
-using TranslationEntity = Translator.Domain.DataModels.Translation;
-using ValueEntity = Translator.Domain.DataModels.Value;
+using TemplateEntity = Translator.Domain.Entities.Template;
+using LanguageEntity = Translator.Domain.Entities.Language;
+using TranslationEntity = Translator.Domain.Entities.Translation;
+using ValueEntity = Translator.Domain.Entities.Value;
 
 namespace Translator.Application.Features.Values.Queries.GetValue;
 

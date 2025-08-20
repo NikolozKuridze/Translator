@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres.Repository;
-using TemplateEntity = Translator.Domain.DataModels.Template;
+using TemplateEntity = Translator.Domain.Entities.Template;
 
 namespace Translator.Application.Features.Template.Commands.DeleteTemplate;
 

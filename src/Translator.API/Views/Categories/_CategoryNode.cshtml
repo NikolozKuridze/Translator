@@ -89,7 +89,7 @@
         <div class="tree-children" id="children-@Model.Id">
             @foreach (var child in Model.Children.OrderBy(c => c.Order ?? int.MaxValue))
             {
-                @Html.Partial("_CategoryNode", child)
+                @await Html.PartialAsync("_CategoryNode", child)
             }
         </div>
     }

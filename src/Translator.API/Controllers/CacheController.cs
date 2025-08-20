@@ -33,8 +33,8 @@ public class CacheController : Controller
         {
             var skip = (pageNumber - 1) * pageSize;
             
-            var templatesTask = _mediator.Send(new GetCachedTemplatesCommand(new PaginationRequest(skip, pageSize)));
-            var valuesTask = _mediator.Send(new GetCachedValueCommand(new PaginationRequest(skip, pageSize)));
+            var templatesTask = _mediator.Send(new GetCachedTemplatesCommand(new PaginationRequest(skip, pageSize, null, null, null, null)));
+            var valuesTask = _mediator.Send(new GetCachedValueCommand(new PaginationRequest(skip, pageSize, null, null, null, null)));
             
             await Task.WhenAll(templatesTask, valuesTask);
             
@@ -96,7 +96,7 @@ public class CacheController : Controller
                 templateId,
                 null,
                 true,
-                new PaginationRequest(1, 1000));
+                null);
             var templateData = await _mediator.Send(templateQuery);
 
             if (!templateData.Items.Any())

@@ -1,14 +1,14 @@
-namespace Translator.Domain.DataModels;
+namespace Translator.Domain.Entities;
 
 public class Category(
     string value,
     Guid typeId,
     int? order = null,
-    Guid? parentId = null) : BaseDataModel
+    Guid? parentId = null) : BaseEntity
 {
     public string Value { get; set; } = value;
     public Guid TypeId { get; init; } = typeId;
-    public CategoryType Type { get; set; }
+    public CategoryType Type { get; set; } = null!;
     public int? Order { get; set; } = order;
     public Guid? ParentId { get; set; } = parentId;
     public Category? Parent { get; set; }

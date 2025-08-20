@@ -1,8 +1,6 @@
-using System.Collections.ObjectModel;
+namespace Translator.Domain.Entities;
 
-namespace Translator.Domain.DataModels;
-
-public class Language : BaseDataModel
+public class Language : BaseEntity
 {
     public string Code { get; private set; } = default!; 
     public string Name { get; private set; } = default!;

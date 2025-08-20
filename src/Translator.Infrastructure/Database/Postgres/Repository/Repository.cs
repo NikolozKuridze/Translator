@@ -5,7 +5,7 @@ using Translator.Domain;
 namespace Translator.Infrastructure.Database.Postgres.Repository;
 
 public class Repository<TEntity> : IRepository<TEntity> 
-    where TEntity : BaseDataModel
+    where TEntity : BaseEntity
 {
     private readonly ApplicationDbContext _context;
     private readonly DbSet<TEntity> _dbSet;

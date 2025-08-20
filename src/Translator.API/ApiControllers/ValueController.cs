@@ -38,6 +38,9 @@ public class ValueController : ControllerBase
             new PaginationRequest(
                 pageNumber,
                 pageSize,
+                null,
+                null,
+                null,
                 sortBy: sortBy,
                 sortDirection: sortDirection));
         var result = await _mediator.Send(command);
@@ -50,7 +53,7 @@ public class ValueController : ControllerBase
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var command = new SearchValueCommand(valueKey, new PaginationRequest(page, pageSize));
+        var command = new SearchValueCommand(valueKey, new PaginationRequest(page, pageSize, null, null, null, null));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }

@@ -1,8 +1,8 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
-using Translator.Application.Features.Language.Queries.GetLanguages;
 using Translator.Application.Features.Language.Commands.AddLanguage;
+using Translator.Application.Features.Language.Queries.GetLanguages;
 using Translator.Application.Features.Language.Commands.DeleteLanguage;
 
 namespace Translator.API.Controllers;
@@ -22,7 +22,7 @@ public class Languages : Controller
     [HttpGet("")]
     [HttpGet("Index")]
     public async Task<IActionResult> Index(
-        string filterName = null,
+        string filterName = "",
         bool? filterActive = null,
         int pageNumber = 1,
         int pageSize = 10)
@@ -70,10 +70,9 @@ public class Languages : Controller
     }
 
     [HttpPost("Create")]
-    public async Task<IActionResult> Create(string code)
+    public async Task<IActionResult> Create([FromBody] AddLanguage request)
     {
-        var command = new AddLanguageCommand(code.ToLower().Trim());
-        await _mediator.Send(command);
+        await _mediator.Send(request);
         
         TempData["SuccessMessage"] = "Language added successfully!";
 
@@ -93,7 +92,7 @@ public class Languages : Controller
     [HttpPost("Activate")]
     public async Task<IActionResult> Activate(string code)
     {
-        var command = new AddLanguageCommand(code.ToLower().Trim());
+        var command = new AddLanguage.AddLanguageCommand(code.ToLower().Trim());
         await _mediator.Send(command);
         
         TempData["SuccessMessage"] = "Language activated successfully!";

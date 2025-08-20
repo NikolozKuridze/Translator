@@ -18,12 +18,6 @@ public class Translations : Controller
         _mediator = mediator;
     }
     
-    [HttpGet("")]
-    [HttpGet("Index")]
-    public async Task<IActionResult> Index()
-    { 
-        return View();
-    }
 
     [HttpPost("Create")]
     public async Task<IActionResult> Create(string value, string translation, string languageCode)

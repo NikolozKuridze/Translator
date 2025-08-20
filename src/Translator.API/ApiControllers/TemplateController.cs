@@ -35,7 +35,7 @@ public class TemplateController : ControllerBase
         [FromQuery] bool allTranslates,
         [FromQuery] string? lang = "")
     {
-        var command = new GetTemplateCommand(templateId, lang, allTranslates, new PaginationRequest(1, 1000));
+        var command = new GetTemplateCommand(templateId, lang, allTranslates, new PaginationRequest(1, 1000, null, null, null, null));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
@@ -43,7 +43,7 @@ public class TemplateController : ControllerBase
     [HttpGet("get-templates/{pageNumber}/{pageSize}")]
     public async Task<IResult> GetTemplate(int pageNumber = 1, int pageSize = 10)
     {
-        var command = new GetAllTemplatesCommand(new PaginationRequest(pageNumber, pageSize));
+        var command = new GetAllTemplatesCommand(new PaginationRequest(pageNumber, pageSize, null, null, null, null));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }

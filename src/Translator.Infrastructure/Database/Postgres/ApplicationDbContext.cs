@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 using Translator.Infrastructure.Configurations;
 using Translator.Infrastructure.Database.Postgres.SeedData;
 
@@ -27,6 +27,8 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
-        _ = new LanguageSeeder(_languageSeedingConfiguration.Value).Seed(modelBuilder);
+        #if DEBUG
+            _ = new LanguageSeeder(_languageSeedingConfiguration.Value).Seed(modelBuilder);
+        #endif
     }
 }

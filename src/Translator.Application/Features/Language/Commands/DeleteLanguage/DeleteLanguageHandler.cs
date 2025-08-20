@@ -3,7 +3,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres.Repository;
-using LanguageEntity = Translator.Domain.DataModels.Language;
+using LanguageEntity = Translator.Domain.Entities.Language;
 
 namespace Translator.Application.Features.Language.Commands.DeleteLanguage;
 

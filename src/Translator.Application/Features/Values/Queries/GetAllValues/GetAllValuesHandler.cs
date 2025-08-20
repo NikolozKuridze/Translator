@@ -2,7 +2,7 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Postgres.Repository;
-using ValueEntity = Translator.Domain.DataModels.Value;
+using ValueEntity = Translator.Domain.Entities.Value;
 
 namespace Translator.Application.Features.Values.Queries.GetAllValues;
 
@@ -23,17 +23,23 @@ public class GetAllValuesHandler : IRequestHandler<GetAllValuesCommand, Paginate
         
         var totalCount = await query.CountAsync(cancellationToken);
         
-        if (request.Pagination.SortBy.ToLower() == "date")
-            query = request.Pagination.SortDirection.ToLower() == "desc"
+        var sortBy = request.Pagination?.SortBy?.ToLower();
+        var sortDirection = request.Pagination?.SortDirection?.ToLower();
+
+        query = sortBy switch
+        {
+            "date" => sortDirection == "desc"
                 ? query.OrderByDescending(v => v.CreatedAt)
-                : query.OrderBy(v => v.CreatedAt);
-        else if (request.Pagination.SortBy.ToLower() == "key")
-            query = request.Pagination.SortDirection.ToLower() == "desc"
+                : query.OrderBy(v => v.CreatedAt),
+            
+            "key" => sortDirection == "desc" 
                 ? query.OrderByDescending(v => v.Key)
-                : query.OrderBy(v => v.Key);
+                : query.OrderBy(v => v.Key),
+            _ => query
+        };
 
         var items = await query
-            .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
+            .Skip((request.Pagination!.Page - 1) * request.Pagination.PageSize)
             .Take(request.Pagination.PageSize)
             .Select(t => new GetAllValuesResponse(
                 t.Key, 

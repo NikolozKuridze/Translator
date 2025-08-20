@@ -1,7 +1,7 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Features.Values.Queries.GetAllValues;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Postgres.Repository;
 

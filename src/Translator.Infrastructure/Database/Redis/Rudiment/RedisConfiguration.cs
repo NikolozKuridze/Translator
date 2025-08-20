@@ -3,5 +3,5 @@
 public class RedisConfiguration
 {
     public string ConnectionString { get; set; } = null!;
-    public int DefaultCacheExpirationMinutes { get; set; }
+    public int DefaultCacheExpirationDays { get; set; }
 }

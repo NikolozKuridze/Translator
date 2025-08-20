@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 
 namespace Translator.Infrastructure.Database.Postgres.Configurations;
 
@@ -17,8 +17,7 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(c => c.TypeId)
             .IsRequired();
 
-        builder.Property(c => c.Order)
-            .IsRequired(false);
+        builder.Property(c => c.Order);
 
         builder.HasOne(c => c.Type)
             .WithMany(ct => ct.Categories)

@@ -21,10 +21,13 @@ public static class ApiDependencies
             builder.Configuration.GetSection(nameof(AdminAuthSettings)));
 
         builder.Services.AddDistributedMemoryCache();
-
+        
+        var adminAuthSettings = builder
+            .Configuration.GetSection(nameof(AdminAuthSettings)).Get<AdminAuthSettings>();
+        
         builder.Services.AddSession(options =>
         {
-            options.IdleTimeout = TimeSpan.FromHours(SessionTimeout);
+            options.IdleTimeout = TimeSpan.FromMinutes(adminAuthSettings!.SessionTimeoutInMinutes);
             options.Cookie.HttpOnly = true;
             options.Cookie.IsEssential = true;
             options.Cookie.Name = nameof(AdminSession);

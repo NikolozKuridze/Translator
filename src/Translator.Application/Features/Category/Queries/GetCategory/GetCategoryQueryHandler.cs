@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
-using CategoryEntity = Translator.Domain.DataModels.Category;
+using CategoryEntity = Translator.Domain.Entities.Category;
 
 namespace Translator.Application.Features.Category.Queries.GetCategory;
 

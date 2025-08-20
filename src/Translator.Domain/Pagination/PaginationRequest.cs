@@ -12,12 +12,12 @@ public class PaginationRequest
     public string? SortDirection { get; set; }
 
     public PaginationRequest(
-        int page = 1,
-        int pageSize = 10,
-        DateTime? dateFrom = null,
-        DateTime? dateTo = null,
-        string? search = null,
-        string? sortBy = null,
+        int page,
+        int pageSize,
+        DateTime? dateFrom,
+        DateTime? dateTo,
+        string? search,
+        string? sortBy,
         string? sortDirection = "asc")
     {
         Page = page;
@@ -25,7 +25,7 @@ public class PaginationRequest
         Search = search;
         DateFrom = dateFrom;
         DateTo = dateTo;
-        SortBy = sortBy;
+        SortBy = sortBy?.ToLower();
         SortDirection = sortDirection;
     }
 }

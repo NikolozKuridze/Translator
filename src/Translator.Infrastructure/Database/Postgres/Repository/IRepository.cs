@@ -4,7 +4,7 @@ using Translator.Domain;
 namespace Translator.Infrastructure.Database.Postgres.Repository;
 
 public interface IRepository<TEntity>
-    where TEntity : BaseDataModel
+    where TEntity : BaseEntity
 {
     public Task AddAsync(TEntity entity, CancellationToken cancellationToken);
     

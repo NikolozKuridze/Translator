@@ -2,11 +2,11 @@ using System.Security.Cryptography;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 using Translator.Infrastructure.Database.Postgres.Repository;
 
-using TemplateEntity = Translator.Domain.DataModels.Template;
-using TranslationEntity = Translator.Domain.DataModels.Translation;
+using TemplateEntity = Translator.Domain.Entities.Template;
+using TranslationEntity = Translator.Domain.Entities.Translation;
 
 namespace Translator.Application.Features.Translation.Commands.DeleteTranslation;
 

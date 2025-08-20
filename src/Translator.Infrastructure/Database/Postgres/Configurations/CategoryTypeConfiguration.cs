@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Translator.Domain;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 
 namespace Translator.Infrastructure.Database.Postgres.Configurations;
 

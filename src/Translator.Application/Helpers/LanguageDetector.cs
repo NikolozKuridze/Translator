@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using Translator.Application.Exceptions;
-using Translator.Domain.DataModels;
+using Translator.Domain.Entities;
 
 namespace Translator.Application.Helpers;
 
@@ -41,11 +41,9 @@ public static class LanguageDetector
             if (IsNeutralCharacter(currentChar))
                 continue;
                 
-            if (!IsInRanges(currentChar, detectedRanges))
-            {
+            if (!IsInRanges(currentChar, detectedRanges ?? []))
                 throw new UknownLanguageException(
                     $"Mixed languages detected. Expected {detectedLanguage.Name}, but found character '{currentChar}' at position {i}");
-            }
         }
 
         return detectedLanguage;

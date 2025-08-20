@@ -3,11 +3,11 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
 using Translator.Infrastructure.Database.Postgres.Repository;
-using LanguageEntity = Translator.Domain.DataModels.Language;
+using LanguageEntity = Translator.Domain.Entities.Language;
 
 namespace Translator.Application.Features.Language.Commands.AddLanguage;
 
-public class AddLanguageHandler : IRequestHandler<AddLanguageCommand, AddLanguageResponse>
+/*public class AddLanguageHandler : IRequestHandler<AddLanguageCommand, AddLanguageResponse>
 {
     private readonly IRepository<LanguageEntity> _repository;
     private readonly IValidator<AddLanguageCommand> _validator;
@@ -41,4 +41,4 @@ public class AddLanguageHandler : IRequestHandler<AddLanguageCommand, AddLanguag
     }
 }
 
-public record AddLanguageResponse(string LanguageCode);
+public record AddLanguageResponse(string LanguageCode);*/
