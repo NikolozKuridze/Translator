@@ -38,6 +38,38 @@
     </div>
 }
 
+<!-- Search Form -->
+<div class="card mb-3">
+    <div class="card-body">
+        @using (Html.BeginForm("Search", "Values", FormMethod.Get, new { @class = "row g-3" }))
+        {
+            @Html.Hidden("pageNumber", 1)
+            @Html.Hidden("pageSize", pageSize, null)
+            @Html.Hidden("sortBy", sortBy)
+            @Html.Hidden("sortDirection", sortDirection)
+            
+            <div class="col-md-4">
+                <label class="form-label">Search by Key</label>
+                <input type="text" name="valueKey" 
+                       value="@(ViewBag.ValueKey ?? "")" 
+                       class="form-control"
+                       placeholder="Enter key to search..." />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                @if (!string.IsNullOrEmpty(ViewBag.ValueKey as string))
+                {
+                    <a href="@Url.Action("Index", "Values")" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                }
+            </div>
+        }
+    </div>
+</div>
+
 <!-- Create Value Form -->
 <div class="collapse mb-4" id="createValueSection">
     <div class="card">
@@ -74,24 +106,18 @@
                     <tr>
                         <th>
                             Key
-                            <a href="@Url.Action("Index", new { 
-                                sortBy = "key", 
-                                sortDirection = flipDirection(sortDirection), 
-                                pageNumber = currentPage, 
-                                pageSize 
-                            })" class="btn btn-link btn-sm p-1 ms-1" title="Sort by key">
+                            <a href="@(string.IsNullOrEmpty(ViewBag.ValueKey as string) ? 
+                                Url.Action("Index", new { sortBy = "key", sortDirection = flipDirection(sortDirection), pageNumber = currentPage, pageSize }) :
+                                Url.Action("Search", new { valueKey = ViewBag.ValueKey, sortBy = "key", sortDirection = flipDirection(sortDirection), pageNumber = currentPage, pageSize }))" class="btn btn-link btn-sm p-1 ms-1" title="Sort by key">
                                 <i class="fas @getSortIcon("key")"></i>
                             </a>
                         </th>
                         <th>Translations Count</th>
                         <th>
                             Created Date
-                            <a href="@Url.Action("Index", new { 
-                                sortBy = "date", 
-                                sortDirection = flipDirection(sortDirection), 
-                                pageNumber = currentPage, 
-                                pageSize 
-                            })" class="btn btn-link btn-sm p-1 ms-1" title="Sort by date">
+                            <a href="@(string.IsNullOrEmpty(ViewBag.ValueKey as string) ? 
+                                Url.Action("Index", new { sortBy = "date", sortDirection = flipDirection(sortDirection), pageNumber = currentPage, pageSize }) :
+                                Url.Action("Search", new { valueKey = ViewBag.ValueKey, sortBy = "date", sortDirection = flipDirection(sortDirection), pageNumber = currentPage, pageSize }))" class="btn btn-link btn-sm p-1 ms-1" title="Sort by date">
                                 <i class="fas @getSortIcon("date")"></i>
                             </a>
                         </th>
@@ -166,12 +192,9 @@
             @if (currentPage > 1)
             {
                 <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = 1, 
-                        pageSize, 
-                        sortBy, 
-                        sortDirection 
-                    })" title="First page">
+                    <a class="page-link" href="@(string.IsNullOrEmpty(ViewBag.ValueKey as string) ? 
+                        Url.Action("Index", new { pageNumber = 1, pageSize, sortBy, sortDirection }) :
+                        Url.Action("Search", new { valueKey = ViewBag.ValueKey, pageNumber = 1, pageSize, sortBy, sortDirection }))" title="First page">
                         <i class="fas fa-angle-double-left"></i> First
                     </a>
                 </li>
@@ -187,12 +210,9 @@
             @if (currentPage > 1)
             {
                 <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = currentPage - 1, 
-                        pageSize, 
-                        sortBy, 
-                        sortDirection 
-                    })">Previous</a>
+                    <a class="page-link" href="@(string.IsNullOrEmpty(ViewBag.ValueKey as string) ? 
+                        Url.Action("Index", new { pageNumber = currentPage - 1, pageSize, sortBy, sortDirection }) :
+                        Url.Action("Search", new { valueKey = ViewBag.ValueKey, pageNumber = currentPage - 1, pageSize, sortBy, sortDirection }))">Previous</a>
                 </li>
             }
             else 
@@ -214,12 +234,9 @@
                 else
                 {
                     <li class="page-item">
-                        <a class="page-link" href="@Url.Action("Index", new { 
-                            pageNumber = i, 
-                            pageSize, 
-                            sortBy, 
-                            sortDirection 
-                        })">@i</a>
+                        <a class="page-link" href="@(string.IsNullOrEmpty(ViewBag.ValueKey as string) ? 
+                            Url.Action("Index", new { pageNumber = i, pageSize, sortBy, sortDirection }) :
+                            Url.Action("Search", new { valueKey = ViewBag.ValueKey, pageNumber = i, pageSize, sortBy, sortDirection }))">@i</a>
                     </li>
                 }
             }
@@ -228,12 +245,9 @@
             @if (currentPage < totalPages)
             {
                 <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = currentPage + 1, 
-                        pageSize, 
-                        sortBy, 
-                        sortDirection 
-                    })">Next</a>
+                    <a class="page-link" href="@(string.IsNullOrEmpty(ViewBag.ValueKey as string) ? 
+                        Url.Action("Index", new { pageNumber = currentPage + 1, pageSize, sortBy, sortDirection }) :
+                        Url.Action("Search", new { valueKey = ViewBag.ValueKey, pageNumber = currentPage + 1, pageSize, sortBy, sortDirection }))">Next</a>
                 </li>
             }
             else
@@ -247,12 +261,9 @@
             @if (currentPage < totalPages)
             {
                 <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = totalPages, 
-                        pageSize, 
-                        sortBy, 
-                        sortDirection 
-                    })" title="Last page">
+                    <a class="page-link" href="@(string.IsNullOrEmpty(ViewBag.ValueKey as string) ? 
+                        Url.Action("Index", new { pageNumber = totalPages, pageSize, sortBy, sortDirection }) :
+                        Url.Action("Search", new { valueKey = ViewBag.ValueKey, pageNumber = totalPages, pageSize, sortBy, sortDirection }))" title="Last page">
                         Last <i class="fas fa-angle-double-right"></i>
                     </a>
                 </li>
@@ -268,8 +279,12 @@
 
     <!-- Page size selector -->
     <div class="d-flex justify-content-end align-items-center mt-3">
-        @using (Html.BeginForm("Index", "Values", FormMethod.Get, new { @class = "d-flex align-items-center" }))
+        @using (Html.BeginForm(string.IsNullOrEmpty(ViewBag.ValueKey as string) ? "Index" : "Search", "Values", FormMethod.Get, new { @class = "d-flex align-items-center" }))
         {
+            @if (!string.IsNullOrEmpty(ViewBag.ValueKey as string))
+            {
+                @Html.Hidden("valueKey", ViewBag.ValueKey, null)
+            }
             @Html.Hidden("pageNumber", 1)
             @Html.Hidden("sortBy", sortBy)
             @Html.Hidden("sortDirection", sortDirection)

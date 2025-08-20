@@ -8,6 +8,7 @@ using Translator.Application.Features.Values.Queries.GetAllValues;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 using Translator.Application.Features.Language.Queries.GetLanguages;
+using Translator.Application.Features.Values.Queries.SearchValue;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
@@ -48,7 +49,7 @@ public class ValuesController : Controller
         catch (Exception ex)
         {
             TempData["ErrorMessage"] = $"Error loading values: {ex.Message}";
-            return View(new List<GetAllValuesResponse>());
+            return View(new List<Application.Features.Values.Queries.GetAllValues.GetAllValuesResponse>());
         }
     }
     
@@ -72,6 +73,33 @@ public class ValuesController : Controller
         ViewBag.AvailableLanguages = availableLanguages;
         
         return View(result);
+    }
+    
+    [HttpGet("Search")]
+    public async Task<IActionResult> Search(
+        string valueKey = "",
+        int pageNumber = 1,
+        int pageSize = 10)
+    {
+        try
+        {
+            var paginationRequest = new PaginationRequest(pageNumber, pageSize);
+            var command = new SearchValueCommand(valueKey, paginationRequest);
+            var result = await _mediator.Send(command);
+
+            ViewBag.CurrentPage = result.Page;
+            ViewBag.PageSize = result.PageSize;
+            ViewBag.TotalPages = result.TotalPages;
+            ViewBag.TotalCount = result.TotalItems;
+            ViewBag.ValueKey = valueKey;
+            
+            return View("Index", result.Items);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error searching values: {ex.Message}";
+            return View("Index", new List<GetAllValuesResponse>());
+        }
     }
 
     [HttpPost("Create")]

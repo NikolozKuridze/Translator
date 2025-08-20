@@ -1,39 +1,45 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Translator.Application.Features.Values.Queries.GetAllValues;
 using Translator.Domain.DataModels;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Postgres.Repository;
 
 namespace Translator.Application.Features.Values.Queries.SearchValue;
 
-public class SearchValueHandler : IRequestHandler<SearchValueCommand, PaginatedResponse<SearchValueResponse>>
+public class SearchValueHandler : IRequestHandler<SearchValueCommand, PaginatedResponse<GetAllValuesResponse>>
 {
     private readonly IRepository<Value> _valueRepository;
 
     public SearchValueHandler(IRepository<Value> valueRepository)
         => _valueRepository = valueRepository;
     
-    public async Task<PaginatedResponse<SearchValueResponse>> Handle(SearchValueCommand request, CancellationToken cancellationToken)
+    public async Task<PaginatedResponse<GetAllValuesResponse>> Handle(SearchValueCommand request, CancellationToken cancellationToken)
     {
-        var totalValuesCount = await _valueRepository.AsQueryable().CountAsync(cancellationToken);
-        
-        var values = _valueRepository
-            .Where(v => EF.Functions.Like(v.Key, $"%{request.ValueKey}%"))
-            .Skip(request.paginationRequest.Page)
-            .Take(request.paginationRequest.PageSize)
-            .Select(vk => new SearchValueResponse(
-                    vk.Key, vk.Id, vk.Translations.Count, vk.CreatedAt 
-                ));
-        
-        return new PaginatedResponse<SearchValueResponse>()
+        var query = _valueRepository
+            .Where(v =>
+                string.IsNullOrEmpty(request.ValueKey)||
+                 v.Key.Contains(request.ValueKey) ||
+                v.Key == request.ValueKey);
+
+        var totalItems = await query.CountAsync(cancellationToken);
+
+        var values = await query
+            .Skip((request.PaginationRequest.Page - 1) * request.PaginationRequest.PageSize)
+            .Take(request.PaginationRequest.PageSize)
+            .Select(vk => new GetAllValuesResponse(
+                vk.Key, vk.Id, vk.Translations.Count, vk.CreatedAt
+            ))
+            .ToArrayAsync(cancellationToken);
+
+        return new PaginatedResponse<GetAllValuesResponse>()
         {
-            Page = request.paginationRequest.Page,
-            PageSize = request.paginationRequest.PageSize,
-            TotalItems = totalValuesCount,
-            HasNextPage = request.paginationRequest.Page * request.paginationRequest.PageSize < totalValuesCount,
-            HasPreviousPage = request.paginationRequest.Page > 1,
-            Items = await values.ToArrayAsync(cancellationToken)
+            Page = request.PaginationRequest.Page,
+            PageSize = request.PaginationRequest.PageSize,
+            TotalItems = totalItems,
+            HasNextPage = request.PaginationRequest.Page * request.PaginationRequest.PageSize < totalItems,
+            HasPreviousPage = request.PaginationRequest.Page > 1,
+            Items = values
         };
     }
 }
-public record SearchValueResponse(string ValueKey, Guid Id, int TranslationsCount, DateTimeOffset CreatedAt);
