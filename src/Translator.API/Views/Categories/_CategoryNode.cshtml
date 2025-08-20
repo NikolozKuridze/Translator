@@ -1,0 +1,96 @@
+@model Translator.Application.Features.Category.Queries.GetCategory.CategoryReadDto
+@{
+    // Determine if this is a root category by checking ParentId
+    bool isRoot = !Model.ParentId.HasValue;
+    int childrenCount = Model.Children?.Count ?? 0;
+}
+
+<div class="tree-node">
+    <div class="tree-node-content @(isRoot ? "is-root" : "")">
+        <div class="tree-node-header">
+            <div class="tree-node-info">
+                @if (childrenCount > 0)
+                {
+                    <button type="button"
+                            class="expand-btn"
+                            id="expand-@Model.Id"
+                            onclick="toggleChildren('@Model.Id')"
+                            title="Expand/Collapse">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                }
+                else
+                {
+                    <span style="width: 24px;"></span>
+                }
+
+                <div class="tree-node-value">
+                    <i class="fas fa-@(isRoot ? "crown" : "sitemap") me-1"></i>
+                    @Model.Value
+
+                    @if (isRoot)
+                    {
+                        <span class="root-badge">Root</span>
+                    }
+
+                    <span class="category-type-badge">@Model.TypeName</span>
+
+                    @if (childrenCount > 0)
+                    {
+                        <span class="children-count">
+                            <i class="fas fa-sitemap"></i>
+                            @childrenCount
+                        </span>
+                    }
+                </div>
+            </div>
+
+            <div class="node-actions">
+                
+                <button type="button"
+                        class="node-action-btn btn-copy"
+                        onclick="copyToClipboard('@Model.Id', this)"
+                        title="Copy Category ID">
+                    <i class="fas fa-copy"></i>
+                </button>
+
+                <button type="button"
+                        class="node-action-btn btn-add"
+                        onclick="openCreateForm('@Model.Id', '@Html.Raw(Html.Encode(Model.Value))')"
+                        title="Add Child Category">
+                    <i class="fas fa-plus"></i>
+                </button>
+
+                <button type="button"
+                        class="node-action-btn btn-edit"
+                        onclick="showEditForm('@Model.Id', '@Html.Raw(Html.Encode(Model.Value))', @(Model.Order?.ToString() ?? "null"))"
+                        title="Edit Category">
+                    <i class="fas fa-edit"></i>
+                </button>
+
+
+                <form action="@Url.Action("Delete", "Categories")" method="post" style="display: inline;">
+                    <input type="hidden" name="id" value="@Model.Id"/>
+                    <input type="hidden" name="returnToTreeId" value="@Model.Id"/>
+                    <button type="button"
+                            class="node-action-btn btn-delete"
+                            onclick="showDeleteConfirmation('@Model.Id', '@Html.Raw(Html.Encode(Model.Value))', this.closest('form'))"
+                            title="Delete Category">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Children container (initially hidden) -->
+    @if (Model.Children != null && Model.Children.Any())
+    {
+        <div class="tree-children" id="children-@Model.Id">
+            @foreach (var child in Model.Children.OrderBy(c => c.Order ?? int.MaxValue))
+            {
+                @Html.Partial("_CategoryNode", child)
+            }
+        </div>
+    }
+</div>

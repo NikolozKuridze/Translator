@@ -1,51 +1,308 @@
 @model IEnumerable<Translator.Application.Features.Category.Queries.GetRootCategories.RootCategoryDto>
 @{
-ViewData["Title"] = "Categories";
+ViewData["Title"] = "Categories Management";
 Layout = "_Layout";
+var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 }
 
 <style>
+    body {
+        background-color: #f8fafc;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
     .categories-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 1rem 0;
-        margin-bottom: 1rem;
-        border-radius: 0.375rem;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
 
-    .category-table {
+    .categories-header h1 {
+        font-weight: 700;
+        font-size: 2.25rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .categories-header .lead {
+        font-size: 1.125rem;
+        opacity: 0.9;
+    }
+
+    /* Form Overlays */
+    .form-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .form-overlay.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .form-container {
         background: white;
         border-radius: 0.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        width: 100%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: translateY(-20px);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .form-overlay.show .form-container {
+        transform: translateY(0);
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .form-header h5 {
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .form-body {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .required {
+        color: #ef4444;
+        font-weight: 700;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.75rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #fafbfc;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    /* Buttons */
+    .btn-base {
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.375rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        text-align: center;
+        justify-content: center;
+        min-width: 100px;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 2px solid #e2e8f0;
+    }
+
+    .btn-cancel:hover {
+        background: #e2e8f0;
+        color: #475569;
+        transform: translateY(-1px);
+    }
+
+    .btn-save, .btn-create, .btn-update {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .btn-save:hover, .btn-create:hover, .btn-update:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .section-card {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
         overflow: hidden;
+        margin-bottom: 2rem;
+        border: 1px solid #f1f5f9;
+    }
+
+    .section-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        font-weight: 600;
+        font-size: 1.125rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .section-header h3 {
+        margin: 0;
+        font-size: 1.125rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-controls {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* Add/Delete Buttons */
+    .add-btn, .delete-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        color: white;
+        font-weight: 600;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.875rem;
+        text-decoration: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        border: none;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .add-btn {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    }
+
+    .delete-btn {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+
+    .add-btn:hover, .delete-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        color: white;
+        text-decoration: none;
+    }
+
+    /* Category Types */
+    .types-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 1.5rem;
+    }
+
+    .type-item {
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        border: 2px solid #e2e8f0;
+        padding: 0.625rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 500;
+        color: #1e293b;
+        font-size: 0.875rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .type-item:hover {
+        background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
+        border-color: #cbd5e1;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    /* Table Styles */
+    .category-table {
         font-size: 0.875rem;
     }
 
+    .category-table .table {
+        margin: 0;
+    }
+
     .category-table thead th {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        color: white;
+        background: #b3e5fc;
+        color: black;
         font-weight: 600;
         text-transform: uppercase;
         font-size: 0.75rem;
-        letter-spacing: 0.025em;
-        padding: 0.75rem 0.5rem;
+        letter-spacing: 0.05em;
+        padding: 1rem 0.75rem;
         border: none;
+        position: sticky;
+        top: 0;
+        z-index: 10;
     }
 
     .category-table tbody tr {
-        transition: all 0.2s ease;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         border-bottom: 1px solid #f1f5f9;
     }
 
     .category-table tbody tr:hover {
         background-color: #f8fafc;
         transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
     .category-table tbody td {
-        padding: 0.75rem 0.5rem;
+        padding: 1rem 0.75rem;
         vertical-align: middle;
+        border-color: #f1f5f9;
     }
 
     .category-value {
@@ -55,260 +312,311 @@ Layout = "_Layout";
     }
 
     .category-type-badge {
-        background: linear-gradient(135deg, #06b6d4 0%, #3b82f6 100%);
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
         color: white;
-        padding: 0.25rem 0.5rem;
+        padding: 0.375rem 0.75rem;
         border-radius: 0.375rem;
         font-weight: 500;
         font-size: 0.75rem;
         text-transform: capitalize;
+        display: inline-block;
     }
 
     .category-order-badge {
-        background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         color: white;
-        padding: 0.25rem 0.5rem;
+        padding: 0.375rem 0.75rem;
         border-radius: 0.375rem;
         font-weight: 500;
         font-size: 0.75rem;
+        display: inline-block;
     }
 
     .category-id-container {
         display: flex;
         align-items: center;
-        gap: 0.25rem;
-        flex-wrap: wrap;
+        gap: 0.5rem;
+        max-width: 300px;
     }
 
     .category-id {
-        font-family: 'Courier New', monospace;
-        font-size: 0.7rem;
+        font-family: 'Fira Code', 'Monaco', 'Consolas', monospace;
+        font-size: 0.75rem;
         color: #64748b;
-        background: #f1f5f9;
-        padding: 0.2rem 0.4rem;
-        border-radius: 0.2rem;
+        background: #f8fafc;
+        padding: 0.375rem 0.5rem;
+        border-radius: 0.375rem;
+        border: 1px solid #e2e8f0;
         flex: 1;
-        min-width: 120px;
-        word-break: break-all;
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .copy-btn {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         border: none;
         color: white;
-        padding: 0.25rem 0.4rem;
-        border-radius: 0.25rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.375rem;
         cursor: pointer;
-        transition: all 0.2s ease;
-        font-size: 0.65rem;
-        min-width: 45px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 0.75rem;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 0.2rem;
+        gap: 0.25rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        white-space: nowrap;
     }
 
     .copy-btn:hover {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
     }
 
     .copy-btn.copied {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
 
+    /* Action Buttons */
     .action-buttons {
         display: flex;
-        gap: 0.25rem;
+        gap: 0.375rem;
         justify-content: center;
         flex-wrap: wrap;
     }
 
     .action-btn {
-        padding: 0.375rem;
+        padding: 0.5rem;
         border-radius: 0.375rem;
-        border: 2px solid transparent;
-        transition: all 0.2s ease;
+        border: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 32px;
-        height: 32px;
-        font-size: 0.75rem;
-        text-decoration: none;
-    }
-
-    .action-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-        text-decoration: none;
-    }
-
-    .btn-view { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); color: white; }
-    .btn-view:hover { color: white; }
-    .btn-edit { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; }
-    .btn-edit:hover { color: white; }
-    .btn-tree { background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; }
-    .btn-tree:hover { color: white; }
-    .btn-delete { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; cursor: pointer; }
-
-    .add-category-btn {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        color: white;
-        font-weight: 600;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+        width: 40px;
+        height: 40px;
         font-size: 0.875rem;
         text-decoration: none;
         cursor: pointer;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
     }
 
-    .add-category-btn:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
-        color: white;
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
         text-decoration: none;
     }
 
+    .btn-edit {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+
+    .btn-tree {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-delete {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+
+    .btn-edit:hover, .btn-tree:hover, .btn-delete:hover {
+        color: white;
+    }
+
+    /* Empty State */
     .empty-state {
         text-align: center;
-        padding: 2rem 1rem;
+        padding: 3rem 2rem;
         color: #64748b;
     }
 
     .empty-state-icon {
-        font-size: 2.5rem;
-        margin-bottom: 0.5rem;
+        font-size: 3rem;
+        margin-bottom: 1rem;
         color: #cbd5e1;
     }
 
-    .stats-card {
+    .empty-state h4 {
+        font-size: 1.25rem;
+        margin-bottom: 0.75rem;
+        color: #374151;
+    }
+
+    .empty-state p {
+        font-size: 0.875rem;
+        margin-bottom: 1.5rem;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    /* Modal Styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .modal.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .modal-content {
         background: white;
         border-radius: 0.5rem;
-        padding: 1rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        border-left: 3px solid #3b82f6;
-    }
-
-    .display-4 { font-size: 1.75rem; }
-    .lead { font-size: 1rem; margin-bottom: 1rem !important; }
-
-    .stats-card h3 { font-size: 1.5rem; }
-    .stats-card i { font-size: 1.5rem !important; }
-
-    .empty-state h3 { font-size: 1.25rem; }
-    .empty-state p { font-size: 0.875rem; }
-
-    /* Create form styles */
-    .create-form {
-        background: #f8fafc;
-        border: 2px dashed #cbd5e1;
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        display: none;
-    }
-
-    .create-form.show {
-        display: block;
-    }
-
-    .form-row {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-
-    .form-group {
-        flex: 1;
-        min-width: 200px;
-    }
-
-    .form-label {
-        font-weight: 600;
-        color: #1e293b;
-        font-size: 0.75rem;
-        margin-bottom: 0.25rem;
-        display: block;
-    }
-
-    .form-control {
-        border: 2px solid #e2e8f0;
-        border-radius: 0.375rem;
-        padding: 0.5rem;
-        font-size: 0.875rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
         width: 100%;
-        transition: all 0.2s ease;
+        max-width: 450px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.9);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
-    .form-control:focus {
-        outline: none;
-        border-color: #667eea;
-        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    .modal.show .modal-content {
+        transform: scale(1);
     }
 
-    .form-actions {
+    .modal-header {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        padding: 1.25rem 1.5rem;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .modal-header h4 {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 600;
         display: flex;
+        align-items: center;
         gap: 0.5rem;
-        justify-content: flex-end;
     }
 
-    .btn-create {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+
+
+    /* Alerts */
+    .alert {
         border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
+        border-radius: 0.5rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        border-left: 4px solid;
+    }
+
+    .form-actions, .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center; /* Changed from flex-end to center */
+        padding: 1.5rem;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .form-actions .btn-base,
+    .modal-actions .btn-base {
+        min-width: 140px; /* Ensure consistent button widths */
+    }
+    
+    .alert-success {
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        color: #065f46;
+        border-left-color: #10b981;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+        color: #991b1b;
+        border-left-color: #ef4444;
+    }
+
+  
+
+    /* Loading states */
+    .loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
+
+    .loading::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 20px;
+        height: 20px;
+        margin: -10px 0 0 -10px;
+        border: 2px solid #f3f3f3;
+        border-top: 2px solid #4f46e5;
+        border-radius: 50%;
+    }
+
+    .modal-body {
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .modal-body p {
+        font-size: 1rem;
+        color: #374151;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .btn-delete-confirm {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
         color: white;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
     }
 
-    .btn-create:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+    .btn-delete-confirm:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
     }
 
-    .btn-cancel {
-        background: #6b7280;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        color: white;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
+    /* Focus styles for accessibility */
+    .btn-base:focus,
+    .action-btn:focus,
+    .copy-btn:focus {
+        outline: 2px solid #4f46e5;
+        outline-offset: 2px;
     }
 
-    .btn-cancel:hover {
-        background: #4b5563;
-    }
-
-    .required {
-        color: #ef4444;
+    /* Smooth scrolling */
+    html {
+        scroll-behavior: smooth;
     }
 </style>
 
 <div class="container-fluid px-3">
-
     <!-- Header Section -->
     <div class="categories-header text-center">
         <div class="container">
             <h1 class="display-4 fw-bold mb-2">
                 <i class="fas fa-layer-group me-2"></i>
-                Categories
+                Categories Management
             </h1>
-            <p class="lead mb-3">Manage your content categories</p>
-            <button type="button" class="add-category-btn" onclick="toggleCreateForm()">
-                <i class="fas fa-plus me-1"></i>Add New
-            </button>
+            <p class="lead mb-0">Manage your content categories and types</p>
         </div>
     </div>
 
@@ -330,13 +638,45 @@ Layout = "_Layout";
     </div>
     }
 
-    <!-- Create Form -->
-    <div class="create-form" id="createForm">
-        <h5 class="mb-3">
-            <i class="fas fa-plus me-2"></i>Create New Category
-        </h5>
+  <div class="form-overlay" id="typeForm">
+    <div class="form-container">
+        <div class="form-header">
+            <h5><i class="fas fa-tags me-2"></i>Add New Category Type</h5>
+        </div>
+        <form action="@Url.Action("CreateCategoryType", "Categories")" method="post">
+            <div class="form-body">
+                <div class="form-group">
+                    <label for="typeName" class="form-label">
+                        Type Name <span class="required">*</span>
+                    </label>
+                    <input type="text"
+                           class="form-control"
+                           id="typeName"
+                           name="typeName"
+                           required
+                           placeholder="Enter category type name">
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-base btn-cancel" onclick="toggleTypeForm()">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="submit" class="btn-base btn-save">
+                    <i class="fas fa-save me-1"></i>Create Type
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Create Category Form Overlay -->
+<div class="form-overlay" id="createForm">
+    <div class="form-container">
+        <div class="form-header">
+            <h5><i class="fas fa-plus me-2"></i>Create New Category</h5>
+        </div>
         <form action="@Url.Action("Create", "Categories")" method="post">
-            <div class="form-row">
+            <div class="form-body">
                 <div class="form-group">
                     <label for="value" class="form-label">
                         Value <span class="required">*</span>
@@ -348,17 +688,20 @@ Layout = "_Layout";
                            required
                            placeholder="Enter category value">
                 </div>
+                
                 <div class="form-group">
                     <label for="type" class="form-label">
                         Type <span class="required">*</span>
                     </label>
-                    <input type="text"
-                           class="form-control"
-                           id="type"
-                           name="type"
-                           required
-                           placeholder="Enter category type">
+                    <select class="form-control" id="type" name="type" required>
+                        <option value="">Select a type</option>
+                        @foreach (var type in categoryTypes)
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
                 </div>
+                
                 <div class="form-group">
                     <label for="order" class="form-label">Order</label>
                     <input type="number"
@@ -368,133 +711,369 @@ Layout = "_Layout";
                            min="0"
                            placeholder="Display order">
                 </div>
-                <div class="form-group">
-                    <label for="parentId" class="form-label">Parent ID</label>
-                    <input type="text"
-                           class="form-control"
-                           id="parentId"
-                           name="parentId"
-                           placeholder="Parent category ID">
-                </div>
             </div>
             <div class="form-actions">
-                <button type="button" class="btn-cancel" onclick="toggleCreateForm()">
-                    Cancel
+                <button type="button" class="btn-base btn-cancel" onclick="toggleCreateForm()">
+                    <i class="fas fa-times me-1"></i>Cancel
                 </button>
-                <button type="submit" class="btn-create">
+                <button type="submit" class="btn-base btn-create">
                     <i class="fas fa-save me-1"></i>Create Category
                 </button>
             </div>
         </form>
     </div>
-
-    <!-- Main Content -->
-    <div class="row">
-        <div class="col-12">
-            @if (!Model.Any())
-            {
-            <div class="empty-state">
-                <div class="empty-state-icon">
-                    <i class="fas fa-folder-open"></i>
+</div>
+<!-- Edit Category Form Overlay -->
+<div class="form-overlay" id="editForm">
+    <div class="form-container">
+        <div class="form-header">
+            <h5><i class="fas fa-edit me-2"></i>Update Category</h5>
+        </div>
+        <form action="@Url.Action("Update", "Categories")" method="post">
+            <input type="hidden" id="editId" name="id" />
+            <div class="form-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editValue" class="form-label">Value</label>
+                        <input type="text"
+                               class="form-control"
+                               id="editValue"
+                               name="value"
+                               placeholder="Enter category value">
+                    </div>
+                    <div class="form-group">
+                        <label for="editOrder" class="form-label">Order</label>
+                        <input type="number"
+                               class="form-control"
+                               id="editOrder"
+                               name="order"
+                               min="0"
+                               placeholder="Display order">
+                    </div>
                 </div>
-                <h3 class="mb-2">No Categories Found</h3>
-                <p class="mb-3">Start by creating your first category.</p>
-                <button type="button" class="add-category-btn" onclick="toggleCreateForm()">
-                    <i class="fas fa-plus me-1"></i>Create First Category
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-base btn-cancel" onclick="toggleEditForm()">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="submit" class="btn-base btn-update">
+                    <i class="fas fa-save me-1"></i>Update Category
                 </button>
             </div>
-            }
-            else
-            {
-            <div class="category-table">
-                <table class="table table-hover mb-0 table-sm">
-                    <thead>
-                    <tr>
-                        <th style="width: 8%;">Order</th>
-                        <th style="width: 22%;">Value</th>
-                        <th style="width: 12%;">Type</th>
-                        <th style="width: 38%;">ID</th>
-                        <th style="width: 20%;" class="text-center">Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    @foreach (var category in Model.OrderBy(c => c.Order ?? int.MaxValue))
+        </form>
+    </div>
+</div>
+
+    <div class="row">
+        <div class="col-12">
+            <!-- Category Types Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-tags me-2"></i>
+                        Category Types
+                    </h3>
+                    <div class="section-controls">
+                        <button type="button" class="add-btn" onclick="addCategoryType()">
+                            <i class="fas fa-plus"></i>
+                            Add Type
+                        </button>
+                        <button type="button" class="delete-btn" onclick="deleteCategoryType()">
+                            <i class="fas fa-trash"></i>
+                            Delete Type
+                        </button>
+                    </div>
+                </div>
+
+                @if (!categoryTypes.Any())
+                {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-tags"></i>
+                    </div>
+                    <h4>No Category Types Found</h4>
+                    <p>Start by creating your first category type.</p>
+                    <button type="button" class="add-btn" onclick="addCategoryType()">
+                        <i class="fas fa-plus me-1"></i>Create First Type
+                    </button>
+                </div>
+                }
+                else
+                {
+                <div class="types-list">
+                    @foreach (var type in categoryTypes.OrderBy(t => t))
                     {
-                    <tr>
-                        <td>
-                            @if (category.Order.HasValue)
-                            {
-                            <span class="category-order-badge">@category.Order</span>
-                            }
-                            else
-                            {
-                            <span class="text-muted">—</span>
-                            }
-                        </td>
-                        <td>
-                            <div class="category-value">@category.Value</div>
-                        </td>
-                        <td>
-                            <span class="category-type-badge">@category.Type</span>
-                        </td>
-                        <td>
-                            <div class="category-id-container">
-                                <code class="category-id">@category.Id</code>
-                                <button type="button"
-                                        class="copy-btn"
-                                        onclick="copyToClipboard('@category.Id', this)"
-                                        title="Copy ID">
-                                    <i class="fas fa-copy"></i>
-                                    <span class="copy-text d-none d-md-inline">Copy</span>
-                                </button>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <a href="@Url.Action("Details", "Categories", new { id = category.Id })"
-                                   class="action-btn btn-view" title="View">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="@Url.Action("Edit", "Categories", new { id = category.Id })"
-                                   class="action-btn btn-edit" title="Edit">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <a href="@Url.Action("Tree", "Categories", new { id = category.Id })"
-                                   class="action-btn btn-tree" title="Tree">
-                                    <i class="fas fa-sitemap"></i>
-                                </a>
-                                <form action="@Url.Action("Delete", "Categories")" method="post" style="display: inline;">
-                                    <input type="hidden" name="id" value="@category.Id" />
-                                    <button type="submit"
-                                            class="action-btn btn-delete"
-                                            title="Delete @category.Value">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </form>
-                            </div>
-                        </td>
-                    </tr>
+                    <div class="type-item">
+                        <i class="fas fa-tag me-1"></i>
+                        @type
+                    </div>
                     }
-                    </tbody>
-                </table>
+                </div>
+                }
             </div>
-            }
+
+            <!-- Root Categories Section -->
+            <div class="section-card">
+                <div class="section-header">
+                    <h3>
+                        <i class="fas fa-sitemap me-2"></i>
+                        Root Categories
+                    </h3>
+                    <div class="section-controls">
+                        <button type="button" class="add-btn" onclick="openCreateForm()">
+                            <i class="fas fa-plus"></i>
+                            Add Category
+                        </button>
+                    </div>
+                </div>
+
+                @if (!Model.Any())
+                {
+                <div class="empty-state">
+                    <div class="empty-state-icon">
+                        <i class="fas fa-folder-open"></i>
+                    </div>
+                    <h4>No Categories Found</h4>
+                    <p>Start by creating your first category.</p>
+                    <button type="button" class="add-btn" onclick="toggleCreateForm()">
+                        <i class="fas fa-plus me-1"></i>Create First Category
+                    </button>
+                </div>
+                }
+                else
+                {
+                <div class="category-table">
+                    <table class="table table-hover mb-0 table-sm">
+                        <thead>
+                        <tr>
+                            <th style="width: 8%;">Order</th>
+                            <th style="width: 22%;">Value</th>
+                            <th style="width: 12%;">Type</th>
+                            <th style="width: 33%;">ID</th>
+                            <th style="width: 25%;" class="text-center">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var category in Model.OrderBy(c => c.Order ?? int.MaxValue))
+                        {
+                        <tr>
+                            <td>
+                                @if (category.Order.HasValue)
+                                {
+                                <span class="category-order-badge">@category.Order</span>
+                                }
+                                else
+                                {
+                                <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td>
+                                <div class="category-value">@category.Value</div>
+                            </td>
+                            <td>
+                                <span class="category-type-badge">@category.TypeName</span>
+                            </td>
+                            <td>
+                                <div class="category-id-container">
+                                    <code class="category-id">@category.Id</code>
+                                    <button type="button"
+                                            class="copy-btn"
+                                            onclick="copyToClipboard('@category.Id', this)"
+                                            title="Copy ID">
+                                        <i class="fas fa-copy"></i>
+                                        <span class="copy-text d-none d-md-inline">Copy</span>
+                                    </button>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button type="button"
+                                            class="action-btn btn-edit"
+                                            onclick="showEditForm('@category.Id', '@Html.Raw(Html.Encode(category.Value))', @(category.Order?.ToString() ?? "null"))"
+                                            title="Update Category">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <a href="@Url.Action("Tree", "Categories", new { id = category.Id })"
+                                       class="action-btn btn-tree"
+                                       title="Show Tree">
+                                        <i class="fas fa-sitemap"></i>
+                                    </a>
+                                    <form action="@Url.Action("Delete", "Categories")" method="post" style="display: inline;">
+                                        <input type="hidden" name="id" value="@category.Id" />
+                                        <button type="button"
+                                                class="action-btn btn-delete"
+                                                onclick="showDeleteConfirmation('@category.Id', '@Html.Raw(Html.Encode(category.Value))', this.closest('form'))"
+                                                title="Delete @category.Value">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Type Modal -->
+<div class="modal" id="deleteTypeModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4><i class="fas fa-trash me-2"></i>Delete Category Type</h4>
+        </div>
+        <form action="@Url.Action("DeleteCategoryType", "Categories")" method="post">
+            <div class="form-body">
+                <div class="form-group">
+                    <label for="deleteTypeName" class="form-label">
+                        Select Type to Delete <span class="required">*</span>
+                    </label>
+                    <select class="form-control" id="deleteTypeName" name="typeName" required>
+                        <option value="">Select a type to delete</option>
+                        @foreach (var type in categoryTypes)
+                        {
+                            <option value="@type">@type</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-base btn-cancel" onclick="closeDeleteTypeModal()">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="submit" class="btn-base btn-delete">
+                    <i class="fas fa-trash me-1"></i>Delete Type
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Custom Delete Confirmation Modal -->
+<div class="modal" id="deleteConfirmModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4><i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion</h4>
+        </div>
+        <div class="modal-body">
+            <p id="deleteConfirmMessage">Are you sure you want to delete this category?</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-base btn-cancel" onclick="closeDeleteConfirmModal()">
+                <i class="fas fa-times me-1"></i>Cancel
+            </button>
+            <button type="button" class="btn-base btn-delete-confirm" onclick="confirmDelete()">
+                <i class="fas fa-trash me-1"></i>Delete
+            </button>
         </div>
     </div>
 </div>
 
 <script>
-    // Toggle create form visibility
-    function toggleCreateForm() {
-        const form = document.getElementById('createForm');
-        form.classList.toggle('show');
-
-        if (form.classList.contains('show')) {
-            document.getElementById('value').focus();
+    let deleteFormToSubmit = null;
+    let categoryToDelete = null;
+    
+    // Close overlays when clicking outside
+    function closeOnOutsideClick(event, overlayId) {
+        const overlay = document.getElementById(overlayId);
+        if (event.target === overlay) {
+            overlay.classList.remove('show');
         }
     }
 
-    // Copy to clipboard function
+    // Category Type Functions
+    function addCategoryType() {
+        closeAllForms();
+        const typeForm = document.getElementById('typeForm');
+        typeForm.classList.add('show');
+        setTimeout(() => document.getElementById('typeName').focus(), 300);
+    }
+
+    function toggleTypeForm() {
+        const typeForm = document.getElementById('typeForm');
+        typeForm.classList.remove('show');
+    }
+
+    // Root Category Functions
+    function toggleCreateForm() {
+        const createForm = document.getElementById('createForm');
+        createForm.classList.remove('show');
+    }
+
+    function toggleEditForm() {
+        const editForm = document.getElementById('editForm');
+        editForm.classList.remove('show');
+    }
+
+    function openCreateForm() {
+        closeAllForms(); // Close any open modals first
+        const createForm = document.getElementById('createForm');
+        createForm.classList.add('show');
+        setTimeout(() => document.getElementById('value').focus(), 300);
+    }
+    
+    function showEditForm(id, value, order) {
+        closeAllForms();
+        
+        // Populate form fields
+        document.getElementById('editId').value = id;
+        document.getElementById('editValue').value = value;
+        document.getElementById('editOrder').value = order === null ? '' : order;
+
+        // Show form
+        const editForm = document.getElementById('editForm');
+        editForm.classList.add('show');
+        setTimeout(() => document.getElementById('editValue').focus(), 300);
+    }
+
+    function showDeleteConfirmation(categoryId, categoryValue, deleteForm) {
+        deleteFormToSubmit = deleteForm;
+        categoryToDelete = categoryValue;
+
+        // Update the confirmation message
+        document.getElementById('deleteConfirmMessage').textContent =
+            `Are you sure you want to delete the category "${categoryValue}"?`;
+
+        // Show the modal
+        document.getElementById('deleteConfirmModal').classList.add('show');
+    }
+    
+    function closeDeleteConfirmModal() {
+        document.getElementById('deleteConfirmModal').classList.remove('show');
+        deleteFormToSubmit = null;
+        categoryToDelete = null;
+    }
+
+    function confirmDelete() {
+        if (deleteFormToSubmit) {
+            deleteFormToSubmit.submit();
+        }
+        closeDeleteConfirmModal();
+    }
+
+    function deleteCategoryType() {
+        closeAllForms();
+        const modal = document.getElementById('deleteTypeModal');
+        modal.classList.add('show');
+    }
+
+    function closeDeleteTypeModal() {
+        const modal = document.getElementById('deleteTypeModal');
+        modal.classList.remove('show');
+    }
+
+    function closeAllForms() {
+        document.getElementById('typeForm').classList.remove('show');
+        document.getElementById('createForm').classList.remove('show');
+        document.getElementById('editForm').classList.remove('show');
+        document.getElementById('deleteTypeModal').classList.remove('show');
+    }
+
+    // Copy to clipboard function (enhanced)
     async function copyToClipboard(text, button) {
         try {
             if (navigator.clipboard && window.isSecureContext) {
@@ -525,11 +1104,18 @@ Layout = "_Layout";
 
         } catch (err) {
             console.error('Failed to copy text: ', err);
+            // Fallback notification
+            const notification = document.createElement('div');
+            notification.textContent = 'Failed to copy to clipboard';
+            notification.style.cssText = 'position:fixed;top:20px;right:20px;background:#ef4444;color:white;padding:1rem;border-radius:0.5rem;z-index:9999';
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
         }
     }
 
-    // Auto-hide alerts after 5 seconds
+    // Event listeners
     document.addEventListener('DOMContentLoaded', function() {
+        // Auto-hide alerts after 5 seconds
         const alerts = document.querySelectorAll('.alert');
         alerts.forEach(function(alert) {
             setTimeout(function() {
@@ -543,6 +1129,34 @@ Layout = "_Layout";
                     }, 300);
                 }
             }, 5000);
+        });
+
+        // Close overlays when clicking outside
+        ['typeForm', 'createForm', 'editForm', 'deleteTypeModal'].forEach(id => {
+            document.getElementById(id).addEventListener('click', function(e) {
+                closeOnOutsideClick(e, id);
+            });
+        });
+
+        // Close overlays with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAllForms();
+            }
+        });
+
+        document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteConfirmModal();
+            }
+        });
+
+// Close all modals with Escape key (update existing function)
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAllForms();
+                closeDeleteConfirmModal();
+            }
         });
     });
 </script>

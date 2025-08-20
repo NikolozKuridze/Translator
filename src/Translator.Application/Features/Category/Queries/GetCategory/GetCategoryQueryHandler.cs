@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
@@ -7,34 +8,57 @@ using CategoryEntity = Translator.Domain.DataModels.Category;
 
 namespace Translator.Application.Features.Category.Queries.GetCategory;
 
-public class GetCategoryQueryHandler(IRepository<CategoryEntity> _categoryRepository)
+public class GetCategoryQueryHandlerRecursive(IRepository<CategoryEntity> categoryRepository)
     : IRequestHandler<GetCategoryQuery, CategoryReadDto>
 {
     public async Task<CategoryReadDto> Handle(GetCategoryQuery request, CancellationToken cancellationToken)
     {
-        var category = await _categoryRepository
+        var category = await categoryRepository
             .AsQueryable()
-            .Include(c => c.Children)
+            .Include(c => c.Type)
             .FirstOrDefaultAsync(c => c.Id == request.Id, cancellationToken);
 
-        if(category is null)
+        if (category == null)
             throw new CategoryNotFoundException(request.Id);
-        
-        return MapToReadDto(category);
+
+        return await MapToDtoWithChildren(category, cancellationToken);
     }
 
-    private CategoryReadDto MapToReadDto(CategoryEntity category)
+    private async Task<CategoryReadDto> MapToDtoWithChildren(CategoryEntity category,
+        CancellationToken cancellationToken)
     {
-        var dto = new CategoryReadDto(category.Id, category.Value, category.Type, category.Order, category.ParentId);
-        
-        if (category.Children is not null)
-            dto.Children = category.Children.Select(c => MapToReadDto(c)).ToList();
+        var textInfo = CultureInfo.CurrentCulture.TextInfo;
 
-        return dto;
+        var children = await categoryRepository
+            .AsQueryable()
+            .Include(c => c.Type)
+            .Where(c => c.ParentId == category.Id)
+            .OrderBy(c => c.Order)
+            .ToListAsync(cancellationToken);
+
+        var childDtos = new List<CategoryReadDto>();
+        foreach (var child in children)
+        {
+            var childDto = await MapToDtoWithChildren(child, cancellationToken);
+            childDtos.Add(childDto);
+        }
+
+        return new CategoryReadDto(
+            category.Id,
+            textInfo.ToTitleCase(category.Value),
+            textInfo.ToTitleCase(category.Type.Name),
+            category.Order,
+            category.ParentId,
+            childDtos
+        );
     }
 }
 
-public record CategoryReadDto(Guid Id, string Value, string Type, int? Order, Guid? ParentId)
-{
-    public List<CategoryReadDto> Children { get; set; } = [];
-}
+public record CategoryReadDto(
+    Guid Id,
+    string Value,
+    string TypeName,
+    int? Order,
+    Guid? ParentId,
+    List<CategoryReadDto> Children
+);

@@ -12,7 +12,7 @@ public class DeleteCategoryCommandHandler(IRepository<CategoryEntity> _categoryR
     {
         var categoryExists = await _categoryRepository
             .AsQueryable()
-            .FirstOrDefaultAsync(category => category.Id == request.Id);
+            .FirstOrDefaultAsync(category => category.Id == request.Id, cancellationToken: cancellationToken);
 
         if (categoryExists is null)
             throw new CategoryNotFoundException(request.Id);
