@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using Translator.Domain.DataModels;
 using Translator.Infrastructure.Configurations;
 
@@ -40,6 +41,6 @@ public class LanguageSeeder
         public string Name { get; set; } = string.Empty;
         
         [JsonPropertyName("hexrange")]
-        public List<string> HexRange { get; set; } = default!;
+        public List<string> HexRange { get; set; } = new();
     }
 }

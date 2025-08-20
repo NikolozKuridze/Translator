@@ -14,10 +14,17 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
             .IsRequired()
             .HasMaxLength(200);
 
-        builder.Property(c => c.Type)
-            .IsRequired()
-            .HasMaxLength(50);
-        
+        builder.Property(c => c.TypeId)
+            .IsRequired();
+
+        builder.Property(c => c.Order)
+            .IsRequired(false);
+
+        builder.HasOne(c => c.Type)
+            .WithMany(ct => ct.Categories)
+            .HasForeignKey(c => c.TypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         builder.HasOne(c => c.Parent)
             .WithMany(c => c.Children)
             .HasForeignKey(c => c.ParentId)

@@ -1,0 +1,993 @@
+@model Translator.Application.Features.Category.Queries.GetCategory.CategoryReadDto
+@{
+ViewData["Title"] = "Category Tree - " + Model.Value;
+Layout = "_Layout";
+var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
+}
+
+<style>
+    body {
+        background-color: #f8fafc;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .tree-header {
+        background: linear-gradient(135deg, #059669 0%, #047857 100%);
+        color: white;
+        padding: 1.5rem 0;
+        margin-bottom: 1.5rem;
+        border-radius: 0.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .tree-header h1 {
+        font-weight: 700;
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .tree-header .lead {
+        font-size: 1rem;
+        opacity: 0.9;
+    }
+
+    .breadcrumb-container {
+        background: white;
+        border-radius: 0.5rem;
+        padding: 0.75rem 1rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        border: 1px solid #f1f5f9;
+    }
+
+    .breadcrumb {
+        background: none;
+        padding: 0;
+        margin: 0;
+        font-size: 0.8rem;
+    }
+
+    .breadcrumb-item + .breadcrumb-item::before {
+        content: "›";
+        color: #64748b;
+        font-weight: 600;
+    }
+
+    .breadcrumb-item a {
+        color: #4f46e5;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .breadcrumb-item a:hover {
+        color: #3730a3;
+        text-decoration: underline;
+    }
+
+    .breadcrumb-item.active {
+        color: #1e293b;
+        font-weight: 600;
+    }
+
+    /* Compact Tree Styles */
+    .tree-container {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid #f1f5f9;
+    }
+
+    .tree-header-section {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        padding: 1rem 1.25rem;
+        font-weight: 600;
+        font-size: 1rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .tree-content {
+        padding: 1rem;
+    }
+
+    /* Compact tree node styles */
+    .tree-node {
+        margin-bottom: 0.5rem;
+    }
+
+    .tree-node-content {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        padding: 0.75rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        position: relative;
+    }
+
+    .tree-node-content:hover {
+        border-color: #4f46e5;
+        background: #f1f5f9;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .tree-node-content.is-root {
+        background: #ecfdf5;
+        border-color: #10b981;
+        border-width: 2px;
+    }
+
+    .tree-node-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .tree-node-info {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .tree-node-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #1e293b;
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+    }
+
+    .expand-btn {
+        background: none;
+        border: none;
+        color: #64748b;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+    }
+
+    .expand-btn:hover {
+        background: #e2e8f0;
+        color: #374151;
+    }
+
+    .expand-btn.expanded {
+        transform: rotate(90deg);
+    }
+
+    .category-type-badge {
+        background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+        color: white;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        font-size: 0.65rem;
+        text-transform: capitalize;
+    }
+
+    .children-count {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        font-size: 0.65rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .root-badge {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.25rem;
+        font-weight: 600;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+    }
+
+    /* Compact action buttons */
+    .node-actions {
+        display: flex;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+    }
+
+    .node-action-btn {
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        border: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        font-size: 0.75rem;
+        text-decoration: none;
+        cursor: pointer;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .node-action-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        text-decoration: none;
+    }
+
+    .btn-add {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+    }
+
+    .btn-edit {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+    }
+
+    .btn-delete {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+
+    .btn-add:hover, .btn-edit:hover, .btn-delete:hover {
+        color: white;
+    }
+
+    /* Compact children container */
+    .tree-children {
+        margin-left: 1.5rem;
+        margin-top: 0.5rem;
+        position: relative;
+        display: none;
+    }
+
+    .tree-children.expanded {
+        display: block;
+    }
+
+    .tree-children::before {
+        content: '';
+        position: absolute;
+        left: -0.75rem;
+        top: 0;
+        bottom: 0.5rem;
+        width: 1px;
+        background: #d1d5db;
+    }
+
+    .tree-children .tree-node::before {
+        content: '';
+        position: absolute;
+        left: -0.75rem;
+        top: 0.75rem;
+        width: 0.75rem;
+        height: 1px;
+        background: #d1d5db;
+    }
+
+    /* Action Buttons */
+    .tree-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .action-btn {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        border: none;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.375rem;
+        font-size: 0.75rem;
+        text-decoration: none;
+        cursor: pointer;
+        font-weight: 500;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .action-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+        text-decoration: none;
+    }
+
+    .btn-back {
+        background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+        color: white;
+    }
+
+    .btn-back:hover {
+        color: white;
+    }
+
+    /* Form overlays - compact */
+    .form-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        z-index: 1000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .form-overlay.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .form-container {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        width: 100%;
+        max-width: 450px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: translateY(-20px);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .form-overlay.show .form-container {
+        transform: translateY(0);
+    }
+
+    .form-header {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        padding: 1rem 1.25rem;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .form-header h5 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .form-body {
+        padding: 1.25rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        display: block;
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.025em;
+    }
+
+    .required {
+        color: #ef4444;
+        font-weight: 700;
+    }
+
+    .form-control {
+        width: 100%;
+        padding: 0.625rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.375rem;
+        font-size: 0.8rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #fafbfc;
+    }
+
+    .form-control:focus {
+        outline: none;
+        border-color: #4f46e5;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .btn-base {
+        padding: 0.625rem 1.25rem;
+        border-radius: 0.375rem;
+        font-weight: 600;
+        font-size: 0.8rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        text-decoration: none;
+        text-align: center;
+        justify-content: center;
+        min-width: 100px;
+    }
+
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #64748b;
+        border: 2px solid #e2e8f0;
+    }
+
+    .btn-cancel:hover {
+        background: #e2e8f0;
+        color: #475569;
+        transform: translateY(-1px);
+    }
+
+    .btn-save, .btn-create, .btn-update {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+    }
+
+    .btn-save:hover, .btn-create:hover, .btn-update:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        padding: 1.25rem;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .form-actions .btn-base {
+        min-width: 120px;
+    }
+
+    /* Modal styles */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        z-index: 2000;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        padding: 1rem;
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .modal.show {
+        display: flex;
+        opacity: 1;
+    }
+
+    .modal-content {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        width: 100%;
+        max-width: 400px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.9);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal.show .modal-content {
+        transform: scale(1);
+    }
+
+    .modal-header {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        padding: 1rem 1.25rem;
+        border-radius: 0.5rem 0.5rem 0 0;
+    }
+
+    .modal-header h4 {
+        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .modal-body {
+        padding: 1.25rem;
+        text-align: center;
+    }
+
+    .modal-body p {
+        font-size: 0.9rem;
+        color: #374151;
+        margin: 0;
+        line-height: 1.6;
+    }
+
+    .modal-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        padding: 1.25rem;
+        border-top: 1px solid #e2e8f0;
+        background: #f8fafc;
+    }
+
+    .modal-actions .btn-base {
+        min-width: 120px;
+    }
+
+    .btn-delete-confirm {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
+    }
+
+    .btn-delete-confirm:hover {
+        background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+    }
+</style>
+
+<div class="container-fluid px-3">
+    <!-- Header Section -->
+    <div class="tree-header text-center">
+        <div class="container">
+            <h1 class="display-6 fw-bold mb-2">
+                <i class="fas fa-sitemap me-2"></i>
+                Category Tree
+            </h1>
+            <p class="lead mb-0">Viewing hierarchy for: <strong>@Model.Value</strong></p>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item">
+                    <a href="@Url.Action("Index", "Categories")">
+                        <i class="fas fa-home me-1"></i>Categories
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    <i class="fas fa-sitemap me-1"></i>@Model.Value Tree
+                </li>
+            </ol>
+        </nav>
+    </div>
+
+    <!-- Error Message -->
+    @if (ViewBag.ErrorMessage != null)
+    {
+    <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
+        <i class="fas fa-exclamation-circle me-2"></i>
+        @ViewBag.ErrorMessage
+    </div>
+    }
+
+    <!-- Success Message -->
+    @if (ViewBag.SuccessMessage != null)
+    {
+    <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
+        <i class="fas fa-check-circle me-2"></i>
+        @ViewBag.SuccessMessage
+    </div>
+    }
+
+    <!-- Tree Container -->
+    <div class="tree-container">
+        <div class="tree-header-section">
+            <h3>
+                <i class="fas fa-tree me-2"></i>
+                Category Hierarchy
+            </h3>
+            <div class="tree-actions">
+                <a href="@Url.Action("Index", "Categories")" class="action-btn btn-back">
+                    <i class="fas fa-arrow-left"></i>
+                    Back to Categories
+                </a>
+            </div>
+        </div>
+
+        <div class="tree-content">
+            <!-- Root Category -->
+            @Html.Partial("_CategoryNode", Model)
+        </div>
+    </div>
+</div>
+
+<!-- Create Category Form Overlay -->
+<div class="form-overlay" id="createForm">
+    <div class="form-container">
+        <div class="form-header">
+            <h5><i class="fas fa-plus me-2"></i>Create New Category</h5>
+        </div>
+        <form action="@Url.Action("Create", "Categories")" method="post">
+            <input type="hidden" id="returnToTreeId" name="returnToTreeId" value="@Model.Id" />
+            <input type="hidden" id="parentId" name="parentId" value="" />
+            <div class="form-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="value" class="form-label">
+                            Value <span class="required">*</span>
+                        </label>
+                        <input type="text"
+                               class="form-control"
+                               id="value"
+                               name="value"
+                               required
+                               placeholder="Enter category value">
+                    </div>
+                    <div class="form-group">
+                        <label for="type" class="form-label">
+                            Type <span class="required">*</span>
+                        </label>
+                        <select class="form-control" id="type" name="type" required>
+                            <option value="">Select a type</option>
+                            @foreach (var type in categoryTypes)
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="order" class="form-label">Order</label>
+                        <input type="number"
+                               class="form-control"
+                               id="order"
+                               name="order"
+                               min="0"
+                               placeholder="Display order">
+                    </div>
+                    <!-- Parent info display (read-only) -->
+                    <div class="form-group">
+                        <label class="form-label">Parent Category</label>
+                        <div class="form-control" id="parentInfo" style="background: #f8f9fa; color: #6c757d; cursor: not-allowed;">
+                            Root Category
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-base btn-cancel" onclick="toggleCreateForm()">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="submit" class="btn-base btn-create">
+                    <i class="fas fa-save me-1"></i>Create Category
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+<!-- Edit Category Form Overlay -->
+<div class="form-overlay" id="editForm">
+    <div class="form-container">
+        <div class="form-header">
+            <h5><i class="fas fa-edit me-2"></i>Update Category</h5>
+        </div>
+        <form action="@Url.Action("Update", "Categories")" method="post">
+            <input type="hidden" id="editId" name="id" />
+            <input type="hidden" name="returnToTreeId" value="@Model.Id" />
+            <div class="form-body">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="editValue" class="form-label">Value</label>
+                        <input type="text"
+                               class="form-control"
+                               id="editValue"
+                               name="value"
+                               placeholder="Enter category value">
+                    </div>
+                    <div class="form-group">
+                        <label for="editOrder" class="form-label">Order</label>
+                        <input type="number"
+                               class="form-control"
+                               id="editOrder"
+                               name="order"
+                               min="0"
+                               placeholder="Display order">
+                    </div>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn-base btn-cancel" onclick="toggleEditForm()">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="submit" class="btn-base btn-update">
+                    <i class="fas fa-save me-1"></i>Update Category
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal" id="deleteConfirmModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h4><i class="fas fa-exclamation-triangle me-2"></i>Confirm Deletion</h4>
+        </div>
+        <div class="modal-body">
+            <p id="deleteConfirmMessage">Are you sure you want to delete this category?</p>
+        </div>
+        <div class="modal-actions">
+            <button type="button" class="btn-base btn-cancel" onclick="closeDeleteConfirmModal()">
+                <i class="fas fa-times me-1"></i>Cancel
+            </button>
+            <button type="button" class="btn-base btn-delete-confirm" onclick="confirmDelete()">
+                <i class="fas fa-trash me-1"></i>Delete
+            </button>
+        </div>
+    </div>
+</div>
+<script>
+    let deleteFormToSubmit = null;
+    let categoryToDelete = null;
+    let expandedNodes = new Set();
+
+    // Load expanded state from localStorage on page load
+    function loadExpandedState() {
+        const stored = localStorage.getItem('categoryTreeExpanded');
+        if (stored) {
+            try {
+                const expandedArray = JSON.parse(stored);
+                expandedNodes = new Set(expandedArray);
+                
+                // Restore the expanded state
+                expandedNodes.forEach(nodeId => {
+                    const childrenContainer = document.getElementById('children-' + nodeId);
+                    const expandBtn = document.getElementById('expand-' + nodeId);
+                    
+                    if (childrenContainer && expandBtn) {
+                        childrenContainer.classList.add('expanded');
+                        expandBtn.classList.add('expanded');
+                    }
+                });
+            } catch (e) {
+                console.error('Error loading expanded state:', e);
+                expandedNodes = new Set();
+            }
+        }
+    }
+
+    // Save expanded state to localStorage
+    function saveExpandedState() {
+        localStorage.setItem('categoryTreeExpanded', JSON.stringify([...expandedNodes]));
+    }
+
+    // Toggle children visibility with state persistence
+    function toggleChildren(categoryId) {
+        const childrenContainer = document.getElementById('children-' + categoryId);
+        const expandBtn = document.getElementById('expand-' + categoryId);
+        
+        if (childrenContainer && expandBtn) {
+            const isExpanded = childrenContainer.classList.contains('expanded');
+            
+            if (isExpanded) {
+                childrenContainer.classList.remove('expanded');
+                expandBtn.classList.remove('expanded');
+                expandedNodes.delete(categoryId);
+            } else {
+                childrenContainer.classList.add('expanded');
+                expandBtn.classList.add('expanded');
+                expandedNodes.add(categoryId);
+            }
+            
+            saveExpandedState();
+        }
+    }
+
+    // Save state before form submissions
+    function saveStateBeforeSubmit() {
+        saveExpandedState();
+    }
+
+    // Create category with parent ID and parent name
+    function openCreateForm(parentId = null, parentName = 'Root Category') {
+        closeAllForms();
+        
+        // Set parent ID and display parent info
+        if (parentId) {
+            document.getElementById('parentId').value = parentId;
+            document.getElementById('parentInfo').textContent = `Child of: ${parentName}`;
+        } else {
+            document.getElementById('parentId').value = '';
+            document.getElementById('parentInfo').textContent = 'Root Category';
+        }
+        
+        const createForm = document.getElementById('createForm');
+        createForm.classList.add('show');
+        setTimeout(() => document.getElementById('value').focus(), 300);
+    }
+
+    function toggleCreateForm() {
+        const createForm = document.getElementById('createForm');
+        createForm.classList.remove('show');
+    }
+
+    function showEditForm(id, value, order) {
+        closeAllForms();
+        
+        // Populate form fields
+        document.getElementById('editId').value = id;
+        document.getElementById('editValue').value = value;
+        document.getElementById('editOrder').value = order === null ? '' : order;
+
+        // Show form
+        const editForm = document.getElementById('editForm');
+        editForm.classList.add('show');
+        setTimeout(() => document.getElementById('editValue').focus(), 300);
+    }
+
+    function toggleEditForm() {
+        const editForm = document.getElementById('editForm');
+        editForm.classList.remove('show');
+    }
+
+    function showDeleteConfirmation(categoryId, categoryValue, deleteForm) {
+        deleteFormToSubmit = deleteForm;
+        categoryToDelete = categoryValue;
+
+        // Update the confirmation message
+        document.getElementById('deleteConfirmMessage').textContent =
+            `Are you sure you want to delete the category "${categoryValue}"?`;
+
+        // Show the modal
+        document.getElementById('deleteConfirmModal').classList.add('show');
+    }
+    
+    function closeDeleteConfirmModal() {
+        document.getElementById('deleteConfirmModal').classList.remove('show');
+        deleteFormToSubmit = null;
+        categoryToDelete = null;
+    }
+
+    function confirmDelete() {
+        if (deleteFormToSubmit) {
+            saveStateBeforeSubmit(); // Save state before deletion
+            deleteFormToSubmit.submit();
+        }
+        closeDeleteConfirmModal();
+    }
+
+    function closeAllForms() {
+        document.getElementById('createForm').classList.remove('show');
+        document.getElementById('editForm').classList.remove('show');
+    }
+
+    async function copyToClipboard(text, button) {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'absolute';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+
+            const icon = button.querySelector('i');
+
+            // Store original classes
+            const originalClasses = icon.className;
+
+            button.classList.add('copied');
+            icon.className = 'fas fa-check';
+
+            setTimeout(() => {
+                button.classList.remove('copied');
+                icon.className = originalClasses;
+            }, 2000);
+
+        } catch (err) {
+            console.error('Failed to copy text: ', err);
+            // Show error feedback
+            const icon = button.querySelector('i');
+            const originalClasses = icon.className;
+
+            icon.className = 'fas fa-times';
+            button.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+
+            setTimeout(() => {
+                icon.className = originalClasses;
+                button.style.background = '';
+            }, 2000);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Load expanded state on page load
+        loadExpandedState();
+
+        // Auto-hide alerts after 5 seconds
+        const alerts = document.querySelectorAll('.alert');
+        alerts.forEach(function (alert) {
+            setTimeout(function () {
+                if (alert && alert.parentNode) {
+                    alert.style.opacity = '0';
+                    alert.style.transition = 'opacity 0.3s';
+                    setTimeout(function () {
+                        if (alert.parentNode) {
+                            alert.parentNode.removeChild(alert);
+                        }
+                    }, 300);
+                }
+            }, 5000);
+        });
+
+        // Close overlays when clicking outside
+        ['createForm', 'editForm'].forEach(id => {
+            document.getElementById(id).addEventListener('click', function(e) {
+                if (e.target === this) {
+                    this.classList.remove('show');
+                }
+            });
+        });
+
+        document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteConfirmModal();
+            }
+        });
+
+        // Close all modals with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAllForms();
+                closeDeleteConfirmModal();
+            }
+        });
+
+        // Add event listeners to forms to save state before submission
+        const createForm = document.querySelector('#createForm form');
+        const editForm = document.querySelector('#editForm form');
+        
+        if (createForm) {
+            createForm.addEventListener('submit', saveStateBeforeSubmit);
+        }
+        
+        if (editForm) {
+            editForm.addEventListener('submit', saveStateBeforeSubmit);
+        }
+    });
+</script>
