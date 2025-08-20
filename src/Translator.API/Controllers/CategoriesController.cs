@@ -30,7 +30,7 @@ public class CategoriesController(IMediator mediator) : Controller
         }
         catch (Exception ex)
         {
-            ViewBag.ErrorMessage = "An error occurred while loading categories.";
+            ViewBag.ErrorMessage = ex.Message;
             ViewBag.CategoryTypes = new List<string>();
             return View(new List<RootCategoryDto>());
         }
@@ -157,7 +157,7 @@ public class CategoriesController(IMediator mediator) : Controller
         }
         catch (Exception ex)
         {
-            ViewBag.ErrorMessage = "An error occurred while loading the category tree.";
+            ViewBag.ErrorMessage = ex.Message;
             return RedirectToAction("Index");
         }
     }
