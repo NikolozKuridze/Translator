@@ -66,6 +66,7 @@
             @using (Html.BeginForm("CreateTranslation", "Values", FormMethod.Post, new { id = "createTranslationForm" }))
             {
                 @Html.Hidden("value", valueName)
+                @Html.Hidden("valueId", valueId)
                 <div class="row g-3">
                     <div class="col-md-4">
                         @Html.Label("languageCode", "Language", new { @class = "form-label" })
@@ -212,6 +213,7 @@ else
                 {
                     @Html.Hidden("value", "")
                     @Html.Hidden("languageCode", "")
+                    @Html.Hidden("valueId", valueId)  <!-- Добавьте эту строку -->
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                     <button type="submit" class="btn btn-danger">
                         <i class="fas fa-trash"></i> Delete Translation
