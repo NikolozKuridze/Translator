@@ -47,7 +47,7 @@ public class CreateTemplateHandler : IRequestHandler<CreateTemplateCommand>
                 .SingleOrDefaultAsync(cancellationToken);
             if (existsValue is null)
                 throw new ValueNotFoundException(valueHash);
-            newTemplate.Values.Add(existsValue);
+            newTemplate.AddValue(existsValue);
         }
         
         await _templateRepository.AddAsync(newTemplate, cancellationToken);
