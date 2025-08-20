@@ -7,5 +7,5 @@ public record GetTemplateCommand(
     Guid TemplateId, 
     string? LanguageCode, 
     bool AllTranslates,
-    PaginationRequest Pagination) 
+    PaginationRequest? Pagination) 
     : IRequest<PaginatedResponse<ValueDto>>;
