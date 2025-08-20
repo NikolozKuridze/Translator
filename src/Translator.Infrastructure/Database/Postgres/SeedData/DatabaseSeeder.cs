@@ -55,14 +55,26 @@ public class DatabaseSeeder
         var templates = await _context.Templates.ToListAsync();
         var values = await _context.Values.ToListAsync();
         
-        for (int i = 0; i < values.Count; i++)
+        for (int i = 0; i < values.Count; i += 10_000)
         {
-            var templateIndex = i % templates.Count;
-            var template = templates[templateIndex];
+            var batch = values.Skip(i).Take(10_000).ToList();
+            var templateIndex = i; 
             
-            template.Values.Add(values[i]);
+            foreach (var value in batch)
+            {
+                var template = templates[templateIndex % templates.Count];
+                var templateProperty = typeof(Value).GetProperty("TemplateId");
+                
+                if (templateProperty != null && templateProperty.CanWrite)
+                    templateProperty.SetValue(value, template.Id);
+                else
+                    template.Values.Add(value);
+
+                templateIndex++;
+            }
+            
+            await _context.SaveChangesAsync();
+            Console.WriteLine($"Assigned {Math.Min(i + 10_000, values.Count)} values to templates");
         }
-        
-        await _context.SaveChangesAsync();
     }
 }
