@@ -43,7 +43,6 @@
     <div class="card-body">
         @using (Html.BeginForm("Search", "Values", FormMethod.Get, new { @class = "row g-3" }))
         {
-            @Html.Hidden("pageNumber", 1)
             @Html.Hidden("pageSize", pageSize, null)
             @Html.Hidden("sortBy", sortBy)
             @Html.Hidden("sortDirection", sortDirection)

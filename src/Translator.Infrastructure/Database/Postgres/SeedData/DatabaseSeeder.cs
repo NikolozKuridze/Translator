@@ -68,7 +68,7 @@ public class DatabaseSeeder
                 if (templateProperty != null && templateProperty.CanWrite)
                     templateProperty.SetValue(value, template.Id);
                 else
-                    template.Values.Add(value);
+                    template.AddValue(value);
 
                 templateIndex++;
             }

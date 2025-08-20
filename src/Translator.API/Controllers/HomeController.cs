@@ -18,7 +18,15 @@ public class HomeController : Controller
     public async Task<IActionResult> Index()
     {
         var command = new GetDashboardStatisticCommand();
-        var statistics = await _mediator.Send(command);
-        return View(statistics);
+        try
+        {
+            var statistics = await _mediator.Send(command);
+            return View(statistics);
+        }
+        catch (Exception)
+        {
+            ViewBag.Error = "Database is not available";
+            return View(new GetDashboardRequestResponse(0, 0, 0, 0));
+        }
     }
 }
