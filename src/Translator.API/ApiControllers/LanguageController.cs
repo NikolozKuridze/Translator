@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Translator.API.Contracts;
+using Translator.API.Models;
 using Translator.Application.Features.Language.Commands.AddLanguage;
 using Translator.Application.Features.Language.Commands.DeleteLanguage;
 using Translator.Application.Features.Language.Queries.GetLanguages;
@@ -18,7 +18,7 @@ public class LanguageController : ControllerBase
 
     [HttpPost("language/add")]
     public async Task<IResult> Handle(
-        [FromBody] AddLanguageContract request)
+        [FromBody] AddLanguageModel request)
     {
         var command = new AddLanguage.AddLanguageCommand(request.Code.ToLower().Trim());
         var result = await _mediator.Send(command);
@@ -27,7 +27,7 @@ public class LanguageController : ControllerBase
 
     [HttpDelete("language/remove")]
     public async Task<IResult> Handle(
-        [FromBody] DeleteLanguageContract request)
+        [FromBody] DeleteLanguageModel request)
     {
         var command = new DeleteLanguageCommand(request.Code);
         await _mediator.Send(command);

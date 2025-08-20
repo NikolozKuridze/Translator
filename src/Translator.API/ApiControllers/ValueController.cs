@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Translator.API.Contracts;
+using Translator.API.Models;
 using Translator.Application.Features.Values.Commands.CreateValue;
 using Translator.Application.Features.Values.Commands.DeleteValue;
 using Translator.Application.Features.Values.Queries.GetAllValues;
@@ -60,18 +60,18 @@ public class ValueController : ControllerBase
     
     [HttpPost("add-value")]
     public async Task<IResult> AddValue(
-        [FromBody] CreateValueContract contract)
+        [FromBody] CreateValueModel model)
     {
-        var command = new CreateValueCommand(contract.Key.Trim(), contract.Value.Trim());
+        var command = new CreateValueCommand(model.Key.Trim(), model.Value.Trim());
         await _mediator.Send(command);
         return Results.Ok();
     }
 
     [HttpDelete("delete-value")]
     public async Task<IResult> DeleteValue(
-        [FromBody] DeleteValueContract contract)
+        [FromBody] DeleteValueModel model)
     {
-        var command = new DeleteValueCommand(contract.ValueName);
+        var command = new DeleteValueCommand(model.ValueName);
         await _mediator.Send(command);
         return Results.NoContent();
     }

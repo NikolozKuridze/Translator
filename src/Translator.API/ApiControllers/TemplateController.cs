@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Translator.API.Contracts;
+using Translator.API.Models;
 using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetAllTemplates;
@@ -20,10 +20,10 @@ public class TemplateController : ControllerBase
     
     [HttpPost("create-template")]
     public async Task<IResult> AddTemplate(
-        [FromBody] CreateTemplateContract contract)
+        [FromBody] CreateTemplateModel model)
     {
         var command = new CreateTemplateCommand(
-            contract.TemplateName.Trim(), contract.Values);
+            model.TemplateName.Trim(), model.Values);
         await _mediator.Send(command);
         
         return Results.Ok();

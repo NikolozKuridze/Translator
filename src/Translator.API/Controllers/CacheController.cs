@@ -96,7 +96,7 @@ public class CacheController : Controller
                 templateId,
                 null,
                 true,
-                null);
+                new PaginationRequest(1, 10, null, null, null, null));
             var templateData = await _mediator.Send(templateQuery);
 
             if (!templateData.Items.Any())

@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.Extensions.Options;
-using Translator.API.Contracts;
+using Translator.API.Models;
 
 namespace Translator.API.Attributes;
 

@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Translator.API.Contracts;
+using Translator.API.Models;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 
@@ -17,18 +17,18 @@ public class TranslationController : ControllerBase
     
     [HttpPost("create-translation")]
     public async Task<IResult> AddTranslation(
-        [FromBody] CreateTranslationContract contract)
+        [FromBody] CreateTranslationModel model)
     {
-        var command = new CreateTranslationCommand(contract.Value.Trim(), contract.Translation, contract.LanguageCode.Trim());        
+        var command = new CreateTranslationCommand(model.Value.Trim(), model.Translation, model.LanguageCode.Trim());        
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
 
     [HttpDelete("delete-translation")]
     public async Task<IResult> DeleteTranslation(
-        [FromBody] DeleteTranslationContract contract)
+        [FromBody] DeleteTranslationModel model)
     {
-        var command = new DeleteTranslationCommand(contract.Value, contract.LanguageCode);
+        var command = new DeleteTranslationCommand(model.Value, model.LanguageCode);
         await _mediator.Send(command);
         return Results.NoContent();
     }

@@ -1,4 +1,4 @@
-namespace Translator.API.Contracts;
+namespace Translator.API.Models;
 
 public class AdminAuthSettings
 {

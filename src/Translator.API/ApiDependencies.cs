@@ -1,9 +1,8 @@
 using Scalar.AspNetCore;
 using Serilog;
 using Translator.API.Attributes;
-using Translator.API.Contracts;
 using Translator.API.Middlewares;
-using Translator.Application.Helpers;
+using Translator.API.Models;
 
 namespace Translator.API;
 

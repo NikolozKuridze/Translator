@@ -11,7 +11,7 @@ public class Template : BaseEntity
     
     private List<Value> _values = new();
     public ICollection<Value> Values => _values.AsReadOnly();
-
+    
     public Template(string name)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));

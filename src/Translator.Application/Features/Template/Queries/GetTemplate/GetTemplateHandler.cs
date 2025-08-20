@@ -56,7 +56,6 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
                 t.Key.Contains(request.Pagination.Search, StringComparison.OrdinalIgnoreCase) ||
                 t.Value.Contains(request.Pagination.Search, StringComparison.OrdinalIgnoreCase));
         }
-
         
         translations = ApplySorting(translations, request.Pagination!)
             .ToList();
@@ -126,11 +125,11 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
         if (allItems.Count == 0)
             throw new TemplateNotFoundException(request.TemplateId.ToString());
 
-        var sortedItems = ApplySorting(allItems, request.Pagination!).ToArray();
-
-        var totalItems = sortedItems.Length;
+        var sortedItems = ApplySorting(allItems, request.Pagination!).ToList();
+        
+        var totalItems = sortedItems.Count;
         var pagedItems = sortedItems
-            .Skip((request.Pagination!.Page - 1) * request.Pagination.PageSize)
+            .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
             .Take(request.Pagination.PageSize)
             .ToList();
 
@@ -147,9 +146,9 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
 
     private static IEnumerable<ValueDto> ApplySorting(
         IEnumerable<ValueDto> query, 
-        PaginationRequest pagination)
+        PaginationRequest? pagination)
     {
-        if (string.IsNullOrEmpty(pagination.SortBy))
+        if (pagination?.SortBy is null)
             return query.OrderBy(x => x.Key); 
 
         var isDescending = pagination.SortDirection?.ToLower() == "desc";

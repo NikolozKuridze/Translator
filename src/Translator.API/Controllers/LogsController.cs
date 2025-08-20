@@ -67,7 +67,7 @@ public class LogsController : Controller
     {
         try
         {
-            var command = new GetLogsCommand(new PaginationRequest(0, 100000000, null, null, null, null));
+            var command = new GetLogsCommand(new PaginationRequest(1, 100000000, null, null, null, null));
             var allLogs = await _mediator.Send(command);
             
             var targetLog = allLogs.Items.FirstOrDefault(l => 

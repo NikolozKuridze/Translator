@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using Translator.API.Contracts;
+using Translator.API.Models;
 using Translator.Application.Features.Category.Commands.AddCategory;
 using Translator.Application.Features.Category.Commands.DeleteCategory;
 using Translator.Application.Features.Category.Commands.UpdateCategory;
@@ -15,9 +15,9 @@ namespace Translator.API.ApiControllers;
 public class CategoryController(IMediator mediator) : ControllerBase
 {
     [HttpPost]
-    public async Task<ActionResult<Guid>> CreateCategory(CreateCategoryContract contract)
+    public async Task<ActionResult<Guid>> CreateCategory(CreateCategoryModel model)
     {
-        var command = new CreateCategoryCommand(contract.Value.ToLower().Trim(), contract.Type.ToLower().Trim(), contract.Order, contract.ParentId);
+        var command = new CreateCategoryCommand(model.Value.ToLower().Trim(), model.Type.ToLower().Trim(), model.Order, model.ParentId);
         var categoryId = await mediator.Send(command);
         return Ok(categoryId);
     }
@@ -39,18 +39,18 @@ public class CategoryController(IMediator mediator) : ControllerBase
     }
 
     [HttpDelete]
-    public async Task<ActionResult> DeleteCategory(DeleteCategoryContract contract)
+    public async Task<ActionResult> DeleteCategory(DeleteCategoryModel model)
     {
-        var command = new DeleteCategoryCommand(contract.Id);
+        var command = new DeleteCategoryCommand(model.Id);
         await mediator.Send(command);
         
         return  NoContent();
     }
 
     [HttpPut]
-    public async Task<ActionResult> UpdateCategory(UpdateCategoryContract contract)
+    public async Task<ActionResult> UpdateCategory(UpdateCategoryModel model)
     {
-        var command = new UpdateCategoryCommand(contract.Id, contract.Value?.ToLower().Trim(), contract.Order);
+        var command = new UpdateCategoryCommand(model.Id, model.Value?.ToLower().Trim(), model.Order);
         await mediator.Send(command);
         
         return NoContent();
