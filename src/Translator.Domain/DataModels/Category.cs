@@ -8,9 +8,9 @@ public class Category(
 {
     public string Value { get; set; } = value;
     public Guid TypeId { get; init; } = typeId;
-    public CategoryType Type { get; set; }
+    public CategoryType Type { get; init; }
     public int? Order { get; set; } = order;
-    public Guid? ParentId { get; set; } = parentId;
-    public Category? Parent { get; set; }
-    public List<Category>? Children { get; set; }
+    public Guid? ParentId { get; init; } = parentId;
+    public Category? Parent { get; init; }
+    public List<Category>? Children { get; init; }
 }
