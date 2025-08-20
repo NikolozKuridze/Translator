@@ -9,6 +9,7 @@ using Translator.Application.Features.Caching.Queries.Template;
 using Translator.Application.Features.Caching.Queries.Value;
 using Translator.Application.Features.Values.Queries.GetValue;
 using Translator.Application.Features.Template.Queries.GetTemplate;
+using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Redis.CacheServices;
 
 namespace Translator.API.Controllers;
@@ -32,42 +33,37 @@ public class CacheController : Controller
         {
             var skip = (pageNumber - 1) * pageSize;
             
-            // Получаем закэшированные шаблоны и значения
-            var templatesTask = _mediator.Send(new GetCachedTemplatesCommand(skip, pageSize));
-            var valuesTask = _mediator.Send(new GetCachedValueCommand(skip, pageSize));
+            var templatesTask = _mediator.Send(new GetCachedTemplatesCommand(new PaginationRequest(skip, pageSize)));
+            var valuesTask = _mediator.Send(new GetCachedValueCommand(new PaginationRequest(skip, pageSize)));
             
             await Task.WhenAll(templatesTask, valuesTask);
             
             var templates = await templatesTask;
             var values = await valuesTask;
             
-            // Объединяем в общий список
             var cachedItems = new List<CachedItemViewModel>();
             
-            // Добавляем шаблоны
-            cachedItems.AddRange(templates.Select(t => new CachedItemViewModel
+            cachedItems.AddRange(templates.Items.Select(t => new CachedItemViewModel
             {
                 Id = t.TemplateId,
                 Name = t.TemplateName,
                 Type = "Template",
                 Count = t.ValuesCount,
-                TotalCount = t.TemplatesCount
+                TotalCount = templates.TotalItems
             }));
             
-            // Добавляем значения
-            cachedItems.AddRange(values.Select(v => new CachedItemViewModel
+            cachedItems.AddRange(values.Items.Select(v => new CachedItemViewModel
             {
                 Id = v.ValueId,
                 Name = v.ValueKey,
                 Type = "Value",
                 Count = v.TranslationsCount,
-                TotalCount = v.ValuesCount
+                TotalCount = values.TotalItems
             }));
             
-            // Сортируем по имени
+            
             cachedItems = cachedItems.OrderBy(x => x.Name).ToList();
             
-            // Пагинация объединенного списка
             var totalItems = cachedItems.Count;
             var totalPages = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
             pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
@@ -96,17 +92,21 @@ public class CacheController : Controller
     {
         try
         {
-            var templateQuery = new GetTemplateCommand(templateId, null, true);
-            var templateData = (await _mediator.Send(templateQuery)).ToList();
+            var templateQuery = new GetTemplateCommand(
+                templateId,
+                null,
+                true,
+                new PaginationRequest(1, 1000));
+            var templateData = await _mediator.Send(templateQuery);
 
-            if (!templateData.Any())
+            if (!templateData.Items.Any())
             {
                 return Json(new { success = false, message = "Template not found" });
             }
 
-            var templateName = templateData.First().Key; 
+            var templateName = templateData.Items.First().Key; 
 
-            var translations = templateData.Select(t => new TranslationDto(
+            var translations = templateData.Items.Select(t => new TranslationDto(
                 t.Key,
                 t.Value,
                 t.ValueId,
@@ -204,13 +204,11 @@ public class CacheController : Controller
         }
     }
 }
-
-// ViewModel для объединенного списка
 public class CachedItemViewModel
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty; // "Template" or "Value"
+    public string Type { get; set; } = string.Empty; 
     public int Count { get; set; }
     public long TotalCount { get; set; }
 }

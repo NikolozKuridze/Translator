@@ -6,6 +6,7 @@ using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetAllTemplates;
 using Translator.Application.Features.Template.Queries.GetTemplate;
+using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
 
@@ -28,12 +29,18 @@ public class Templates : Controller
         int pageNumber = 1,
         int pageSize = 10)
     {
-        var command = new GetAllTemplatesCommand(pageNumber, pageSize, sortBy, sortDirection);
+        var command = new GetAllTemplatesCommand(
+            new PaginationRequest(
+                pageNumber, 
+                pageSize,
+                sortBy:sortBy,
+                sortDirection:sortDirection));
+        
         var templates = await _mediator.Send(command);
 
-        var totalCount = templates.FirstOrDefault()?.TemplateCount ?? 0;
-        var totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
-        pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
+        var totalCount = templates.TotalItems;
+        var totalPages = templates.TotalPages;
+        pageNumber = templates.Page;
 
         ViewBag.CurrentPage = pageNumber;
         ViewBag.PageSize = pageSize;
@@ -42,7 +49,7 @@ public class Templates : Controller
         ViewBag.SortBy = sortBy;
         ViewBag.SortDirection = sortDirection;
 
-        return View(templates);
+        return View(templates.Items);
     }
 
     [HttpGet("Details/{templateId:guid}")]
@@ -59,19 +66,24 @@ public class Templates : Controller
             .OrderBy(l => l.LanguageCode)
             .ToList();
 
-        var query = new GetTemplateCommand(templateId, lang, false);
-        var allTemplateData = (await _mediator.Send(query)).ToList();
+        var query = new GetTemplateCommand(
+            templateId, 
+            lang,
+            false,
+            new PaginationRequest(pageNumber, pageSize));
+        var allTemplateData = await _mediator.Send(query);
         
-        var totalCount = allTemplateData.Count;
+        var totalCount = allTemplateData.TotalItems;
         var totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
         pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
 
         var pagedTemplateData = allTemplateData
+            .Items
             .Skip((pageNumber - 1) * pageSize)
             .Take(pageSize)
             .ToList();
 
-        var templateName = allTemplateData.FirstOrDefault()?.Key ?? "Unknown";
+        var templateName = allTemplateData.Items.FirstOrDefault()?.Key ?? "Uknown template";
 
         ViewBag.TemplateId = templateId;
         ViewBag.TemplateName = templateName;

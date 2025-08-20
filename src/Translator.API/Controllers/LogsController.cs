@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
 using Translator.Application.Features.Logs.Queries;
+using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
 
@@ -28,16 +29,19 @@ public class LogsController : Controller
                 dateFrom = DateTime.UtcNow; 
                 dateTo = DateTime.UtcNow.AddHours(lastHours.Value);
             }
-
-            var skip = (pageNumber - 1) * pageSize;
         
-            var command = new GetLogsCommand(skip, pageSize, dateFrom, dateTo);
+            var command = new GetLogsCommand(
+                new PaginationRequest(
+                    pageNumber,
+                    pageSize,
+                    dateFrom: dateFrom,
+                    dateTo: dateFrom ));
             var logs = await _mediator.Send(command);
 
 
-            var totalCount = logs.FirstOrDefault()?.LogsCount ?? 0;
-            var totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
-            pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
+            var totalCount = logs.TotalItems;
+            var totalPages = logs.TotalPages;
+            pageNumber = logs.Page;
 
             ViewBag.CurrentPage = pageNumber;
             ViewBag.PageSize = pageSize;
@@ -47,7 +51,7 @@ public class LogsController : Controller
             ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd") ?? "";
             ViewBag.LastHours = lastHours?.ToString() ?? "";
 
-            return View(logs);
+            return View(logs.Items);
         }
         catch (Exception ex)
         {
@@ -61,10 +65,10 @@ public class LogsController : Controller
     {
         try
         {
-            var command = new GetLogsCommand(0, 100);
+            var command = new GetLogsCommand(new PaginationRequest(0, 100));
             var allLogs = await _mediator.Send(command);
             
-            var targetLog = allLogs.FirstOrDefault(l => 
+            var targetLog = allLogs.Items.FirstOrDefault(l => 
                 Math.Abs((l.Timestamp - timestamp).TotalSeconds) < 1);
 
             if (targetLog == null)
@@ -74,6 +78,7 @@ public class LogsController : Controller
             }
 
             ViewBag.LogTimestamp = timestamp;
+            ViewBag.TotalCount = allLogs.TotalItems;
             return View(targetLog);
         }
         catch (Exception ex)

@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.Application.Features.Logs.Queries;
+using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
@@ -15,11 +16,11 @@ public class LogController : ControllerBase
         => _mediator = mediator;
 
     [HttpGet]
-    public async Task<IEnumerable<GetLogsResponse>> Handle(
+    public async Task<PaginatedResponse<GetLogsResponse>> Handle(
         [FromQuery] int skip = 1, 
         [FromQuery] int page = 10)
     {
-        var request  = new GetLogsCommand(skip, page);
-        return await _mediator.Send(request);
+        var request = new GetLogsCommand(new PaginationRequest(skip, page));
+        return await _mediator.Send(new GetLogsCommand(new PaginationRequest(skip, page)));
     }
 }

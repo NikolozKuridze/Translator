@@ -8,6 +8,7 @@ using Translator.Application.Features.Values.Queries.GetAllValues;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 using Translator.Application.Features.Language.Queries.GetLanguages;
+using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
 
@@ -26,22 +27,29 @@ public class ValuesController : Controller
         string sortDirection = "asc",
         int pageNumber = 1,
         int pageSize = 10)
-    {
-        var command = new GetAllValuesCommand(pageNumber, pageSize, sortBy, sortDirection);
-        var values = await _mediator.Send(command);
+    {   try
+        {
+            var paginationRequest = new PaginationRequest(pageNumber, pageSize, sortBy: sortBy, sortDirection: sortDirection);
 
-        var totalCount = values.FirstOrDefault()?.TotalCount ?? 0;
-        var totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
-        pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
+            var command = new GetAllValuesCommand(paginationRequest);
+            var result = await _mediator.Send(command);
 
-        ViewBag.CurrentPage = pageNumber;
-        ViewBag.PageSize = pageSize;
-        ViewBag.TotalPages = totalPages;
-        ViewBag.TotalCount = totalCount;
-        ViewBag.SortBy = sortBy;
-        ViewBag.SortDirection = sortDirection;
+            ViewBag.CurrentPage = result.Page;
+            ViewBag.PageSize = result.PageSize;
+            ViewBag.TotalPages = result.TotalPages;
+            ViewBag.TotalCount = result.TotalItems;
+            ViewBag.HasNextPage = result.HasNextPage;
+            ViewBag.HasPreviousPage = result.HasPreviousPage;
+            ViewBag.SortBy = sortBy;
+            ViewBag.SortDirection = sortDirection;
 
-        return View(values);
+            return View(result.Items);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error loading values: {ex.Message}";
+            return View(new List<GetAllValuesResponse>());
+        }
     }
     
     [HttpGet("Details/{valueId:guid}")]
@@ -105,14 +113,14 @@ public class ValuesController : Controller
     }
 
     [HttpPost("CreateTranslation")]
-    public async Task<IActionResult> CreateTranslation(string value, string translation, string languageCode)
+    public async Task<IActionResult> CreateTranslation(string value, Guid ValueId, string translation, string languageCode)
     {
         try
         {
             if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(translation) || string.IsNullOrWhiteSpace(languageCode))
             {
                 TempData["ErrorMessage"] = "All fields are required for creating translation.";
-                return RedirectToAction("Details", new { valueName = value });
+                return RedirectToAction("Details", new { valueId = ValueId });
             }
 
             var command = new CreateTranslationCommand(value.Trim(), translation.Trim(), languageCode.Trim());
@@ -125,16 +133,16 @@ public class ValuesController : Controller
             TempData["ErrorMessage"] = $"Error creating translation: {ex.Message}";
         }
 
-        return RedirectToAction("Details", new { valueName = value });
+        return RedirectToAction("Details", new { valueId = ValueId });
     }
 
     [HttpPost("DeleteTranslation")]
-    public async Task<IActionResult> DeleteTranslation(string value, string languageCode)
+    public async Task<IActionResult> DeleteTranslation(string value, Guid ValueId, string languageCode)
     {
         if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(languageCode))
         {
             TempData["ErrorMessage"] = "Value and language code are required for deleting translation.";
-            return RedirectToAction("Details", new { valueName = value });
+            return RedirectToAction("Details", new { valueId = ValueId });
         }
 
         var command = new DeleteTranslationCommand(value.Trim(), languageCode.Trim());
@@ -142,6 +150,6 @@ public class ValuesController : Controller
         
         TempData["SuccessMessage"] = "Translation deleted successfully!";
         
-        return RedirectToAction("Details", new { valueName = value });
+        return RedirectToAction("Details", new { valueId = ValueId });
     }
 }
