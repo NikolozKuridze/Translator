@@ -1,8 +1,8 @@
 @model Translator.Application.Features.Category.Queries.GetCategory.CategoryReadDto
 @{
     // Determine if this is a root category by checking ParentId
-    bool isRoot = !Model.ParentId.HasValue;
-    int childrenCount = Model.Children?.Count ?? 0;
+    var isRoot = !Model.ParentId.HasValue;
+    var childrenCount = Model.Children?.Count ?? 0;
 }
 
 <div class="tree-node">

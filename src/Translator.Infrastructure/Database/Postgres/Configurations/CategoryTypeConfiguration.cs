@@ -1,7 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using Translator.Domain;
-using Translator.Domain.Entities;
+using Translator.Domain.DataModels;
+using Translator.Infrastructure.Database.Postgres.Configurations.Constants;
 
 namespace Translator.Infrastructure.Database.Postgres.Configurations;
 
@@ -13,7 +14,7 @@ public class CategoryTypeConfiguration : IEntityTypeConfiguration<CategoryType>
 
         builder.Property(ct => ct.Name)
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(DatabaseConstants.Type.NAME_MAX_LENGTH);
 
         builder.HasIndex(ct => ct.Name)
             .IsUnique();
