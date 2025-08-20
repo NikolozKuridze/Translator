@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
@@ -23,12 +24,16 @@ public class GetCategoryQueryHandlerRecursive(IRepository<CategoryEntity> catego
         return await MapToDtoWithChildren(category, cancellationToken);
     }
 
-    private async Task<CategoryReadDto> MapToDtoWithChildren(CategoryEntity category, CancellationToken cancellationToken)
+    private async Task<CategoryReadDto> MapToDtoWithChildren(CategoryEntity category,
+        CancellationToken cancellationToken)
     {
+        var textInfo = CultureInfo.CurrentCulture.TextInfo;
+
         var children = await categoryRepository
             .AsQueryable()
             .Include(c => c.Type)
             .Where(c => c.ParentId == category.Id)
+            .OrderBy(c => c.Order)
             .ToListAsync(cancellationToken);
 
         var childDtos = new List<CategoryReadDto>();
@@ -40,14 +45,15 @@ public class GetCategoryQueryHandlerRecursive(IRepository<CategoryEntity> catego
 
         return new CategoryReadDto(
             category.Id,
-            category.Value,
-            category.Type.Name,
+            textInfo.ToTitleCase(category.Value),
+            textInfo.ToTitleCase(category.Type.Name),
             category.Order,
             category.ParentId,
             childDtos
         );
     }
 }
+
 public record CategoryReadDto(
     Guid Id,
     string Value,

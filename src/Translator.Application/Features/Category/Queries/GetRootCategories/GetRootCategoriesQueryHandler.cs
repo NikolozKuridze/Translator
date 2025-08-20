@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Infrastructure.Database.Postgres.Repository;
@@ -14,6 +15,7 @@ public class GetRootCategoriesQueryHandler(IRepository<CategoryEntity> categoryR
             .AsQueryable()
             .Where(c => c.ParentId == null)
             .Include(c => c.Type)
+            .OrderBy(c => c.Order)
             .ToListAsync(cancellationToken);
 
         return await MapToRootcategoryDto(categories);
@@ -21,7 +23,14 @@ public class GetRootCategoriesQueryHandler(IRepository<CategoryEntity> categoryR
 
     private static async Task<List<RootCategoryDto>> MapToRootcategoryDto(IEnumerable<CategoryEntity> categories)
     {
-        return await Task.FromResult(categories.Select(c =>  new RootCategoryDto(c.Id, c.Value, c.Type.Name, c.Order)).ToList());
+        var textInfo = CultureInfo.CurrentCulture.TextInfo;
+        
+        return await Task.FromResult(categories.Select(c 
+            =>  new RootCategoryDto(
+                c.Id,
+                textInfo.ToTitleCase(c.Value),
+                textInfo.ToTitleCase(c.Type.Name),
+                c.Order)).ToList());
     }
 }
 

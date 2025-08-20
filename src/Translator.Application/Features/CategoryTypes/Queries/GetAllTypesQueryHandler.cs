@@ -1,3 +1,4 @@
+using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Domain.DataModels;
@@ -10,6 +11,7 @@ public class GetAllTypesQueryHandler(IRepository<CategoryType> typeRepository) :
     public async Task<List<string>> Handle(GetAllTypesQuery request, CancellationToken cancellationToken)
     {
         var types = await typeRepository.AsQueryable()
+            .OrderBy(t => t.Name)
             .ToListAsync(cancellationToken: cancellationToken);
         
         if(types.Count == 0)
@@ -17,9 +19,11 @@ public class GetAllTypesQueryHandler(IRepository<CategoryType> typeRepository) :
 
         List<string> typesAsStrings = [];
         
-        typesAsStrings.AddRange(types.Select(t => t.Name));
+        var textInfo = CultureInfo.CurrentCulture.TextInfo;
 
-        return typesAsStrings;
+        var capitalizedTypes = types.Select(t => textInfo.ToTitleCase(t.Name.ToLower())).ToList();
+
+        return capitalizedTypes;
     }
 }
 
