@@ -14,7 +14,7 @@ public class CategoryTypeController(IMediator mediator) : ControllerBase
     [HttpPost]
     public async Task<Guid> Create(CreateCategoryTypeContract contract)
     {
-        var command = new CreateCategoryTypeCommand(contract.TypeName.ToLower());
+        var command = new CreateCategoryTypeCommand(contract.TypeName.ToLower().Trim());
         
         return await mediator.Send(command);
     }
@@ -22,7 +22,7 @@ public class CategoryTypeController(IMediator mediator) : ControllerBase
     [HttpDelete]
     public async Task<ActionResult> Delete(DeleteCategoryTypeContract contract)
     {
-        var command = new DeleteCategoryTypeCommand(contract.TypeName.ToLower());
+        var command = new DeleteCategoryTypeCommand(contract.TypeName.ToLower().Trim());
         
         await mediator.Send(command);
         
