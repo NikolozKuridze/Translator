@@ -1,6 +1,7 @@
 using MediatR;
-using Translator.Application.Features.Caching.Queries.Template;
+using Translator.Domain.Pagination;
+using Translator.Infrastructure.Database.Redis.CacheServices;
 
 namespace Translator.Application.Features.Caching.Queries.Value;
 
-public record GetCachedValueCommand(int Skip, int Take) : IRequest<IEnumerable<GetCachedValueResponse>>;
+public record GetCachedValueCommand(PaginationRequest Pagination) : IRequest<PaginatedResponse<CachedValueInfo>>;
