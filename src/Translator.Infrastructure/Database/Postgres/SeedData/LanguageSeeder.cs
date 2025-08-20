@@ -1,7 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Translator.Domain.DataModels;
 using Translator.Infrastructure.Configurations;
 
@@ -15,9 +14,9 @@ public class LanguageSeeder
     {
         _languageSeedingConfiguration = languageSeedingConfiguration;
     }
-    public Task Seed(ApplicationDbContext dbContext)
+    public async Task Seed(ModelBuilder modelBuilder)
     {
-        //Database/Postgres/SeedData/languages.json
+
         var path = Path.Combine(AppContext.BaseDirectory, _languageSeedingConfiguration.Path);
         var json = File.ReadAllText(path);
 
@@ -28,17 +27,17 @@ public class LanguageSeeder
             Id = StaticGuidGenerator.CreateGuidFromString(l.Name),
             IsActive = false
         });
-        dbContext.Languages.AddRangeAsync(languages);
-        return dbContext.SaveChangesAsync();
+        
+        modelBuilder.Entity<Language>().HasData(languages);
     }
 
     private class LanguageSeedDto
     {
         [JsonPropertyName("code")]
-        public string Code { get; set; } = default!;
+        public string Code { get; set; } = string.Empty;
         
         [JsonPropertyName("name")]
-        public string Name { get; set; } = default!;
+        public string Name { get; set; } = string.Empty;
         
         [JsonPropertyName("hexrange")]
         public List<string> HexRange { get; set; } = default!;

@@ -1,6 +1,4 @@
 using Bogus;
-using System.Security.Cryptography;
-using System.Text;
 using Translator.Domain.DataModels;
 
 namespace Translator.Infrastructure.Database.Postgres.SeedData;
@@ -27,17 +25,13 @@ public class TranslationDataSeeder
     public static (List<Template> templates, List<Value> values, List<Translation> translations)
         GenerateTranslationData(int translationsPerLanguage = 120_000)
     {
-        var templates = new List<Template>();
-        var values = new List<Value>();
-        var translations = new List<Translation>();
-
-        templates = GenerateTemplates(200);
+        var templates = GenerateTemplates(200);
         Console.WriteLine($"Generated {templates.Count} templates");
 
-        values = GenerateValues(translationsPerLanguage);
+        var values = GenerateValues(translationsPerLanguage);
         Console.WriteLine($"Generated {values.Count} values");
 
-        translations = GenerateTranslations(values);
+        var translations = GenerateTranslations(values);
         Console.WriteLine($"Generated {translations.Count} translations");
 
         return (templates, values, translations);
@@ -100,8 +94,7 @@ public class TranslationDataSeeder
             if (translationText.Length > MAX_TRANSLATION_VALUE_LENGTH)
                 translationText = translationText[..MAX_TRANSLATION_VALUE_LENGTH];
 
-            var translation = new Translation(value.Id, translationText);
-            SetLanguageId(translation, RussianLanguageId);
+            var translation = CreateTranslationWithLanguageId(value.Id, translationText, RussianLanguageId);
             translations.Add(translation);
 
             if ((i + 1) % 50_000 == 0)
@@ -115,9 +108,8 @@ public class TranslationDataSeeder
             var translationText = GenerateEnglishTranslation(faker, value.Key);
             if (translationText.Length > MAX_TRANSLATION_VALUE_LENGTH)
                 translationText = translationText[..MAX_TRANSLATION_VALUE_LENGTH];
-
-            var translation = new Translation(value.Id, translationText);
-            SetLanguageId(translation, EnglishLanguageId);
+            
+            var translation = CreateTranslationWithLanguageId(value.Id, translationText, EnglishLanguageId);
             translations.Add(translation);
 
             if ((i + 1) % 50_000 == 0)
@@ -125,6 +117,50 @@ public class TranslationDataSeeder
         }
 
         return translations;
+    }
+
+    private static Translation CreateTranslationWithLanguageId(Guid valueId, string translationText, Guid languageId)
+    {
+        try
+        {
+            var constructorWithLanguageId = typeof(Translation).GetConstructor(new[] { typeof(Guid), typeof(string), typeof(Guid) });
+            if (constructorWithLanguageId != null)
+            {
+                return (Translation)constructorWithLanguageId.Invoke(new object[] { valueId, translationText, languageId });
+            }
+
+            var translation = new Translation(valueId, translationText);
+            var languageIdProperty = typeof(Translation).GetProperty("LanguageId");
+            if (languageIdProperty != null && languageIdProperty.CanWrite)
+            {
+                languageIdProperty.SetValue(translation, languageId);
+                return translation;
+            }
+
+            var privateLanguageIdProperty = typeof(Translation).GetProperty("LanguageId", 
+                System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (privateLanguageIdProperty != null)
+            {
+                privateLanguageIdProperty.SetValue(translation, languageId);
+                return translation;
+            }
+
+            var languageIdField = typeof(Translation).GetField("_languageId", 
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+            if (languageIdField != null)
+            {
+                languageIdField.SetValue(translation, languageId);
+                return translation;
+            }
+
+            Console.WriteLine($"Warning: Could not set LanguageId for translation. Using default constructor.");
+            return translation;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creating translation: {ex.Message}");
+            return new Translation(valueId, translationText);
+        }
     }
 
     private static string GenerateRussianTranslation(Faker faker, string key)
@@ -149,11 +185,5 @@ public class TranslationDataSeeder
             var k when k.Contains("lbl") => faker.Commerce.ProductName(),
             _ => faker.Lorem.Sentence(2, 5)
         };
-    }
-
-    private static void SetLanguageId(Translation translation, Guid languageId)
-    {
-        var propertyInfo = typeof(Translation).GetProperty("LanguageId");
-        propertyInfo?.SetValue(translation, languageId);
     }
 }
