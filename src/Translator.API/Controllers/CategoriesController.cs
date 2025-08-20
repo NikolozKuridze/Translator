@@ -28,7 +28,7 @@ public class CategoriesController(IMediator mediator) : Controller
             ViewBag.CategoryTypes = categoryTypes;
             return View(categories);
         }
-        catch
+        catch (Exception ex)
         {
             ViewBag.ErrorMessage = ex.Message;
             ViewBag.CategoryTypes = new List<string>();
@@ -155,7 +155,7 @@ public class CategoriesController(IMediator mediator) : Controller
             
             return View(category);
         }
-        catch
+        catch (Exception ex)
         {
             ViewBag.ErrorMessage = ex.Message;
             return RedirectToAction("Index");
