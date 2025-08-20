@@ -1,5 +1,6 @@
 using Scalar.AspNetCore;
 using Serilog;
+using Translator.API.Attributes;
 using Translator.API.Contracts;
 using Translator.API.Middlewares;
 using Translator.Application.Helpers;
@@ -8,7 +9,7 @@ namespace Translator.API;
 
 public static class ApiDependencies
 {
-    const int sessionTimeout = 1;
+    private const int SessionTimeout = 1;
     
     public static void AddApiDependencies(this WebApplicationBuilder builder)
     {
@@ -24,10 +25,10 @@ public static class ApiDependencies
 
         builder.Services.AddSession(options =>
         {
-            options.IdleTimeout = TimeSpan.FromHours(sessionTimeout);
+            options.IdleTimeout = TimeSpan.FromHours(SessionTimeout);
             options.Cookie.HttpOnly = true;
             options.Cookie.IsEssential = true;
-            options.Cookie.Name = "AdminSession";
+            options.Cookie.Name = nameof(AdminSession);
         });
 
         builder.Services.AddSerilog(
