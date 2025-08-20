@@ -5,6 +5,7 @@ using Translator.Application.Features.Values.Commands.CreateValue;
 using Translator.Application.Features.Values.Commands.DeleteValue;
 using Translator.Application.Features.Values.Queries.GetAllValues;
 using Translator.Application.Features.Values.Queries.GetValue;
+using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
@@ -32,7 +33,12 @@ public class ValueController : ControllerBase
         [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10,
         [FromQuery] string sortBy = "date", [FromQuery] string sortDirection = "asc")
     {
-        var command = new GetAllValuesCommand(pageNumber, pageSize, sortBy, sortDirection);
+        var command = new GetAllValuesCommand(
+            new PaginationRequest(
+                pageNumber,
+                pageSize,
+                sortBy: sortBy,
+                sortDirection: sortDirection));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }

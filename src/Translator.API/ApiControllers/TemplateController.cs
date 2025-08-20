@@ -5,6 +5,7 @@ using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetAllTemplates;
 using Translator.Application.Features.Template.Queries.GetTemplate;
+using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
@@ -34,7 +35,7 @@ public class TemplateController : ControllerBase
         [FromQuery] bool allTranslates,
         [FromQuery] string? lang = "")
     {
-        var command = new GetTemplateCommand(templateId, lang, allTranslates);
+        var command = new GetTemplateCommand(templateId, lang, allTranslates, new PaginationRequest(1, 1000));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
@@ -42,7 +43,7 @@ public class TemplateController : ControllerBase
     [HttpGet("get-templates/{pageNumber}/{pageSize}")]
     public async Task<IResult> GetTemplate(int pageNumber = 1, int pageSize = 10)
     {
-        var command = new GetAllTemplatesCommand(pageNumber, pageSize);
+        var command = new GetAllTemplatesCommand(new PaginationRequest(pageNumber, pageSize));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
