@@ -25,4 +25,13 @@ public class Template : BaseDataModel
         var hash = SHA256.HashData(bytes);
         return Convert.ToBase64String(hash)[..HashMaxLength];
     }
+    
+    public void AddValue(Value value)
+    {
+        if (value == null) throw new ArgumentNullException(nameof(value));
+        if (!_values.Contains(value))
+        {
+            _values.Add(value);
+        }
+    }
 }
