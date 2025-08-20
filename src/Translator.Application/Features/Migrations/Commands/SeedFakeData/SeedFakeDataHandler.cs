@@ -1,11 +1,10 @@
 using MediatR;
-using Translator.Application.Features.Migrations.Commands.SeedLanguages;
 using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.SeedData;
 
 namespace Translator.Application.Features.Migrations.Commands.SeedFakeData;
 
-public class SeedFakeDataHandler : IRequestHandler<SeedLanguagesCommand>
+public class SeedFakeDataHandler : IRequestHandler<SeedFakeDataCommand>
 {
     private readonly ApplicationDbContext _context;
 
@@ -14,7 +13,7 @@ public class SeedFakeDataHandler : IRequestHandler<SeedLanguagesCommand>
         _context = context;
     }
     
-    public Task Handle(SeedLanguagesCommand request, CancellationToken cancellationToken)
+    public Task Handle(SeedFakeDataCommand request, CancellationToken cancellationToken)
     {
         var databaseSeeder = new DatabaseSeeder(_context);
         return databaseSeeder.SeedTranslationsAsync();

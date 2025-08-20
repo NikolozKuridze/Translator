@@ -2,7 +2,6 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
 using Translator.Application.Features.Migrations.Commands.ApplyMigrations;
-using Translator.Application.Features.Migrations.Commands.SeedLanguages;
 using Translator.Application.Features.Migrations.Commands.SeedFakeData;
 
 namespace Translator.API.Controllers;
@@ -40,27 +39,11 @@ public class MigrationsController : Controller
     }
 
     [HttpPost]
-    public async Task<IResult> SeedLanguages()
-    {
-        try
-        {
-            var command = new SeedLanguagesCommand();
-            await _mediator.Send(command);
-            
-            return Results.Ok(new { success = true, message = "Languages seeded successfully!" });
-        }
-        catch (Exception ex)
-        {
-            return Results.BadRequest(new { success = false, message = ex.Message });
-        }
-    }
-
-    [HttpPost]
     public async Task<IResult> SeedFakeData()
     {
         try
         {
-            var command = new SeedLanguagesCommand();
+            var command = new SeedFakeDataCommand();
             await _mediator.Send(command);
             
             return Results.Ok(new { success = true, message = "Fake data seeded successfully!" });
