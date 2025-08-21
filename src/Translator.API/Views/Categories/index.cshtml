@@ -6,6 +6,7 @@
 }
 
 <style>
+    /* Keep all your existing styles */
     body {
         background-color: #f8fafc;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -800,23 +801,24 @@
         </div>
     </div>
 
-    <!-- Error Message -->
-    @if (ViewBag.ErrorMessage != null)
-    {
-        <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            @ViewBag.ErrorMessage
-        </div>
-    }
+    <!-- Alert container -->
+    <div id="alertContainer">
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                @ViewBag.ErrorMessage
+            </div>
+        }
 
-    <!-- Success Message -->
-    @if (ViewBag.SuccessMessage != null)
-    {
-        <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            @ViewBag.SuccessMessage
-        </div>
-    }
+        @if (ViewBag.SuccessMessage != null)
+        {
+            <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                @ViewBag.SuccessMessage
+            </div>
+        }
+    </div>
 
     <!-- Category Type Form Overlay -->
     <div class="form-overlay" id="typeForm">
@@ -824,7 +826,7 @@
             <div class="form-header">
                 <h5><i class="fas fa-tags me-2"></i>Add Category Type(s)</h5>
             </div>
-            <form id="categoryTypeForm" method="post">
+            <form id="categoryTypeForm">
                 <div class="form-body">
                     <div class="form-group">
                         <label class="form-label">
@@ -875,7 +877,7 @@
             <div class="form-header">
                 <h5><i class="fas fa-plus me-2"></i>Create New Category</h5>
             </div>
-            <form action="@Url.Action("Create", "Categories")" method="post">
+            <form id="createCategoryForm">
                 <div class="form-body">
                     <div class="form-group">
                         <label for="value" class="form-label">
@@ -895,10 +897,7 @@
                         </label>
                         <select class="form-control" id="type" name="type" required>
                             <option value="">Select a type</option>
-                            @foreach (var type in categoryTypes)
-                            {
-                                <option value="@type">@type</option>
-                            }
+                            <!-- Options will be populated dynamically -->
                         </select>
                     </div>
 
@@ -930,7 +929,7 @@
             <div class="form-header">
                 <h5><i class="fas fa-edit me-2"></i>Update Category</h5>
             </div>
-            <form action="@Url.Action("Update", "Categories")" method="post">
+            <form id="editCategoryForm">
                 <input type="hidden" id="editId" name="id"/>
                 <div class="form-body">
                     <div class="form-row">
@@ -986,43 +985,9 @@
                     </div>
                 </div>
 
-                @if (!categoryTypes.Any())
-                {
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-tags"></i>
-                        </div>
-                        <h4>No Category Types Found</h4>
-                        <p>Start by creating your first category type.</p>
-                        <button type="button" class="add-btn" onclick="addCategoryType()">
-                            <i class="fas fa-plus me-1"></i>Create First Type
-                        </button>
-                    </div>
-                }
-                else
-                {
-                    <div class="types-list" id="categoryTypesList">
-                        @{
-                            var sortedTypes = categoryTypes.OrderBy(t => t).ToArray();
-                        }
-                        @for (int i = 0; i < sortedTypes.Length; i++)
-                        {
-                            <div class="type-item @(i >= 10 ? "hidden" : "")" data-index="@i"
-                                 data-type="@sortedTypes[i].ToLower()">
-                                <i class="fas fa-tag me-1"></i>
-                                @sortedTypes[i]
-                            </div>
-                        }
-                    </div>
-
-                    @if (categoryTypes.Count > 10)
-                    {
-                        <button type="button" class="show-all-btn" id="showAllTypesBtn" onclick="toggleShowAllTypes()">
-                            <i class="fas fa-eye me-1"></i>
-                            Show All (@categoryTypes.Count)
-                        </button>
-                    }
-                }
+                <div id="categoryTypesSection">
+                    <!-- Types will be loaded here -->
+                </div>
             </div>
 
             <!-- Root Categories Section -->
@@ -1040,108 +1005,9 @@
                     </div>
                 </div>
 
-                @if (!Model.Any())
-                {
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-folder-open"></i>
-                        </div>
-                        <h4>No Categories Found</h4>
-                        <p>Start by creating your first category.</p>
-                        <button type="button" class="add-btn" onclick="toggleCreateForm()">
-                            <i class="fas fa-plus me-1"></i>Create First Category
-                        </button>
-                    </div>
-                }
-                else
-                {
-                    <div class="category-table">
-                        <table class="table table-hover mb-0 table-sm" id="categoriesTable">
-                            <thead>
-                            <tr>
-                                <th style="width: 8%;">Order</th>
-                                <th style="width: 22%;">Value</th>
-                                <th style="width: 12%;">Type</th>
-                                <th style="width: 33%;">ID</th>
-                                <th style="width: 25%;" class="text-center">Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody>
-                            @{
-                                var sortedCategories = Model.OrderBy(c => c.Order ?? int.MaxValue).ToArray();
-                            }
-                            @for (int i = 0; i < sortedCategories.Length; i++)
-                            {
-                                var category = sortedCategories[i];
-                                <tr class="category-row @(i >= 10 ? "hidden" : "")" data-index="@i">
-                                    <td>
-                                        @if (category.Order.HasValue)
-                                        {
-                                            <span class="category-order-badge">@category.Order</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted">—</span>
-                                        }
-                                    </td>
-                                    <td>
-                                        <div class="category-value">@category.Value</div>
-                                    </td>
-                                    <td>
-                                        <span class="category-type-badge">@category.TypeName</span>
-                                    </td>
-                                    <td>
-                                        <div class="category-id-container">
-                                            <code class="category-id">@category.Id</code>
-                                            <button type="button"
-                                                    class="copy-btn"
-                                                    onclick="copyToClipboard('@category.Id', this)"
-                                                    title="Copy ID">
-                                                <i class="fas fa-copy"></i>
-                                                <span class="copy-text d-none d-md-inline">Copy</span>
-                                            </button>
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="action-buttons">
-                                            <button type="button"
-                                                    class="action-btn btn-edit"
-                                                    onclick="showEditForm('@category.Id', '@Html.Raw(Html.Encode(category.Value))', @(category.Order?.ToString() ?? "null"))"
-                                                    title="Update Category">
-                                                <i class="fas fa-edit"></i>
-                                            </button>
-                                            <a href="@Url.Action("Tree", "Categories", new { id = category.Id })"
-                                               class="action-btn btn-tree"
-                                               title="Show Tree">
-                                                <i class="fas fa-sitemap"></i>
-                                            </a>
-                                            <form action="@Url.Action("Delete", "Categories")" method="post"
-                                                  style="display: inline;">
-                                                <input type="hidden" name="id" value="@category.Id"/>
-                                                <button type="button"
-                                                        class="action-btn btn-delete"
-                                                        onclick="showDeleteConfirmation('@category.Id', '@Html.Raw(Html.Encode(category.Value))', this.closest('form'))"
-                                                        title="Delete @category.Value">
-                                                    <i class="fas fa-trash"></i>
-                                                </button>
-                                            </form>
-                                        </div>
-                                    </td>
-                                </tr>
-                            }
-                            </tbody>
-                        </table>
-                    </div>
-
-                    @if (Model.Count() > 10)
-                    {
-                        <button type="button" class="show-all-btn" id="showAllCategoriesBtn"
-                                onclick="toggleShowAllCategories()">
-                            <i class="fas fa-eye me-1"></i>
-                            Show All (@Model.Count())
-                        </button>
-                    }
-                }
+                <div id="rootCategoriesSection">
+                    <!-- Categories will be loaded here -->
+                </div>
             </div>
         </div>
     </div>
@@ -1153,7 +1019,7 @@
         <div class="modal-header">
             <h4><i class="fas fa-trash me-2"></i>Delete Category Type</h4>
         </div>
-        <form action="@Url.Action("DeleteCategoryTypes", "Categories")" method="post">
+        <form id="deleteTypeForm">
             <div class="form-body">
                 <div class="form-group">
                     <label class="form-label">
@@ -1197,645 +1063,951 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
     let deleteFormToSubmit = null;
     let categoryToDelete = null;
     let typesList = [];
     let selectedTypes = new Set();
+    let categoryTypes = @Html.Raw(Json.Serialize(categoryTypes));
+    let categories = @Html.Raw(Json.Serialize(Model));
 
     let showingAllTypes = false;
-
-    function toggleShowAllTypes() {
-        const button = document.getElementById('showAllTypesBtn');
-        const hiddenTypes = document.querySelectorAll('#categoryTypesList .type-item.hidden');
-        const icon = button.querySelector('i');
-
-        showingAllTypes = !showingAllTypes;
-
-        if (showingAllTypes) {
-            hiddenTypes.forEach(item => {
-                item.classList.remove('hidden');
-            });
-            button.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Show Less';
-            icon.className = 'fas fa-eye-slash me-1';
-        } else {
-            const allTypes = document.querySelectorAll('#categoryTypesList .type-item');
-            allTypes.forEach((item, index) => {
-                if (index >= 10) {
-                    item.classList.add('hidden');
-                }
-            });
-            const totalCount = allTypes.length;
-            button.innerHTML = `<i class="fas fa-eye me-1"></i>Show All (${totalCount})`;
-        }
-    }
-
     let showingAllCategories = false;
 
-    function toggleShowAllCategories() {
-        const button = document.getElementById('showAllCategoriesBtn');
-        const hiddenRows = document.querySelectorAll('#categoriesTable .category-row.hidden');
-        const icon = button.querySelector('i');
-
-        showingAllCategories = !showingAllCategories;
-
-        if (showingAllCategories) {
-            hiddenRows.forEach(row => {
-                row.classList.remove('hidden');
-            });
-            button.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Show Less';
-        } else {
-            const allRows = document.querySelectorAll('#categoriesTable .category-row');
-            allRows.forEach((row, index) => {
-                if (index >= 10) {
-                    row.classList.add('hidden');
-                }
-            });
-            const totalCount = allRows.length;
-            button.innerHTML = `<i class="fas fa-eye me-1"></i>Show All (${totalCount})`;
-        }
-    }
-
-    function initializeCategoryTypeSelection() {
-        const typeItems = document.querySelectorAll('.type-item');
-        typeItems.forEach(item => {
-            item.addEventListener('click', function () {
-                toggleTypeSelection(this);
-            });
-        });
-        updateDeleteButtonState();
-    }
-
-    function toggleTypeSelection(typeElement) {
-        const typeName = typeElement.dataset.type || typeElement.textContent.trim();
-
-        if (selectedTypes.has(typeName)) {
-            selectedTypes.delete(typeName);
-            typeElement.classList.remove('selected');
-        } else {
-            selectedTypes.add(typeName);
-            typeElement.classList.add('selected');
+    class CategoriesManager {
+        constructor() {
+            this.init();
         }
 
-        updateDeleteButtonState();
-        showSelectionCount();
-    }
-
-    function clearAllSelections() {
-        selectedTypes.clear();
-        const typeItems = document.querySelectorAll('.type-item');
-        typeItems.forEach(item => {
-            item.classList.remove('selected');
-        });
-        updateDeleteButtonState();
-        hideSelectionCount();
-    }
-
-    function updateDeleteButtonState() {
-        const deleteBtn = document.querySelector('.delete-btn');
-
-        if (selectedTypes.size === 0) {
-            deleteBtn.disabled = true;
-            deleteBtn.style.opacity = '0.5';
-            deleteBtn.style.cursor = 'not-allowed';
-            deleteBtn.style.pointerEvents = 'none';
-        } else {
-            deleteBtn.disabled = false;
-            deleteBtn.style.opacity = '1';
-            deleteBtn.style.cursor = 'pointer';
-            deleteBtn.style.pointerEvents = 'auto';
-        }
-    }
-
-    function showSelectionCount() {
-        hideSelectionCount();
-        if (selectedTypes.size > 0) {
-            const countDiv = document.createElement('div');
-            countDiv.className = 'selection-count';
-            countDiv.innerHTML = `
-                <i class="fas fa-check-circle me-2"></i>
-                ${selectedTypes.size} type${selectedTypes.size > 1 ? 's' : ''} selected
-                <button onclick="clearAllSelections()" title="Clear selection">
-                    <i class="fas fa-times"></i>
-                </button>
-            `;
-            document.body.appendChild(countDiv);
-        }
-    }
-
-    function hideSelectionCount() {
-        const existingCount = document.querySelector('.selection-count');
-        if (existingCount) {
-            existingCount.remove();
-        }
-    }
-
-    function updateDeleteModal() {
-        const container = document.getElementById('selectedTypesContainer');
-        const selectedArray = Array.from(selectedTypes);
-
-        if (selectedArray.length === 0) return;
-
-        container.innerHTML = selectedArray.map(type => `
-            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                <i class="fas fa-tag" style="color: #3b82f6;"></i>
-                <span style="font-weight: 500;">${type}</span>
-            </div>
-        `).join('');
-
-        const isMultiple = selectedArray.length > 1;
-        const modalHeader = document.querySelector('#deleteTypeModal .modal-header h4');
-        const deleteButton = document.querySelector('#deleteTypeModal .btn-delete');
-
-        modalHeader.innerHTML = `<i class="fas fa-trash me-2"></i>${isMultiple ? 'Delete Category Types' : 'Delete Category Type'}`;
-        deleteButton.innerHTML = `<i class="fas fa-trash me-1"></i>${isMultiple ? 'Delete Types' : 'Delete Type'}`;
-    }
-
-    function closeOnOutsideClick(event, overlayId) {
-        const overlay = document.getElementById(overlayId);
-        if (event.target === overlay) {
-            overlay.classList.remove('show');
-        }
-    }
-
-    function addCategoryType() {
-        closeAllForms();
-        resetTypeForm();
-        const typeForm = document.getElementById('typeForm');
-        typeForm.classList.add('show');
-        setTimeout(() => document.getElementById('typeNameInput').focus(), 300);
-    }
-
-    function resetTypeForm() {
-        document.getElementById('typeNameInput').value = '';
-        typesList = [];
-        updateTypesDisplay();
-        updateAddMoreButton();
-        updateSubmitButton();
-    }
-
-    function addTypeToList() {
-        const input = document.getElementById('typeNameInput');
-        const typeName = input.value.trim();
-
-        if (typeName && !typesList.includes(typeName.toLowerCase())) {
-            typesList.push(typeName.toLowerCase());
-            input.value = '';
-            updateTypesDisplay();
-            updateAddMoreButton();
-            updateSubmitButton();
-            input.focus();
-        } else if (typesList.includes(typeName.toLowerCase())) {
-            alert('This type already exists in the list!');
-            input.select();
-        }
-    }
-
-    function removeTypeFromList(typeName) {
-        typesList = typesList.filter(type => type !== typeName);
-        updateTypesDisplay();
-        updateSubmitButton();
-        document.getElementById('typeNameInput').focus();
-    }
-
-    function updateTypesDisplay() {
-        const typesList_div = document.getElementById('typesList');
-        const typesContainer = document.getElementById('typesContainer');
-
-        if (typesList.length === 0) {
-            typesList_div.style.display = 'none';
-            typesContainer.innerHTML = '';
-        } else {
-            typesList_div.style.display = 'block';
-            typesContainer.innerHTML = typesList.map(type => `
-                <span class="type-list-item">
-                    <span class="type-list-text">${type}</span>
-                    <button type="button" 
-                            class="type-remove-btn" 
-                            onclick="removeTypeFromList('${type}')"
-                            title="Remove ${type}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </span>
-            `).join('');
-        }
-    }
-
-    function updateAddMoreButton() {
-        const input = document.getElementById('typeNameInput');
-        const addMoreBtn = document.getElementById('addMoreBtn');
-
-        if (input.value.trim()) {
-            addMoreBtn.style.display = 'block';
-        } else {
-            addMoreBtn.style.display = 'none';
-        }
-    }
-
-    function updateSubmitButton() {
-        const submitBtn = document.getElementById('submitBtn');
-        const submitText = document.getElementById('submitButtonText');
-        const input = document.getElementById('typeNameInput');
-        const hasInputValue = input.value.trim();
-        const hasListItems = typesList.length > 0;
-
-        submitBtn.disabled = !hasInputValue && !hasListItems;
-
-        const totalCount = typesList.length + (hasInputValue ? 1 : 0);
-        submitText.textContent = totalCount > 1 ? 'Create Types' : 'Create Type';
-    }
-
-    function toggleTypeForm() {
-        const typeForm = document.getElementById('typeForm');
-        typeForm.classList.remove('show');
-    }
-
-    function showSuccessAlert(message) {
-        showAlert(message, 'success');
-    }
-
-    function showWarningAlert(message) {
-        showAlert(message, 'warning');
-    }
-
-    function showErrorAlert(message) {
-        showAlert(message, 'error');
-    }
-
-    function showAlert(message, type) {
-        const existingAlerts = document.querySelectorAll('.dynamic-alert');
-        existingAlerts.forEach(alert => alert.remove());
-
-        const alertDiv = document.createElement('div');
-        alertDiv.className = `alert dynamic-alert ${getAlertClass(type)}`;
-        alertDiv.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 9999;
-            max-width: 400px;
-            white-space: pre-line;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        `;
-
-        alertDiv.innerHTML = `
-            <i class="${getAlertIcon(type)} me-2"></i>
-            ${message}
-            <button type="button" class="btn-close" style="float: right; margin-left: 10px;" onclick="this.parentElement.remove()"></button>
-        `;
-
-        document.body.appendChild(alertDiv);
-
-        setTimeout(() => {
-            if (alertDiv.parentNode) {
-                alertDiv.remove();
-            }
-        }, 5000);
-    }
-
-    function getAlertClass(type) {
-        switch (type) {
-            case 'success':
-                return 'alert-success';
-            case 'warning':
-                return 'alert-warning';
-            case 'error':
-                return 'alert-danger';
-            default:
-                return 'alert-info';
-        }
-    }
-
-    function getAlertIcon(type) {
-        switch (type) {
-            case 'success':
-                return 'fas fa-check-circle';
-            case 'warning':
-                return 'fas fa-exclamation-triangle';
-            case 'error':
-                return 'fas fa-exclamation-circle';
-            default:
-                return 'fas fa-info-circle';
-        }
-    }
-
-    function toggleCreateForm() {
-        const createForm = document.getElementById('createForm');
-        createForm.classList.remove('show');
-    }
-
-    function toggleEditForm() {
-        const editForm = document.getElementById('editForm');
-        editForm.classList.remove('show');
-    }
-
-    function openCreateForm() {
-        closeAllForms();
-        const createForm = document.getElementById('createForm');
-        createForm.classList.add('show');
-        setTimeout(() => document.getElementById('value').focus(), 300);
-    }
-
-    function showEditForm(id, value, order) {
-        closeAllForms();
-
-        document.getElementById('editId').value = id;
-        document.getElementById('editValue').value = value;
-        document.getElementById('editOrder').value = order === null ? '' : order;
-
-        const editForm = document.getElementById('editForm');
-        editForm.classList.add('show');
-        setTimeout(() => document.getElementById('editValue').focus(), 300);
-    }
-
-    function showDeleteConfirmation(categoryId, categoryValue, deleteForm) {
-        deleteFormToSubmit = deleteForm;
-        categoryToDelete = categoryValue;
-
-        document.getElementById('deleteConfirmMessage').textContent =
-            `Are you sure you want to delete the category "${categoryValue}"?`;
-
-        document.getElementById('deleteConfirmModal').classList.add('show');
-    }
-
-    function closeDeleteConfirmModal() {
-        document.getElementById('deleteConfirmModal').classList.remove('show');
-        deleteFormToSubmit = null;
-        categoryToDelete = null;
-    }
-
-    function confirmDelete() {
-        if (deleteFormToSubmit) {
-            deleteFormToSubmit.submit();
-        }
-        closeDeleteConfirmModal();
-    }
-
-    function deleteCategoryType() {
-        if (selectedTypes.size === 0) {
-            showErrorAlert('Please select at least one category type to delete.');
-            return;
+        init() {
+            console.log('🚀 Initializing CategoriesManager...');
+            this.loadInitialData();
+            this.bindEvents();
         }
 
-        console.log('Selected types for deletion:', Array.from(selectedTypes));
-
-        closeAllForms();
-        updateDeleteModal();
-        const modal = document.getElementById('deleteTypeModal');
-        modal.classList.add('show');
-    }
-
-    function closeDeleteTypeModal() {
-        const modal = document.getElementById('deleteTypeModal');
-        modal.classList.remove('show');
-    }
-
-    function closeAllForms() {
-        document.getElementById('typeForm')?.classList.remove('show');
-        document.getElementById('createForm')?.classList.remove('show');
-        document.getElementById('editForm')?.classList.remove('show');
-        document.getElementById('deleteTypeModal')?.classList.remove('show');
-    }
-
-    async function copyToClipboard(text, button) {
-        try {
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(text);
-            } else {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                textArea.style.position = 'absolute';
-                textArea.style.left = '-9999px';
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-            }
-
-            const icon = button.querySelector('i');
-            const textSpan = button.querySelector('.copy-text');
-
-            button.classList.add('copied');
-            icon.className = 'fas fa-check';
-            if (textSpan) textSpan.textContent = 'Done!';
-
-            setTimeout(() => {
-                button.classList.remove('copied');
-                icon.className = 'fas fa-copy';
-                if (textSpan) textSpan.textContent = 'Copy';
-            }, 2000);
-
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-            const notification = document.createElement('div');
-            notification.textContent = 'Failed to copy to clipboard';
-            notification.style.cssText = 'position:fixed;top:20px;right:20px;background:#ef4444;color:white;padding:1rem;border-radius:0.5rem;z-index:9999';
-            document.body.appendChild(notification);
-            setTimeout(() => notification.remove(), 3000);
+        loadInitialData() {
+            this.renderCategoryTypes(categoryTypes);
+            this.renderCategories(categories);
+            this.populateTypeSelect(categoryTypes);
         }
-    }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        initializeCategoryTypeSelection();
-
-        const typeNameInput = document.getElementById('typeNameInput');
-        if (typeNameInput) {
-            typeNameInput.addEventListener('input', function () {
-                updateAddMoreButton();
-                updateSubmitButton();
-            });
-
-            typeNameInput.addEventListener('keydown', function (e) {
+        bindEvents() {
+            // Category Type Form
+            $('#categoryTypeForm').on('submit', (e) => this.handleCreateTypes(e));
+            $('#typeNameInput').on('input', () => this.updateTypeForm());
+            $('#typeNameInput').on('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
-                    if (this.value.trim()) {
-                        addTypeToList();
+                    if ($('#typeNameInput').val().trim()) {
+                        this.addTypeToList();
+                    }
+                }
+            });
+
+            // Create Category Form
+            $('#createCategoryForm').on('submit', (e) => this.handleCreateCategory(e));
+
+            // Edit Category Form
+            $('#editCategoryForm').on('submit', (e) => this.handleUpdateCategory(e));
+
+            // Delete Type Form
+            $('#deleteTypeForm').on('submit', (e) => this.handleDeleteTypes(e));
+
+            // Close overlays when clicking outside
+            $('.form-overlay, .modal').on('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    $(e.currentTarget).removeClass('show');
+                }
+            });
+
+            // Escape key to close modals
+            $(document).on('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (selectedTypes.size > 0) {
+                        this.clearAllSelections();
+                    } else {
+                        this.closeAllForms();
                     }
                 }
             });
         }
 
-        const categoryTypeForm = document.getElementById('categoryTypeForm');
-        if (categoryTypeForm) {
-            categoryTypeForm.addEventListener('submit', function (e) {
-                e.preventDefault();
+        async loadData() {
+            try {
+                const response = await $.ajax({
+                    url: '/Categories/',
+                    method: 'GET',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
 
-                const input = document.getElementById('typeNameInput');
-                const currentInput = input.value.trim();
-
-                let allTypeNames = [...typesList];
-                if (currentInput && !allTypeNames.includes(currentInput.toLowerCase())) {
-                    allTypeNames.push(currentInput.toLowerCase());
+                if (response.success) {
+                    categoryTypes = response.categoryTypes;
+                    categories = response.categories;
+                    this.renderCategoryTypes(categoryTypes);
+                    this.renderCategories(categories);
+                    this.populateTypeSelect(categoryTypes);
+                } else {
+                    this.showError(response.message || 'Failed to load data');
                 }
+            } catch (error) {
+                console.error('Error loading data:', error);
+                this.showError('Network error: ' + error.message);
+            }
+        }
 
-                if (allTypeNames.length === 0) {
-                    showErrorAlert('Please enter at least one category type name.');
-                    return;
+        renderCategoryTypes(types) {
+            const container = $('#categoryTypesSection');
+
+            if (!types || types.length === 0) {
+                container.html(`
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <h4>No Category Types Found</h4>
+                        <p>Start by creating your first category type.</p>
+                        <button type="button" class="add-btn" onclick="categoriesManager.addCategoryType()">
+                            <i class="fas fa-plus me-1"></i>Create First Type
+                        </button>
+                    </div>
+                `);
+                return;
+            }
+
+            const sortedTypes = types.sort();
+            let html = '<div class="types-list" id="categoryTypesList">';
+
+            sortedTypes.forEach((type, index) => {
+                html += `
+                    <div class="type-item ${index >= 10 ? 'hidden' : ''}" data-index="${index}" data-type="${type.toLowerCase()}">
+                        <i class="fas fa-tag me-1"></i>
+                        ${type}
+                    </div>
+                `;
+            });
+
+            html += '</div>';
+
+            if (types.length > 10) {
+                html += `
+                    <button type="button" class="show-all-btn" id="showAllTypesBtn" onclick="categoriesManager.toggleShowAllTypes()">
+                        <i class="fas fa-eye me-1"></i>
+                        Show All (${types.length})
+                    </button>
+                `;
+            }
+
+            container.html(html);
+            this.initializeCategoryTypeSelection();
+        }
+
+        renderCategories(categories) {
+            const container = $('#rootCategoriesSection');
+
+            if (!categories || categories.length === 0) {
+                container.html(`
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <h4>No Categories Found</h4>
+                        <p>Start by creating your first category.</p>
+                        <button type="button" class="add-btn" onclick="categoriesManager.openCreateForm()">
+                            <i class="fas fa-plus me-1"></i>Create First Category
+                        </button>
+                    </div>
+                `);
+                return;
+            }
+
+            const sortedCategories = categories.sort((a, b) => (a.order || Number.MAX_VALUE) - (b.order || Number.MAX_VALUE));
+
+            let html = `
+                <div class="category-table">
+                    <table class="table table-hover mb-0 table-sm" id="categoriesTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 8%;">Order</th>
+                                <th style="width: 22%;">Value</th>
+                                <th style="width: 12%;">Type</th>
+                                <th style="width: 33%;">ID</th>
+                                <th style="width: 25%;" class="text-center">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+
+            sortedCategories.forEach((category, index) => {
+                html += `
+                    <tr class="category-row ${index >= 10 ? 'hidden' : ''}" data-index="${index}">
+                        <td>
+                            ${category.order != null
+                    ? `<span class="category-order-badge">${category.order}</span>`
+                    : '<span class="text-muted">—</span>'
                 }
+                        </td>
+                        <td>
+                            <div class="category-value">${this.escapeHtml(category.value)}</div>
+                        </td>
+                        <td>
+                            <span class="category-type-badge">${this.escapeHtml(category.typeName)}</span>
+                        </td>
+                        <td>
+                            <div class="category-id-container">
+                                <code class="category-id">${category.id}</code>
+                                <button type="button"
+                                        class="copy-btn"
+                                        onclick="categoriesManager.copyToClipboard('${category.id}', this)"
+                                        title="Copy ID">
+                                    <i class="fas fa-copy"></i>
+                                    <span class="copy-text d-none d-md-inline">Copy</span>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <button type="button"
+                                        class="action-btn btn-edit"
+                                        onclick="categoriesManager.showEditForm('${category.id}', '${this.escapeHtml(category.value)}', ${category.order || 'null'})"
+                                        title="Update Category">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <a href="/Categories/Tree/${category.id}"
+                                   class="action-btn btn-tree"
+                                   title="Show Tree">
+                                    <i class="fas fa-sitemap"></i>
+                                </a>
+                                <button type="button"
+                                        class="action-btn btn-delete"
+                                        onclick="categoriesManager.showDeleteConfirmation('${category.id}', '${this.escapeHtml(category.value)}')"
+                                        title="Delete ${this.escapeHtml(category.value)}">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
 
-                const submitBtn = document.getElementById('submitBtn');
-                const originalText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+            html += '</tbody></table></div>';
 
-                const formData = new FormData();
+            if (categories.length > 10) {
+                html += `
+                    <button type="button" class="show-all-btn" id="showAllCategoriesBtn" onclick="categoriesManager.toggleShowAllCategories()">
+                        <i class="fas fa-eye me-1"></i>
+                        Show All (${categories.length})
+                    </button>
+                `;
+            }
 
-                let actionUrl;
+            container.html(html);
+        }
+
+        populateTypeSelect(types) {
+            const select = $('#type');
+            select.html('<option value="">Select a type</option>');
+            types.forEach(type => {
+                select.append(`<option value="${this.escapeHtml(type)}">${this.escapeHtml(type)}</option>`);
+            });
+        }
+
+        initializeCategoryTypeSelection() {
+            $('.type-item').off('click').on('click', (e) => {
+                this.toggleTypeSelection(e.currentTarget);
+            });
+            this.updateDeleteButtonState();
+        }
+
+        toggleTypeSelection(typeElement) {
+            const typeName = $(typeElement).data('type') || $(typeElement).text().trim();
+
+            if (selectedTypes.has(typeName)) {
+                selectedTypes.delete(typeName);
+                $(typeElement).removeClass('selected');
+            } else {
+                selectedTypes.add(typeName);
+                $(typeElement).addClass('selected');
+            }
+
+            this.updateDeleteButtonState();
+            this.showSelectionCount();
+        }
+
+        clearAllSelections() {
+            selectedTypes.clear();
+            $('.type-item').removeClass('selected');
+            this.updateDeleteButtonState();
+            this.hideSelectionCount();
+        }
+
+        updateDeleteButtonState() {
+            const deleteBtn = $('.delete-btn');
+
+            if (selectedTypes.size === 0) {
+                deleteBtn.prop('disabled', true);
+                deleteBtn.css({
+                    'opacity': '0.5',
+                    'cursor': 'not-allowed',
+                    'pointer-events': 'none'
+                });
+            } else {
+                deleteBtn.prop('disabled', false);
+                deleteBtn.css({
+                    'opacity': '1',
+                    'cursor': 'pointer',
+                    'pointer-events': 'auto'
+                });
+            }
+        }
+
+        showSelectionCount() {
+            this.hideSelectionCount();
+            if (selectedTypes.size > 0) {
+                const countDiv = $(`
+                    <div class="selection-count">
+                        <i class="fas fa-check-circle me-2"></i>
+                        ${selectedTypes.size} type${selectedTypes.size > 1 ? 's' : ''} selected
+                        <button onclick="categoriesManager.clearAllSelections()" title="Clear selection">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `);
+                $('body').append(countDiv);
+            }
+        }
+
+        hideSelectionCount() {
+            $('.selection-count').remove();
+        }
+
+        toggleShowAllTypes() {
+            const button = $('#showAllTypesBtn');
+            const hiddenTypes = $('#categoryTypesList .type-item.hidden');
+
+            showingAllTypes = !showingAllTypes;
+
+            if (showingAllTypes) {
+                hiddenTypes.removeClass('hidden');
+                button.html('<i class="fas fa-eye-slash me-1"></i>Show Less');
+            } else {
+                $('#categoryTypesList .type-item').each((index, item) => {
+                    if (index >= 10) {
+                        $(item).addClass('hidden');
+                    }
+                });
+                const totalCount = $('#categoryTypesList .type-item').length;
+                button.html(`<i class="fas fa-eye me-1"></i>Show All (${totalCount})`);
+            }
+        }
+
+        toggleShowAllCategories() {
+            const button = $('#showAllCategoriesBtn');
+            const hiddenRows = $('#categoriesTable .category-row.hidden');
+
+            showingAllCategories = !showingAllCategories;
+
+            if (showingAllCategories) {
+                hiddenRows.removeClass('hidden');
+                button.html('<i class="fas fa-eye-slash me-1"></i>Show Less');
+            } else {
+                $('#categoriesTable .category-row').each((index, row) => {
+                    if (index >= 10) {
+                        $(row).addClass('hidden');
+                    }
+                });
+                const totalCount = $('#categoriesTable .category-row').length;
+                button.html(`<i class="fas fa-eye me-1"></i>Show All (${totalCount})`);
+            }
+        }
+
+        // Form handling methods
+        addCategoryType() {
+            this.closeAllForms();
+            this.resetTypeForm();
+            $('#typeForm').addClass('show');
+            setTimeout(() => $('#typeNameInput').focus(), 300);
+        }
+
+        resetTypeForm() {
+            $('#typeNameInput').val('');
+            typesList = [];
+            this.updateTypesDisplay();
+            this.updateAddMoreButton();
+            this.updateSubmitButton();
+        }
+
+        addTypeToList() {
+            const input = $('#typeNameInput');
+            const typeName = input.val().trim();
+
+            if (typeName && !typesList.includes(typeName.toLowerCase())) {
+                typesList.push(typeName.toLowerCase());
+                input.val('');
+                this.updateTypesDisplay();
+                this.updateAddMoreButton();
+                this.updateSubmitButton();
+                input.focus();
+            } else if (typesList.includes(typeName.toLowerCase())) {
+                this.showError('This type already exists in the list!');
+                input.select();
+            }
+        }
+
+        removeTypeFromList(typeName) {
+            typesList = typesList.filter(type => type !== typeName);
+            this.updateTypesDisplay();
+            this.updateSubmitButton();
+            $('#typeNameInput').focus();
+        }
+
+        updateTypesDisplay() {
+            const typesList_div = $('#typesList');
+            const typesContainer = $('#typesContainer');
+
+            if (typesList.length === 0) {
+                typesList_div.hide();
+                typesContainer.html('');
+            } else {
+                typesList_div.show();
+                typesContainer.html(typesList.map(type => `
+                    <span class="type-list-item">
+                        <span class="type-list-text">${this.escapeHtml(type)}</span>
+                        <button type="button" 
+                                class="type-remove-btn" 
+                                onclick="categoriesManager.removeTypeFromList('${type}')"
+                                title="Remove ${type}">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </span>
+                `).join(''));
+            }
+        }
+
+        updateAddMoreButton() {
+            const input = $('#typeNameInput');
+            const addMoreBtn = $('#addMoreBtn');
+
+            if (input.val().trim()) {
+                addMoreBtn.show();
+            } else {
+                addMoreBtn.hide();
+            }
+        }
+
+        updateSubmitButton() {
+            const submitBtn = $('#submitBtn');
+            const submitText = $('#submitButtonText');
+            const input = $('#typeNameInput');
+            const hasInputValue = input.val().trim();
+            const hasListItems = typesList.length > 0;
+
+            submitBtn.prop('disabled', !hasInputValue && !hasListItems);
+
+            const totalCount = typesList.length + (hasInputValue ? 1 : 0);
+            submitText.text(totalCount > 1 ? 'Create Types' : 'Create Type');
+        }
+
+        updateTypeForm() {
+            this.updateAddMoreButton();
+            this.updateSubmitButton();
+        }
+
+        toggleTypeForm() {
+            $('#typeForm').removeClass('show');
+        }
+
+        openCreateForm() {
+            this.closeAllForms();
+            $('#createForm').addClass('show');
+            setTimeout(() => $('#value').focus(), 300);
+        }
+
+        toggleCreateForm() {
+            $('#createForm').removeClass('show');
+        }
+
+        showEditForm(id, value, order) {
+            this.closeAllForms();
+
+            $('#editId').val(id);
+            $('#editValue').val(value);
+            $('#editOrder').val(order === null ? '' : order);
+
+            $('#editForm').addClass('show');
+            setTimeout(() => $('#editValue').focus(), 300);
+        }
+
+        toggleEditForm() {
+            $('#editForm').removeClass('show');
+        }
+
+        showDeleteConfirmation(categoryId, categoryValue) {
+            categoryToDelete = categoryId;
+            $('#deleteConfirmMessage').text(`Are you sure you want to delete the category "${categoryValue}"?`);
+            $('#deleteConfirmModal').addClass('show');
+        }
+
+        closeDeleteConfirmModal() {
+            $('#deleteConfirmModal').removeClass('show');
+            categoryToDelete = null;
+        }
+
+        confirmDelete() {
+            if (categoryToDelete) {
+                this.deleteCategory(categoryToDelete);
+            }
+            this.closeDeleteConfirmModal();
+        }
+
+        deleteCategoryType() {
+            if (selectedTypes.size === 0) {
+                this.showError('Please select at least one category type to delete.');
+                return;
+            }
+
+            this.closeAllForms();
+            this.updateDeleteModal();
+            $('#deleteTypeModal').addClass('show');
+        }
+
+        updateDeleteModal() {
+            const container = $('#selectedTypesContainer');
+            const selectedArray = Array.from(selectedTypes);
+
+            if (selectedArray.length === 0) return;
+
+            container.html(selectedArray.map(type => `
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                    <i class="fas fa-tag" style="color: #3b82f6;"></i>
+                    <span style="font-weight: 500;">${this.escapeHtml(type)}</span>
+                </div>
+            `).join(''));
+
+            const isMultiple = selectedArray.length > 1;
+            const modalHeader = $('#deleteTypeModal .modal-header h4');
+            const deleteButton = $('#deleteTypeModal .btn-delete');
+
+            modalHeader.html(`<i class="fas fa-trash me-2"></i>${isMultiple ? 'Delete Category Types' : 'Delete Category Type'}`);
+            deleteButton.html(`<i class="fas fa-trash me-1"></i>${isMultiple ? 'Delete Types' : 'Delete Type'}`);
+        }
+
+        closeDeleteTypeModal() {
+            $('#deleteTypeModal').removeClass('show');
+        }
+
+        closeAllForms() {
+            $('.form-overlay, .modal').removeClass('show');
+        }
+
+        // AJAX form handlers
+        async handleCreateTypes(e) {
+            e.preventDefault();
+
+            const input = $('#typeNameInput');
+            const currentInput = input.val().trim();
+
+            let allTypeNames = [...typesList];
+            if (currentInput && !allTypeNames.includes(currentInput.toLowerCase())) {
+                allTypeNames.push(currentInput.toLowerCase());
+            }
+
+            if (allTypeNames.length === 0) {
+                this.showError('Please enter at least one category type name.');
+                return;
+            }
+
+            const submitBtn = $('#submitBtn');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Creating...');
+
+            try {
+                let response;
                 if (allTypeNames.length === 1) {
-                    actionUrl = '@Url.Action("CreateCategoryType", "Categories")';
-                    formData.append('typeName', allTypeNames[0]);
+                    response = await $.ajax({
+                        url: '/Categories/CreateCategoryType',
+                        method: 'POST',
+                        data: {typeName: allTypeNames[0]},
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}
+                    });
                 } else {
-                    actionUrl = '@Url.Action("CreateBulkCategoryType", "Categories")';
-                    allTypeNames.forEach(name => {
-                        formData.append('typeNames', name);
+                    response = await $.ajax({
+                        url: '/Categories/CreateBulkCategoryType',
+                        method: 'POST',
+                        data: {typeNames: allTypeNames},
+                        headers: {'X-Requested-With': 'XMLHttpRequest'}
                     });
                 }
 
-                fetch(actionUrl, {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.json())
-                    .then(data => {
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalText;
+                if (response.success) {
+                    if (response.warning) {
+                        this.showSuccess(response.message);
+                        this.showWarning(response.warning);
+                    } else {
+                        this.showSuccess(response.message);
+                    }
 
-                        if (data.success) {
-                            if (data.warning) {
-                                showSuccessAlert(data.message);
-                                showWarningAlert(data.warning);
-                            } else {
-                                showSuccessAlert(data.message);
-                            }
+                    // Update data
+                    categoryTypes = response.categoryTypes;
+                    categories = response.categories || categories;
 
-                            setTimeout(() => {
-                                toggleTypeForm();
-                                window.location.reload();
-                            }, 2000);
+                    // Re-render
+                    this.renderCategoryTypes(categoryTypes);
+                    this.renderCategories(categories);
+                    this.populateTypeSelect(categoryTypes);
 
-                        } else {
-                            if (data.existingTypes && data.existingTypes.length > 0) {
-                                const existingTypesText = data.existingTypes.join(', ');
-                                showErrorAlert(`${data.error}\n\nExisting types: ${existingTypesText}`);
-                            } else {
-                                showErrorAlert(data.error);
-                            }
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalText;
-                        showErrorAlert('An error occurred while creating category types.');
-                    });
-            });
+                    this.toggleTypeForm();
+                } else {
+                    if (response.existingTypes && response.existingTypes.length > 0) {
+                        const existingTypesText = response.existingTypes.join(', ');
+                        this.showError(`${response.error}\n\nExisting types: ${existingTypesText}`);
+                    } else {
+                        this.showError(response.error);
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.showError('An error occurred while creating category types.');
+            } finally {
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+            }
         }
 
-        const deleteForm = document.querySelector('#deleteTypeModal form');
-        if (deleteForm) {
-            deleteForm.addEventListener('submit', function (e) {
-                e.preventDefault();
+        async handleCreateCategory(e) {
+            e.preventDefault();
 
-                const selectedTypeNames = Array.from(selectedTypes);
+            const formData = {
+                value: $('#value').val(),
+                type: $('#type').val(),
+                order: $('#order').val() || null
+            };
 
-                console.log('Submitting deletion for types:', selectedTypeNames);
+            if (!formData.value || !formData.type) {
+                this.showError('Value and Type are required.');
+                return;
+            }
 
-                if (selectedTypeNames.length === 0) {
-                    showErrorAlert('No types selected for deletion.');
-                    return;
-                }
+            const submitBtn = $('#createCategoryForm button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Creating...');
 
-                const submitBtn = this.querySelector('.btn-delete');
-                const originalText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deleting...';
-
-                const formData = new FormData();
-                selectedTypeNames.forEach(typeName => {
-                    formData.append('typeNames', typeName);
+            try {
+                const response = await $.ajax({
+                    url: '/Categories/Create',
+                    method: 'POST',
+                    data: formData,
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
                 });
 
-                fetch('@Url.Action("DeleteCategoryTypes", "Categories")', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify(selectedTypeNames)
-                })
-                    .then(response => {
-                        console.log('Response status:', response.status);
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Response data:', data);
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalText;
+                if (response.success) {
+                    this.showSuccess(response.message);
 
-                        if (data.success) {
-                            showSuccessAlert(data.message);
-                            setTimeout(() => {
-                                closeDeleteTypeModal();
-                                clearAllSelections();
-                                window.location.reload();
-                            }, 2000);
-                        } else {
-                            showErrorAlert(data.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        submitBtn.disabled = false;
-                        submitBtn.innerHTML = originalText;
-                        showErrorAlert('An error occurred while deleting category types: ' + error.message);
-                    });
-            });
+                    // Update data
+                    categories = response.categories;
+                    categoryTypes = response.categoryTypes || categoryTypes;
+
+                    // Re-render
+                    this.renderCategories(categories);
+                    this.populateTypeSelect(categoryTypes);
+
+                    // Reset and close form
+                    $('#createCategoryForm')[0].reset();
+                    this.toggleCreateForm();
+                } else {
+                    this.showError(response.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.showError('An error occurred while creating the category.');
+            } finally {
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+            }
         }
 
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function (alert) {
-            setTimeout(function () {
-                if (alert && alert.parentNode) {
-                    alert.style.opacity = '0';
-                    alert.style.transition = 'opacity 0.3s';
-                    setTimeout(function () {
-                        if (alert.parentNode) {
-                            alert.parentNode.removeChild(alert);
-                        }
-                    }, 300);
+        async handleUpdateCategory(e) {
+            e.preventDefault();
+
+            const formData = {
+                id: $('#editId').val(),
+                value: $('#editValue').val() || null,
+                order: $('#editOrder').val() || null
+            };
+
+            const submitBtn = $('#editCategoryForm button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Updating...');
+
+            try {
+                const response = await $.ajax({
+                    url: '/Categories/Update',
+                    method: 'POST',
+                    data: formData,
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+
+                if (response.success) {
+                    this.showSuccess(response.message);
+
+                    // Update data
+                    categories = response.categories;
+                    categoryTypes = response.categoryTypes || categoryTypes;
+
+                    // Re-render
+                    this.renderCategories(categories);
+                    this.populateTypeSelect(categoryTypes);
+
+                    this.toggleEditForm();
+                } else {
+                    this.showError(response.message);
                 }
+            } catch (error) {
+                console.error('Error:', error);
+                this.showError('An error occurred while updating the category.');
+            } finally {
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+            }
+        }
+
+        async deleteCategory(categoryId) {
+            try {
+                const response = await $.ajax({
+                    url: '/Categories/Delete',
+                    method: 'POST',
+                    data: {id: categoryId},
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+
+                if (response.success) {
+                    this.showSuccess(response.message);
+
+                    // Update data
+                    categories = response.categories;
+                    categoryTypes = response.categoryTypes || categoryTypes;
+
+                    // Re-render
+                    this.renderCategories(categories);
+                    this.populateTypeSelect(categoryTypes);
+                } else {
+                    this.showError(response.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.showError('An error occurred while deleting the category.');
+            }
+        }
+
+        async handleDeleteTypes(e) {
+            e.preventDefault();
+
+            const selectedTypeNames = Array.from(selectedTypes);
+
+            if (selectedTypeNames.length === 0) {
+                this.showError('No types selected for deletion.');
+                return;
+            }
+
+            const submitBtn = $('#deleteTypeForm button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Deleting...');
+
+            try {
+                const response = await $.ajax({
+                    url: '/Categories/DeleteCategoryTypes',
+                    method: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(selectedTypeNames),
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+
+                if (response.success) {
+                    this.showSuccess(response.message);
+
+                    // Update data
+                    categoryTypes = response.categoryTypes;
+                    categories = response.categories;
+
+                    // Re-render
+                    this.renderCategoryTypes(categoryTypes);
+                    this.renderCategories(categories);
+                    this.populateTypeSelect(categoryTypes);
+
+                    this.closeDeleteTypeModal();
+                    this.clearAllSelections();
+                } else {
+                    this.showError(response.error);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.showError('An error occurred while deleting category types: ' + error.message);
+            } finally {
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+            }
+        }
+
+        // Utility methods
+        async copyToClipboard(text, button) {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'absolute';
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+
+                const $button = $(button);
+                const $icon = $button.find('i');
+                const $textSpan = $button.find('.copy-text');
+
+                $button.addClass('copied');
+                $icon.removeClass().addClass('fas fa-check');
+                if ($textSpan.length) $textSpan.text('Done!');
+
+                setTimeout(() => {
+                    $button.removeClass('copied');
+                    $icon.removeClass().addClass('fas fa-copy');
+                    if ($textSpan.length) $textSpan.text('Copy');
+                }, 2000);
+
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                this.showError('Failed to copy to clipboard');
+            }
+        }
+
+        showSuccess(message) {
+            this.showAlert(message, 'success');
+        }
+
+        showError(message) {
+            this.showAlert(message, 'danger');
+        }
+
+        showWarning(message) {
+            this.showAlert(message, 'warning');
+        }
+
+        showAlert(message, type) {
+            const container = $('#alertContainer');
+            const alertDiv = $(`
+                <div class="alert alert-${type} alert-dismissible fade show">
+                    <i class="fas fa-${this.getAlertIcon(type)} me-2"></i>
+                    ${this.escapeHtml(message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+
+            container.html(''); // Clear existing alerts
+            container.append(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.fadeOut(() => alertDiv.remove());
             }, 5000);
-        });
-
-        ['typeForm', 'createForm', 'editForm', 'deleteTypeModal'].forEach(id => {
-            const element = document.getElementById(id);
-            if (element) {
-                element.addEventListener('click', function (e) {
-                    closeOnOutsideClick(e, id);
-                });
-            }
-        });
-
-        document.addEventListener('keydown', function (e) {
-            if (e.key === 'Escape') {
-                if (selectedTypes.size > 0) {
-                    clearAllSelections();
-                } else {
-                    closeAllForms();
-                    closeDeleteConfirmModal();
-                }
-            }
-        });
-
-        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
-        if (deleteConfirmModal) {
-            deleteConfirmModal.addEventListener('click', function (e) {
-                if (e.target === this) {
-                    closeDeleteConfirmModal();
-                }
-            });
         }
+
+        getAlertIcon(type) {
+            switch (type) {
+                case 'success':
+                    return 'check-circle';
+                case 'warning':
+                    return 'exclamation-triangle';
+                case 'danger':
+                    return 'exclamation-circle';
+                default:
+                    return 'info-circle';
+            }
+        }
+
+        escapeHtml(text) {
+            if (typeof text !== 'string') return text;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    }
+
+    // Global functions for backward compatibility
+    function addCategoryType() {
+        categoriesManager.addCategoryType();
+    }
+
+    function deleteCategoryType() {
+        categoriesManager.deleteCategoryType();
+    }
+
+    function toggleShowAllTypes() {
+        categoriesManager.toggleShowAllTypes();
+    }
+
+    function toggleShowAllCategories() {
+        categoriesManager.toggleShowAllCategories();
+    }
+
+    function addTypeToList() {
+        categoriesManager.addTypeToList();
+    }
+
+    function removeTypeFromList(typeName) {
+        categoriesManager.removeTypeFromList(typeName);
+    }
+
+    function toggleTypeForm() {
+        categoriesManager.toggleTypeForm();
+    }
+
+    function openCreateForm() {
+        categoriesManager.openCreateForm();
+    }
+
+    function toggleCreateForm() {
+        categoriesManager.toggleCreateForm();
+    }
+
+    function showEditForm(id, value, order) {
+        categoriesManager.showEditForm(id, value, order);
+    }
+
+    function toggleEditForm() {
+        categoriesManager.toggleEditForm();
+    }
+
+    function showDeleteConfirmation(id, value) {
+        categoriesManager.showDeleteConfirmation(id, value);
+    }
+
+    function closeDeleteConfirmModal() {
+        categoriesManager.closeDeleteConfirmModal();
+    }
+
+    function confirmDelete() {
+        categoriesManager.confirmDelete();
+    }
+
+    function closeDeleteTypeModal() {
+        categoriesManager.closeDeleteTypeModal();
+    }
+
+    function copyToClipboard(text, button) {
+        categoriesManager.copyToClipboard(text, button);
+    }
+
+    // Initialize
+    let categoriesManager;
+    $(document).ready(() => {
+        console.log('🎉 DOM loaded, initializing CategoriesManager...');
+        categoriesManager = new CategoriesManager();
     });
 </script>

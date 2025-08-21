@@ -1,11 +1,12 @@
-@model Translator.Application.Features.Category.Queries.GetCategory.CategoryReadDto
+@model Translator.Application.Features.Category.Queries.GetCategoryTree.CategoryTreeDto
 @{
-ViewData["Title"] = "Category Tree - " + Model.Value;
-Layout = "_Layout";
-var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
+    ViewData["Title"] = "Category Tree - " + Model.Value;
+    Layout = "_Layout";
+    var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 }
 
 <style>
+    /* Keep all your existing styles */
     body {
         background-color: #f8fafc;
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -252,8 +253,17 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         color: white;
     }
 
-    .btn-add:hover, .btn-edit:hover, .btn-delete:hover {
+    .btn-copy {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
         color: white;
+    }
+
+    .btn-add:hover, .btn-edit:hover, .btn-delete:hover, .btn-copy:hover {
+        color: white;
+    }
+
+    .btn-copy.copied {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     }
 
     /* Compact children container */
@@ -326,7 +336,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         color: white;
     }
 
-    /* Form overlays - compact */
+    /* Form overlays */
     .form-overlay {
         position: fixed;
         top: 0;
@@ -352,7 +362,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     .form-container {
         background: white;
         border-radius: 0.5rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         width: 100%;
         max-width: 450px;
         max-height: 90vh;
@@ -456,12 +466,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     .btn-save, .btn-create, .btn-update {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
 
     .btn-save:hover, .btn-create:hover, .btn-update:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
     .form-actions {
@@ -503,7 +513,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     .modal-content {
         background: white;
         border-radius: 0.5rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         width: 100%;
         max-width: 400px;
         max-height: 90vh;
@@ -568,6 +578,40 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
     }
+
+    /* Alert styles */
+    .alert {
+        border: none;
+        border-radius: 0.5rem;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        border-left: 4px solid;
+    }
+
+    .alert-success {
+        background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+        color: #065f46;
+        border-left-color: #10b981;
+    }
+
+    .alert-danger {
+        background: linear-gradient(135deg, #fef2f2 0%, #fecaca 100%);
+        color: #991b1b;
+        border-left-color: #ef4444;
+    }
+
+    .alert-warning {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        border-left-color: #f59e0b;
+    }
+
+    /* Loading states */
+    .loading {
+        pointer-events: none;
+        opacity: 0.7;
+    }
 </style>
 
 <div class="container-fluid px-3">
@@ -598,23 +642,24 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         </nav>
     </div>
 
-    <!-- Error Message -->
-    @if (ViewBag.ErrorMessage != null)
-    {
-    <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
-        <i class="fas fa-exclamation-circle me-2"></i>
-        @ViewBag.ErrorMessage
-    </div>
-    }
+    <!-- Alert container -->
+    <div id="alertContainer">
+        @if (ViewBag.ErrorMessage != null)
+        {
+            <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                @ViewBag.ErrorMessage
+            </div>
+        }
 
-    <!-- Success Message -->
-    @if (ViewBag.SuccessMessage != null)
-    {
-    <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
-        <i class="fas fa-check-circle me-2"></i>
-        @ViewBag.SuccessMessage
+        @if (ViewBag.SuccessMessage != null)
+        {
+            <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                @ViewBag.SuccessMessage
+            </div>
+        }
     </div>
-    }
 
     <!-- Tree Container -->
     <div class="tree-container">
@@ -631,9 +676,8 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             </div>
         </div>
 
-        <div class="tree-content">
-            <!-- Root Category -->
-            @await Html.PartialAsync("_CategoryNode", Model, new ViewDataDictionary(ViewData) { { "RootCategoryId", Model.Id } })
+        <div class="tree-content" id="treeContent">
+            <!-- Tree will be rendered here -->
         </div>
     </div>
 </div>
@@ -644,9 +688,9 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         <div class="form-header">
             <h5><i class="fas fa-plus me-2"></i>Create New Category</h5>
         </div>
-        <form action="@Url.Action("Create", "Categories")" method="post">
-            <input type="hidden" id="returnToTreeId" name="returnToTreeId" value="@Model.Id" />
-            <input type="hidden" id="parentId" name="parentId" value="" />
+        <form id="createCategoryForm">
+            <input type="hidden" id="returnToTreeId" name="returnToTreeId" value="@Model.Id"/>
+            <input type="hidden" id="parentId" name="parentId" value=""/>
             <div class="form-body">
                 <div class="form-row">
                     <div class="form-group">
@@ -683,17 +727,17 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                                min="0"
                                placeholder="Display order">
                     </div>
-                    <!-- Parent info display (read-only) -->
                     <div class="form-group">
                         <label class="form-label">Parent Category</label>
-                        <div class="form-control" id="parentInfo" style="background: #f8f9fa; color: #6c757d; cursor: not-allowed;">
+                        <div class="form-control" id="parentInfo"
+                             style="background: #f8f9fa; color: #6c757d; cursor: not-allowed;">
                             Root Category
                         </div>
                     </div>
                 </div>
             </div>
             <div class="form-actions">
-                <button type="button" class="btn-base btn-cancel" onclick="toggleCreateForm()">
+                <button type="button" class="btn-base btn-cancel" onclick="treeManager.toggleCreateForm()">
                     <i class="fas fa-times me-1"></i>Cancel
                 </button>
                 <button type="submit" class="btn-base btn-create">
@@ -704,16 +748,15 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     </div>
 </div>
 
-
 <!-- Edit Category Form Overlay -->
 <div class="form-overlay" id="editForm">
     <div class="form-container">
         <div class="form-header">
             <h5><i class="fas fa-edit me-2"></i>Update Category</h5>
         </div>
-        <form action="@Url.Action("Update", "Categories")" method="post">
-            <input type="hidden" id="editId" name="id" />
-            <input type="hidden" name="returnToTreeId" value="@Model.Id" />
+        <form id="editCategoryForm">
+            <input type="hidden" id="editId" name="id"/>
+            <input type="hidden" name="returnToTreeId" value="@Model.Id"/>
             <div class="form-body">
                 <div class="form-row">
                     <div class="form-group">
@@ -736,7 +779,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                 </div>
             </div>
             <div class="form-actions">
-                <button type="button" class="btn-base btn-cancel" onclick="toggleEditForm()">
+                <button type="button" class="btn-base btn-cancel" onclick="treeManager.toggleEditForm()">
                     <i class="fas fa-times me-1"></i>Cancel
                 </button>
                 <button type="submit" class="btn-base btn-update">
@@ -757,247 +800,521 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             <p id="deleteConfirmMessage">Are you sure you want to delete this category?</p>
         </div>
         <div class="modal-actions">
-            <button type="button" class="btn-base btn-cancel" onclick="closeDeleteConfirmModal()">
+            <button type="button" class="btn-base btn-cancel" onclick="treeManager.closeDeleteConfirmModal()">
                 <i class="fas fa-times me-1"></i>Cancel
             </button>
-            <button type="button" class="btn-base btn-delete-confirm" onclick="confirmDelete()">
+            <button type="button" class="btn-base btn-delete-confirm" onclick="treeManager.confirmDelete()">
                 <i class="fas fa-trash me-1"></i>Delete
             </button>
         </div>
     </div>
 </div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    let deleteFormToSubmit = null;
+    let treeData = @Html.Raw(Json.Serialize(Model));
+    let categoryTypes = @Html.Raw(Json.Serialize(categoryTypes));
+    let rootCategoryId = '@Model.Id';
     let categoryToDelete = null;
     let expandedNodes = new Set();
 
-    // Load expanded state from localStorage on page load
-    function loadExpandedState() {
-        const stored = localStorage.getItem('categoryTreeExpanded');
-        if (stored) {
+    class TreeManager {
+        constructor() {
+            this.init();
+        }
+
+        init() {
+            console.log('🚀 Initializing TreeManager...');
+            this.loadExpandedState();
+            this.renderTree();
+            this.bindEvents();
+        }
+
+        bindEvents() {
+            // Create Category Form
+            $('#createCategoryForm').on('submit', (e) => this.handleCreateCategory(e));
+
+            // Edit Category Form
+            $('#editCategoryForm').on('submit', (e) => this.handleUpdateCategory(e));
+
+            // Close overlays when clicking outside
+            $('.form-overlay, .modal').on('click', (e) => {
+                if (e.target === e.currentTarget) {
+                    $(e.currentTarget).removeClass('show');
+                }
+            });
+
+            // Escape key to close modals
+            $(document).on('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.closeAllForms();
+                }
+            });
+        }
+
+        async loadTreeData() {
             try {
-                const expandedArray = JSON.parse(stored);
-                expandedNodes = new Set(expandedArray);
-                
-                // Restore the expanded state
-                expandedNodes.forEach(nodeId => {
-                    const childrenContainer = document.getElementById('children-' + nodeId);
-                    const expandBtn = document.getElementById('expand-' + nodeId);
-                    
-                    if (childrenContainer && expandBtn) {
-                        childrenContainer.classList.add('expanded');
-                        expandBtn.classList.add('expanded');
-                    }
+                const response = await $.ajax({
+                    url: `/Categories/Tree/${rootCategoryId}`,
+                    method: 'GET',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
                 });
-            } catch (e) {
-                console.error('Error loading expanded state:', e);
-                expandedNodes = new Set();
+
+                if (response.success) {
+                    treeData = response.treeData;
+                    categoryTypes = response.categoryTypes;
+                    this.renderTree();
+                } else {
+                    this.showError(response.message || 'Failed to load tree data');
+                }
+            } catch (error) {
+                console.error('Error loading tree data:', error);
+                this.showError('Network error: ' + error.message);
             }
         }
-    }
 
-    // Save expanded state to localStorage
-    function saveExpandedState() {
-        localStorage.setItem('categoryTreeExpanded', JSON.stringify([...expandedNodes]));
-    }
+        renderTree() {
+            const container = $('#treeContent');
+            container.html(this.renderNode(treeData, true));
+            this.restoreExpandedState();
+        }
 
-    // Toggle children visibility with state persistence
-    function toggleChildren(categoryId) {
-        const childrenContainer = document.getElementById('children-' + categoryId);
-        const expandBtn = document.getElementById('expand-' + categoryId);
-        
-        if (childrenContainer && expandBtn) {
-            const isExpanded = childrenContainer.classList.contains('expanded');
-            
-            if (isExpanded) {
-                childrenContainer.classList.remove('expanded');
-                expandBtn.classList.remove('expanded');
-                expandedNodes.delete(categoryId);
+        renderNode(node, isRoot = false) {
+            const childrenCount = node.children?.length || 0;
+            const hasChildren = childrenCount > 0;
+
+            let html = `
+                <div class="tree-node">
+                    <div class="tree-node-content ${isRoot ? 'is-root' : ''}">
+                        <div class="tree-node-header">
+                            <div class="tree-node-info">
+                                ${hasChildren ? `
+                                    <button type="button"
+                                            class="expand-btn"
+                                            id="expand-${node.id}"
+                                            onclick="treeManager.toggleChildren('${node.id}')"
+                                            title="Expand/Collapse">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                ` : '<span style="width: 24px;"></span>'}
+
+                                <div class="tree-node-value">
+                                    <i class="fas fa-${isRoot ? 'crown' : 'sitemap'} me-1"></i>
+                                    ${this.escapeHtml(node.value)}
+
+                                    ${isRoot ? '<span class="root-badge">Root</span>' : ''}
+                                    
+                                    <span class="category-type-badge">${this.escapeHtml(node.typeName)}</span>
+
+                                    ${node.order ? `<span class="category-order-badge">Order: ${node.order}</span>` : ''}
+
+                                    ${hasChildren ? `
+                                        <span class="children-count">
+                                            <i class="fas fa-sitemap"></i>
+                                            ${childrenCount}
+                                        </span>
+                                    ` : ''}
+                                </div>
+                            </div>
+
+                            <div class="node-actions">
+                                <button type="button"
+                                        class="node-action-btn btn-copy"
+                                        onclick="treeManager.copyToClipboard('${node.id}', this)"
+                                        title="Copy Category ID">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+
+                                <button type="button"
+                                        class="node-action-btn btn-add"
+                                        onclick="treeManager.openCreateForm('${node.id}', '${this.escapeHtml(node.value)}')"
+                                        title="Add Child Category">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+
+                                <button type="button"
+                                        class="node-action-btn btn-edit"
+                                        onclick="treeManager.showEditForm('${node.id}', '${this.escapeHtml(node.value)}', ${node.order || 'null'})"
+                                        title="Edit Category">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+
+                                <button type="button"
+                                        class="node-action-btn btn-delete"
+                                        onclick="treeManager.showDeleteConfirmation('${node.id}', '${this.escapeHtml(node.value)}')"
+                                        title="Delete Category">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+            `;
+
+            if (hasChildren) {
+                html += `<div class="tree-children" id="children-${node.id}">`;
+
+                // Sort children by order
+                const sortedChildren = node.children.sort((a, b) => (a.order || Number.MAX_VALUE) - (b.order || Number.MAX_VALUE));
+
+                sortedChildren.forEach(child => {
+                    html += this.renderNode(child);
+                });
+
+                html += '</div>';
+            }
+
+            html += '</div>';
+            return html;
+        }
+
+        loadExpandedState() {
+            const stored = localStorage.getItem('categoryTreeExpanded_' + rootCategoryId);
+            if (stored) {
+                try {
+                    const expandedArray = JSON.parse(stored);
+                    expandedNodes = new Set(expandedArray);
+                } catch (e) {
+                    console.error('Error loading expanded state:', e);
+                    expandedNodes = new Set();
+                }
+            }
+        }
+
+        saveExpandedState() {
+            localStorage.setItem('categoryTreeExpanded_' + rootCategoryId, JSON.stringify([...expandedNodes]));
+        }
+
+        restoreExpandedState() {
+            expandedNodes.forEach(nodeId => {
+                const childrenContainer = $(`#children-${nodeId}`);
+                const expandBtn = $(`#expand-${nodeId}`);
+
+                if (childrenContainer.length && expandBtn.length) {
+                    childrenContainer.addClass('expanded');
+                    expandBtn.addClass('expanded');
+                }
+            });
+        }
+
+        toggleChildren(categoryId) {
+            const childrenContainer = $(`#children-${categoryId}`);
+            const expandBtn = $(`#expand-${categoryId}`);
+
+            if (childrenContainer.length && expandBtn.length) {
+                const isExpanded = childrenContainer.hasClass('expanded');
+
+                if (isExpanded) {
+                    childrenContainer.removeClass('expanded');
+                    expandBtn.removeClass('expanded');
+                    expandedNodes.delete(categoryId);
+                } else {
+                    childrenContainer.addClass('expanded');
+                    expandBtn.addClass('expanded');
+                    expandedNodes.add(categoryId);
+                }
+
+                this.saveExpandedState();
+            }
+        }
+
+        // Form handling methods
+        openCreateForm(parentId = null, parentName = 'Root Category') {
+            this.closeAllForms();
+
+            // Set parent ID and display parent info
+            if (parentId) {
+                $('#parentId').val(parentId);
+                $('#parentInfo').text(`Child of: ${parentName}`);
             } else {
-                childrenContainer.classList.add('expanded');
-                expandBtn.classList.add('expanded');
-                expandedNodes.add(categoryId);
+                $('#parentId').val('');
+                $('#parentInfo').text('Root Category');
             }
-            
-            saveExpandedState();
+
+            $('#createForm').addClass('show');
+            setTimeout(() => $('#value').focus(), 300);
+        }
+
+        toggleCreateForm() {
+            $('#createForm').removeClass('show');
+        }
+
+        showEditForm(id, value, order) {
+            this.closeAllForms();
+
+            $('#editId').val(id);
+            $('#editValue').val(value);
+            $('#editOrder').val(order === null ? '' : order);
+
+            $('#editForm').addClass('show');
+            setTimeout(() => $('#editValue').focus(), 300);
+        }
+
+        toggleEditForm() {
+            $('#editForm').removeClass('show');
+        }
+
+        showDeleteConfirmation(categoryId, categoryValue) {
+            categoryToDelete = categoryId;
+            $('#deleteConfirmMessage').text(`Are you sure you want to delete the category "${categoryValue}"?`);
+            $('#deleteConfirmModal').addClass('show');
+        }
+
+        closeDeleteConfirmModal() {
+            $('#deleteConfirmModal').removeClass('show');
+            categoryToDelete = null;
+        }
+
+        confirmDelete() {
+            if (categoryToDelete) {
+                this.deleteCategory(categoryToDelete);
+            }
+            this.closeDeleteConfirmModal();
+        }
+
+        closeAllForms() {
+            $('.form-overlay, .modal').removeClass('show');
+        }
+
+        // AJAX form handlers
+        async handleCreateCategory(e) {
+            e.preventDefault();
+
+            const formData = {
+                value: $('#value').val(),
+                type: $('#type').val(),
+                order: $('#order').val() || null,
+                parentId: $('#parentId').val() || null,
+                returnToTreeId: rootCategoryId
+            };
+
+            if (!formData.value || !formData.type) {
+                this.showError('Value and Type are required.');
+                return;
+            }
+
+            const submitBtn = $('#createCategoryForm button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Creating...');
+
+            try {
+                const response = await $.ajax({
+                    url: '/Categories/Create',
+                    method: 'POST',
+                    data: formData,
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+
+                if (response.success) {
+                    this.showSuccess(response.message);
+
+                    // Update tree data
+                    treeData = response.treeData;
+                    categoryTypes = response.categoryTypes || categoryTypes;
+
+                    // Re-render tree
+                    this.renderTree();
+
+                    // Reset and close form
+                    $('#createCategoryForm')[0].reset();
+                    this.toggleCreateForm();
+                } else {
+                    this.showError(response.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.showError('An error occurred while creating the category.');
+            } finally {
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+            }
+        }
+
+        async handleUpdateCategory(e) {
+            e.preventDefault();
+
+            const formData = {
+                id: $('#editId').val(),
+                value: $('#editValue').val() || null,
+                order: $('#editOrder').val() || null,
+                returnToTreeId: rootCategoryId
+            };
+
+            const submitBtn = $('#editCategoryForm button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true);
+            submitBtn.html('<i class="fas fa-spinner fa-spin me-1"></i>Updating...');
+
+            try {
+                const response = await $.ajax({
+                    url: '/Categories/Update',
+                    method: 'POST',
+                    data: formData,
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+
+                if (response.success) {
+                    this.showSuccess(response.message);
+
+                    // Update tree data
+                    treeData = response.treeData;
+                    categoryTypes = response.categoryTypes || categoryTypes;
+
+                    // Re-render tree
+                    this.renderTree();
+
+                    this.toggleEditForm();
+                } else {
+                    this.showError(response.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.showError('An error occurred while updating the category.');
+            } finally {
+                submitBtn.prop('disabled', false);
+                submitBtn.html(originalText);
+            }
+        }
+
+        async deleteCategory(categoryId) {
+            try {
+                const response = await $.ajax({
+                    url: '/Categories/Delete',
+                    method: 'POST',
+                    data: {
+                        id: categoryId,
+                        returnToTreeId: rootCategoryId
+                    },
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+
+                if (response.success) {
+                    this.showSuccess(response.message);
+
+                    // Update tree data
+                    treeData = response.treeData;
+                    categoryTypes = response.categoryTypes || categoryTypes;
+
+                    // Re-render tree
+                    this.renderTree();
+                } else {
+                    this.showError(response.message);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                this.showError('An error occurred while deleting the category.');
+            }
+        }
+
+        // Utility methods
+        async copyToClipboard(text, button) {
+            try {
+                if (navigator.clipboard && window.isSecureContext) {
+                    await navigator.clipboard.writeText(text);
+                } else {
+                    const textArea = document.createElement('textarea');
+                    textArea.value = text;
+                    textArea.style.position = 'absolute';
+                    textArea.style.left = '-9999px';
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textArea);
+                }
+
+                const $button = $(button);
+                const $icon = $button.find('i');
+
+                $button.addClass('copied');
+                $icon.removeClass().addClass('fas fa-check');
+
+                setTimeout(() => {
+                    $button.removeClass('copied');
+                    $icon.removeClass().addClass('fas fa-copy');
+                }, 2000);
+
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                this.showError('Failed to copy to clipboard');
+            }
+        }
+
+        showSuccess(message) {
+            this.showAlert(message, 'success');
+        }
+
+        showError(message) {
+            this.showAlert(message, 'danger');
+        }
+
+        showWarning(message) {
+            this.showAlert(message, 'warning');
+        }
+
+        showAlert(message, type) {
+            const container = $('#alertContainer');
+            const alertDiv = $(`
+                <div class="alert alert-${type} alert-dismissible fade show">
+                    <i class="fas fa-${this.getAlertIcon(type)} me-2"></i>
+                    ${this.escapeHtml(message)}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `);
+
+            container.html(''); // Clear existing alerts
+            container.append(alertDiv);
+
+            setTimeout(() => {
+                alertDiv.fadeOut(() => alertDiv.remove());
+            }, 5000);
+        }
+
+        getAlertIcon(type) {
+            switch (type) {
+                case 'success':
+                    return 'check-circle';
+                case 'warning':
+                    return 'exclamation-triangle';
+                case 'danger':
+                    return 'exclamation-circle';
+                default:
+                    return 'info-circle';
+            }
+        }
+
+        escapeHtml(text) {
+            if (typeof text !== 'string') return text;
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
     }
 
-    // Save state before form submissions
-    function saveStateBeforeSubmit() {
-        saveExpandedState();
-    }
-
-    // Create category with parent ID and parent name
+    // Global functions for backward compatibility
     function openCreateForm(parentId = null, parentName = 'Root Category') {
-        closeAllForms();
-        
-        // Set parent ID and display parent info
-        if (parentId) {
-            document.getElementById('parentId').value = parentId;
-            document.getElementById('parentInfo').textContent = `Child of: ${parentName}`;
-        } else {
-            document.getElementById('parentId').value = '';
-            document.getElementById('parentInfo').textContent = 'Root Category';
-        }
-        
-        const createForm = document.getElementById('createForm');
-        createForm.classList.add('show');
-        setTimeout(() => document.getElementById('value').focus(), 300);
-    }
-
-    function toggleCreateForm() {
-        const createForm = document.getElementById('createForm');
-        createForm.classList.remove('show');
+        treeManager.openCreateForm(parentId, parentName);
     }
 
     function showEditForm(id, value, order) {
-        closeAllForms();
-        
-        // Populate form fields
-        document.getElementById('editId').value = id;
-        document.getElementById('editValue').value = value;
-        document.getElementById('editOrder').value = order === null ? '' : order;
-
-        // Show form
-        const editForm = document.getElementById('editForm');
-        editForm.classList.add('show');
-        setTimeout(() => document.getElementById('editValue').focus(), 300);
+        treeManager.showEditForm(id, value, order);
     }
 
-    function toggleEditForm() {
-        const editForm = document.getElementById('editForm');
-        editForm.classList.remove('show');
+    function showDeleteConfirmation(id, value) {
+        treeManager.showDeleteConfirmation(id, value);
     }
 
-    function showDeleteConfirmation(categoryId, categoryValue, deleteForm) {
-        deleteFormToSubmit = deleteForm;
-        categoryToDelete = categoryValue;
-
-        // Update the confirmation message
-        document.getElementById('deleteConfirmMessage').textContent =
-            `Are you sure you want to delete the category "${categoryValue}"?`;
-
-        // Show the modal
-        document.getElementById('deleteConfirmModal').classList.add('show');
-    }
-    
-    function closeDeleteConfirmModal() {
-        document.getElementById('deleteConfirmModal').classList.remove('show');
-        deleteFormToSubmit = null;
-        categoryToDelete = null;
+    function copyToClipboard(text, button) {
+        treeManager.copyToClipboard(text, button);
     }
 
-    function confirmDelete() {
-        if (deleteFormToSubmit) {
-            saveStateBeforeSubmit(); // Save state before deletion
-            deleteFormToSubmit.submit();
-        }
-        closeDeleteConfirmModal();
+    function toggleChildren(categoryId) {
+        treeManager.toggleChildren(categoryId);
     }
 
-    function closeAllForms() {
-        document.getElementById('createForm').classList.remove('show');
-        document.getElementById('editForm').classList.remove('show');
-    }
-
-    async function copyToClipboard(text, button) {
-        try {
-            if (navigator.clipboard && window.isSecureContext) {
-                await navigator.clipboard.writeText(text);
-            } else {
-                const textArea = document.createElement('textarea');
-                textArea.value = text;
-                textArea.style.position = 'absolute';
-                textArea.style.left = '-9999px';
-                document.body.appendChild(textArea);
-                textArea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textArea);
-            }
-
-            const icon = button.querySelector('i');
-
-            // Store original classes
-            const originalClasses = icon.className;
-
-            button.classList.add('copied');
-            icon.className = 'fas fa-check';
-
-            setTimeout(() => {
-                button.classList.remove('copied');
-                icon.className = originalClasses;
-            }, 2000);
-
-        } catch (err) {
-            console.error('Failed to copy text: ', err);
-            // Show error feedback
-            const icon = button.querySelector('i');
-            const originalClasses = icon.className;
-
-            icon.className = 'fas fa-times';
-            button.style.background = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-
-            setTimeout(() => {
-                icon.className = originalClasses;
-                button.style.background = '';
-            }, 2000);
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', function () {
-        // Load expanded state on page load
-        loadExpandedState();
-
-        // Auto-hide alerts after 5 seconds
-        const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function (alert) {
-            setTimeout(function () {
-                if (alert && alert.parentNode) {
-                    alert.style.opacity = '0';
-                    alert.style.transition = 'opacity 0.3s';
-                    setTimeout(function () {
-                        if (alert.parentNode) {
-                            alert.parentNode.removeChild(alert);
-                        }
-                    }, 300);
-                }
-            }, 5000);
-        });
-
-        // Close overlays when clicking outside
-        ['createForm', 'editForm'].forEach(id => {
-            document.getElementById(id).addEventListener('click', function(e) {
-                if (e.target === this) {
-                    this.classList.remove('show');
-                }
-            });
-        });
-
-        document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeDeleteConfirmModal();
-            }
-        });
-
-        // Close all modals with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeAllForms();
-                closeDeleteConfirmModal();
-            }
-        });
-
-        // Add event listeners to forms to save state before submission
-        const createForm = document.querySelector('#createForm form');
-        const editForm = document.querySelector('#editForm form');
-        
-        if (createForm) {
-            createForm.addEventListener('submit', saveStateBeforeSubmit);
-        }
-        
-        if (editForm) {
-            editForm.addEventListener('submit', saveStateBeforeSubmit);
-        }
+    // Initialize
+    let treeManager;
+    $(document).ready(() => {
+        console.log('🎉 DOM loaded, initializing TreeManager...');
+        treeManager = new TreeManager();
     });
 </script>
