@@ -4,7 +4,7 @@ using Translator.API.Models;
 using Translator.Application.Features.Category.Commands.AddCategory;
 using Translator.Application.Features.Category.Commands.DeleteCategory;
 using Translator.Application.Features.Category.Commands.UpdateCategory;
-using Translator.Application.Features.Category.Queries.GetCategory;
+using Translator.Application.Features.Category.Queries.GetCategoryTree;
 using Translator.Application.Features.Category.Queries.GetRootCategories;
 
 
@@ -23,9 +23,9 @@ public class CategoryController(IMediator mediator) : ControllerBase
     }
     
     [HttpGet("{categoryId}")]
-    public async Task<ActionResult<CategoryReadDto>> GetCategory(Guid categoryId)
+    public async Task<ActionResult<CategoryTreeDto>> GetCategory(Guid categoryId)
     {
-        var category = await mediator.Send(new GetCategoryQuery(categoryId));
+        var category = await mediator.Send(new GetCategoryTreeQuery(categoryId));
         
         return Ok(category);
     }

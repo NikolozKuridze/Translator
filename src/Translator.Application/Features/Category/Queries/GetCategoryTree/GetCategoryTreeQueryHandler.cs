@@ -2,16 +2,15 @@ using System.Globalization;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Translator.Application.Exceptions;
-using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using CategoryEntity = Translator.Domain.Entities.Category;
 
-namespace Translator.Application.Features.Category.Queries.GetCategory;
+namespace Translator.Application.Features.Category.Queries.GetCategoryTree;
 
 public class GetCategoryQueryHandlerRecursive(IRepository<CategoryEntity> categoryRepository)
-    : IRequestHandler<GetCategoryQuery, CategoryReadDto>
+    : IRequestHandler<GetCategoryTreeQuery, CategoryTreeDto>
 {
-    public async Task<CategoryReadDto> Handle(GetCategoryQuery request, CancellationToken cancellationToken)
+    public async Task<CategoryTreeDto> Handle(GetCategoryTreeQuery request, CancellationToken cancellationToken)
     {
         var category = await categoryRepository
             .AsQueryable()
@@ -24,7 +23,7 @@ public class GetCategoryQueryHandlerRecursive(IRepository<CategoryEntity> catego
         return await MapToDtoWithChildren(category, cancellationToken);
     }
 
-    private async Task<CategoryReadDto> MapToDtoWithChildren(CategoryEntity category,
+    private async Task<CategoryTreeDto> MapToDtoWithChildren(CategoryEntity category,
         CancellationToken cancellationToken)
     {
         var textInfo = CultureInfo.CurrentCulture.TextInfo;
@@ -36,14 +35,14 @@ public class GetCategoryQueryHandlerRecursive(IRepository<CategoryEntity> catego
             .OrderBy(c => c.Order)
             .ToListAsync(cancellationToken);
 
-        var childDtos = new List<CategoryReadDto>();
+        var childDtos = new List<CategoryTreeDto>();
         foreach (var child in children)
         {
             var childDto = await MapToDtoWithChildren(child, cancellationToken);
             childDtos.Add(childDto);
         }
 
-        return new CategoryReadDto(
+        return new CategoryTreeDto(
             category.Id,
             textInfo.ToTitleCase(category.Value),
             textInfo.ToTitleCase(category.Type.Name),
@@ -54,11 +53,11 @@ public class GetCategoryQueryHandlerRecursive(IRepository<CategoryEntity> catego
     }
 }
 
-public record CategoryReadDto(
+public record CategoryTreeDto(
     Guid Id,
     string Value,
     string TypeName,
     int? Order,
     Guid? ParentId,
-    List<CategoryReadDto> Children
+    List<CategoryTreeDto> Children
 );
