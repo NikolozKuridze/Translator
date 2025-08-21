@@ -22,7 +22,7 @@ public class Templates : Controller
         _mediator = mediator;
     }
 
-   [HttpGet("")]
+    [HttpGet("")]
     public async Task<IActionResult> Index(
         string sortBy = "name",
         string sortDirection = "asc",
@@ -31,24 +31,35 @@ public class Templates : Controller
     {
         var command = new GetAllTemplatesCommand(
             new PaginationRequest(
-                pageNumber, 
+                pageNumber,
                 pageSize,
-                null, 
+                null,
                 null,
                 null,
                 sortBy,
                 sortDirection));
-        
+
         var templates = await _mediator.Send(command);
 
-        var totalCount = templates.TotalItems;
-        var totalPages = templates.TotalPages;
-        pageNumber = templates.Page;
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            return Json(new
+            {
+                success = true,
+                data = templates.Items,
+                currentPage = templates.Page,
+                totalPages = templates.TotalPages,
+                totalCount = templates.TotalItems,
+                pageSize = pageSize,
+                sortBy = sortBy,
+                sortDirection = sortDirection
+            });
+        }
 
-        ViewBag.CurrentPage = pageNumber;
+        ViewBag.CurrentPage = templates.Page;
         ViewBag.PageSize = pageSize;
-        ViewBag.TotalPages = totalPages;
-        ViewBag.TotalCount = totalCount;
+        ViewBag.TotalPages = templates.TotalPages;
+        ViewBag.TotalCount = templates.TotalItems;
         ViewBag.SortBy = sortBy;
         ViewBag.SortDirection = sortDirection;
 
@@ -57,12 +68,12 @@ public class Templates : Controller
 
     [HttpGet("Details/{templateId:guid}")]
     public async Task<IActionResult> Details(
-        Guid templateId, string? lang,
+        Guid templateId, string? lang = "en",
         int pageNumber = 1, int pageSize = 10)
     {
         if (templateId == Guid.Empty)
             return RedirectToAction(nameof(Index));
-        
+
         var languagesQuery = new GetLanguagesCommand();
         var availableLanguages = (await _mediator.Send(languagesQuery))
             .Where(l => l.IsActive)
@@ -70,12 +81,12 @@ public class Templates : Controller
             .ToList();
 
         var query = new GetTemplateCommand(
-            templateId, 
+            templateId,
             lang,
             false,
             new PaginationRequest(pageNumber, pageSize, null, null, null, null));
         var allTemplateData = await _mediator.Send(query);
-        
+
         var totalCount = allTemplateData.TotalItems;
         var totalPages = totalCount > 0 ? (int)Math.Ceiling((double)totalCount / pageSize) : 1;
         pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
@@ -86,7 +97,24 @@ public class Templates : Controller
             .Take(pageSize)
             .ToList();
 
-        var templateName = allTemplateData.Items.FirstOrDefault()?.Key ?? "Uknown template";
+        var templateName = allTemplateData.Items.FirstOrDefault()?.Key ?? "Unknown template";
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            return Json(new
+            {
+                success = true,
+                templateId = templateId,
+                templateName = templateName,
+                currentLanguage = lang ?? "",
+                availableLanguages = availableLanguages,
+                data = pagedTemplateData,
+                currentPage = pageNumber,
+                pageSize = pageSize,
+                totalPages = totalPages,
+                totalCount = totalCount
+            });
+        }
 
         ViewBag.TemplateId = templateId;
         ViewBag.TemplateName = templateName;
@@ -103,16 +131,56 @@ public class Templates : Controller
     [HttpPost("Create")]
     public async Task<IActionResult> Create(string templateName, List<string> values)
     {
-        var command = new CreateTemplateCommand(templateName.Trim(), values);
-        await _mediator.Send(command);
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            var command = new CreateTemplateCommand(templateName.Trim(), values);
+            await _mediator.Send(command);
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, message = "Template created successfully" });
+            }
+
+            TempData["SuccessMessage"] = "Template created successfully";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+
+            TempData["ErrorMessage"] = ex.Message;
+            return RedirectToAction(nameof(Index));
+        }
     }
 
     [HttpPost("Delete")]
     public async Task<IActionResult> Delete(string templateName)
     {
-        var command = new DeleteTemplateCommand(templateName.Trim());
-        await _mediator.Send(command);
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            var command = new DeleteTemplateCommand(templateName.Trim());
+            await _mediator.Send(command);
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = true, message = "Template deleted successfully" });
+            }
+
+            TempData["SuccessMessage"] = "Template deleted successfully";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (Exception ex)
+        {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+
+            TempData["ErrorMessage"] = ex.Message;
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

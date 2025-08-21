@@ -12,24 +12,27 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Languages <small class="text-muted">(@totalCount total)</small></h2>
+    <h2>Languages <small class="text-muted" id="totalCountInfo">(@totalCount total)</small></h2>
 </div>
 
-@if (TempData["SuccessMessage"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
+<!-- Alert container -->
+<div id="alertContainer">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+</div>
 
 <!-- Languages Table with integrated filters -->
 <div class="card">
@@ -40,47 +43,28 @@
                     <tr>
                         <th scope="col">
                             Name or Code
-                            @using (Html.BeginForm("Index", "Languages", FormMethod.Get, new { @class = "d-inline" }))
-                            {
-                                @Html.Hidden("pageNumber", 1)
-                                @Html.Hidden("pageSize", pageSize, null)
-                                @Html.Hidden("filterActive", filterActive)
-                                @Html.TextBox("filterName", filterName, new { 
-                                    @class = "form-control form-control-sm mt-1", 
-                                    placeholder = "Search by code or name...",
-                                    style = "width: 200px;",
-                                    onchange = "this.form.submit();" 
-                                })
-                            }
+                            <input type="text" id="filterName" name="filterName" 
+                                   value="@filterName" 
+                                   class="form-control form-control-sm mt-1" 
+                                   placeholder="Search by code or name..."
+                                   style="width: 200px;" />
                         </th>
                         <th scope="col">Code</th>
                         <th scope="col">Unicode Range</th>
                         <th scope="col">
                             Status
-                            @using (Html.BeginForm("Index", "Languages", FormMethod.Get, new { @class = "d-inline" }))
-                            {
-                                @Html.Hidden("pageNumber", 1)
-                                @Html.Hidden("pageSize", pageSize, null)
-                                @Html.Hidden("filterName", filterName)
-                                @Html.DropDownList("filterActive", new List<SelectListItem>
-                                {
-                                    new SelectListItem { Text = "All", Value = "", Selected = !filterActive.HasValue },
-                                    new SelectListItem { Text = "Active", Value = "true", Selected = filterActive == true },
-                                    new SelectListItem { Text = "Inactive", Value = "false", Selected = filterActive == false }
-                                }, new { 
-                                    @class = "form-select form-select-sm mt-1", 
-                                    style = "width: 120px;",
-                                    onchange = "this.form.submit();" 
-                                })
-                            }
+                            <select id="filterActive" name="filterActive" class="form-select form-select-sm mt-1" style="width: 120px;">
+                                <option value="" @(!filterActive.HasValue ? "selected" : "")>All</option>
+                                <option value="true" @(filterActive == true ? "selected" : "")>Active</option>
+                                <option value="false" @(filterActive == false ? "selected" : "")>Inactive</option>
+                            </select>
                         </th>
                         <th scope="col">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="languagesTableBody">
                     @if (Model != null && Model.Any())
                     {
-                        int counter = (currentPage - 1) * pageSize + 1;
                         foreach (var language in Model)
                         {
                             <tr class="@(language.IsActive ? "" : "table-secondary")">
@@ -126,12 +110,11 @@
                                     }
                                 </td>
                             </tr>
-                            counter++;
                         }
                     }
                     else
                     {
-                        <tr>
+                        <tr id="emptyState">
                             <td colspan="5" class="text-center text-muted py-4">
                                 <i class="fas fa-search fa-3x mb-3"></i>
                                 <div>No languages found matching your filters</div>
@@ -144,145 +127,96 @@
     </div>
 </div>
 
-<!-- Pagination -->
-@if (Model != null && Model.Any())
-{
-    <nav class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <small class="text-muted">
-                Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
-            </small>
-            <small class="text-muted">Page @currentPage of @totalPages</small>
-        </div>
-        
-        <ul class="pagination justify-content-center">
-            <!-- First page button -->
-            @if (currentPage > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = 1, 
-                        pageSize, 
-                        filterName,
-                        filterActive 
-                    })" title="First page">
-                        <i class="fas fa-angle-double-left"></i> First
-                    </a>
-                </li>
-            }
-            else
-            {
-                <li class="page-item disabled">
-                    <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
-                </li>
-            }
-
-            <!-- Previous button -->
-            @if (currentPage > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = currentPage - 1, 
-                        pageSize,
-                        filterName,
-                        filterActive 
-                    })">Previous</a>
-                </li>
-            }
-            else 
-            { 
-                <li class="page-item disabled">
-                    <span class="page-link">Previous</span>
-                </li> 
-            }
-
-            <!-- Page numbers -->
-            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
-            {
-                if (i == currentPage)
+<!-- Pagination container -->
+<div id="paginationContainer">
+    @if (Model != null && Model.Any())
+    {
+        <nav class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">
+                    Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
+                </small>
+                <small class="text-muted">Page @currentPage of @totalPages</small>
+            </div>
+            
+            <ul class="pagination justify-content-center">
+                @if (currentPage > 1)
                 {
-                    <li class="page-item active">
-                        <span class="page-link">@i</span>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
+                            <i class="fas fa-angle-double-left"></i> First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
                     </li>
                 }
                 else
                 {
-                    <li class="page-item">
-                        <a class="page-link" href="@Url.Action("Index", new { 
-                            pageNumber = i, 
-                            pageSize,
-                            filterName,
-                            filterActive 
-                        })">@i</a>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
                     </li>
                 }
-            }
 
-            <!-- Next button -->
-            @if (currentPage < totalPages)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = currentPage + 1, 
-                        pageSize,
-                        filterName,
-                        filterActive 
-                    })">Next</a>
-                </li>
-            }
-            else
-            {
-                <li class="page-item disabled">
-                    <span class="page-link">Next</span>
-                </li>
-            }
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    if (i == currentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link page-link-custom" href="#" data-page="@i">@i</a>
+                        </li>
+                    }
+                }
 
-            <!-- Last page button -->
-            @if (currentPage < totalPages)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = totalPages, 
-                        pageSize,
-                        filterName,
-                        filterActive 
-                    })" title="Last page">
-                        Last <i class="fas fa-angle-double-right"></i>
-                    </a>
-                </li>
-            }
-            else
-            {
-                <li class="page-item disabled">
-                    <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
-                </li>
-            }
-        </ul>
-    </nav>
+                @if (currentPage < totalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@totalPages" title="Last page">
+                            Last <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>
 
-    <!-- Page size selector -->
-    <div class="d-flex justify-content-end align-items-center mt-3">
-        @using (Html.BeginForm("Index", "Languages", FormMethod.Get, new { @class = "d-flex align-items-center" }))
-        {
-            @Html.Hidden("pageNumber", 1)
-            @Html.Hidden("filterName", filterName)
-            @Html.Hidden("filterActive", filterActive)
-            
+<!-- Page size selector container -->
+<div id="pageSizeContainer">
+    @if (Model != null && Model.Any())
+    {
+        <div class="d-flex justify-content-end align-items-center mt-3">
             <label class="form-label me-2 mb-0">Show:</label>
-            @Html.DropDownList("pageSize", new List<SelectListItem>
-            {
-                new SelectListItem { Text = "5", Value = "5", Selected = pageSize == 5 },
-                new SelectListItem { Text = "10", Value = "10", Selected = pageSize == 10 },
-                new SelectListItem { Text = "25", Value = "25", Selected = pageSize == 25 },
-                new SelectListItem { Text = "50", Value = "50", Selected = pageSize == 50 }
-            }, new { 
-                @class = "form-select form-select-sm", 
-                style = "width: 80px;",
-                onchange = "this.form.submit();" 
-            })
-        }
-    </div>
-}
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="5" @(pageSize == 5 ? "selected" : "")>5</option>
+                <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
+                <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
+                <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
+            </select>
+        </div>
+    }
+</div>
 
 <!-- Deactivate Modal -->
 <div class="modal fade" id="deactivateLanguageModal" tabindex="-1">
@@ -305,13 +239,9 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                @using (Html.BeginForm("Deactivate", "Languages", FormMethod.Post, new { id = "deactivateLanguageForm" }))
-                {
-                    @Html.Hidden("code", "")
-                    <button type="submit" class="btn btn-warning">
-                        <i class="fas fa-pause"></i> Deactivate
-                    </button>
-                }
+                <button type="button" class="btn btn-warning" id="confirmDeactivateBtn">
+                    <i class="fas fa-pause"></i> Deactivate
+                </button>
             </div>
         </div>
     </div>
@@ -338,54 +268,507 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                @using (Html.BeginForm("Activate", "Languages", FormMethod.Post, new { id = "activateLanguageForm" }))
-                {
-                    @Html.Hidden("code", "")
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-play"></i> Activate
-                    </button>
-                }
+                <button type="button" class="btn btn-success" id="confirmActivateBtn">
+                    <i class="fas fa-play"></i> Activate
+                </button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-    function showDeactivateModal(languageCode, languageName) {
-        document.getElementById('languageCodeToDeactivate').textContent = languageCode.toUpperCase();
-        document.getElementById('languageNameToDeactivate').textContent = languageName || 'N/A';
-        document.querySelector('#deactivateLanguageForm input[name="code"]').value = languageCode;
+// Debounce utility function
+function debounce(func, delay) {
+    let timeoutId;
+    return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+class LanguagesManager {
+    constructor() {
+        this.currentPage = @currentPage;
+        this.pageSize = @pageSize;
+        this.filterName = '@Html.Raw(filterName)';
+        this.filterActive = @(filterActive.HasValue ? (filterActive.Value ? "true" : "false") : "null");
+        this.totalCount = @totalCount;
+        this.totalPages = @totalPages;
         
-        const modal = new bootstrap.Modal(document.getElementById('deactivateLanguageModal'));
-        modal.show();
+        // Create debounced search function
+        this.debouncedSearch = debounce(this.performSearch.bind(this), 200);
+        
+        this.init();
     }
 
-    function showActivateModal(languageCode, languageName) {
-        document.getElementById('languageCodeToActivate').textContent = languageCode.toUpperCase();
-        document.getElementById('languageNameToActivate').textContent = languageName || 'N/A';
-        document.querySelector('#activateLanguageForm input[name="code"]').value = languageCode;
-        
-        const modal = new bootstrap.Modal(document.getElementById('activateLanguageModal'));
-        modal.show();
+    init() {
+        console.log('🚀 Initializing LanguagesManager...');
+        this.bindEvents();
+        this.updateUI();
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const successAlert = document.querySelector('.alert-success');
-        if (successAlert) {
-            setTimeout(() => {
-                const alert = new bootstrap.Alert(successAlert);
-                alert.close();
-            }, 5000);
+    bindEvents() {
+        // Name filter with debounce
+        document.getElementById('filterName').addEventListener('input', (e) => {
+            this.filterName = e.target.value;
+            this.currentPage = 1;
+            this.debouncedSearch();
+        });
+
+        // Active filter
+        document.getElementById('filterActive').addEventListener('change', (e) => {
+            this.filterActive = e.target.value || null;
+            this.currentPage = 1;
+            this.loadData();
+        });
+
+        // Page size selector
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', (e) => {
+                this.pageSize = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadData();
+            });
         }
 
-        const errorAlert = document.querySelector('.alert-danger');
-        if (errorAlert) {
-            setTimeout(() => {
-                const alert = new bootstrap.Alert(errorAlert);
-                alert.close();
-            }, 5000);
+        // Modal buttons
+        document.getElementById('confirmDeactivateBtn').addEventListener('click', () => {
+            const languageCode = document.getElementById('languageCodeToDeactivate').textContent;
+            this.deactivateLanguage(languageCode);
+        });
+
+        document.getElementById('confirmActivateBtn').addEventListener('click', () => {
+            const languageCode = document.getElementById('languageCodeToActivate').textContent;
+            this.activateLanguage(languageCode);
+        });
+
+        // Bind pagination events
+        this.bindPaginationEvents();
+    }
+
+    performSearch() {
+        console.log('🔍 Performing search...');
+        this.loadData();
+    }
+
+    async loadData() {
+        console.log('🔄 Loading languages...');
+        
+        try {
+            const params = new URLSearchParams({
+                pageNumber: this.currentPage,
+                pageSize: this.pageSize
+            });
+
+            if (this.filterName) {
+                params.append('filterName', this.filterName);
+            }
+
+            if (this.filterActive !== null) {
+                params.append('filterActive', this.filterActive);
+            }
+
+            const response = await fetch(`/Languages/?${params}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('Response data:', result);
+
+            if (result.success) {
+                this.updatePageData(result);
+                this.renderLanguages(result.data || []);
+                this.renderPagination(result);
+                this.renderPageSizeSelector(result);
+                this.updateUI();
+            } else {
+                this.showError('Failed to load languages: ' + (result.message || 'Unknown error'));
+                this.renderEmptyState();
+            }
+        } catch (error) {
+            console.error('Error loading languages:', error);
+            this.showError('Network error: ' + error.message);
+            this.renderEmptyState();
         }
-    });
+    }
+
+    updatePageData(data) {
+        this.currentPage = data.currentPage || 1;
+        this.totalPages = data.totalPages || 1;
+        this.totalCount = data.totalCount || 0;
+        this.pageSize = data.pageSize || 10;
+        if (data.filterName !== undefined) {
+            this.filterName = data.filterName;
+        }
+        if (data.filterActive !== undefined) {
+            this.filterActive = data.filterActive;
+        }
+    }
+
+    updateUI() {
+        // Update total count
+        document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
+        
+        // Update filter inputs
+        document.getElementById('filterName').value = this.filterName;
+        document.getElementById('filterActive').value = this.filterActive || '';
+    }
+
+    renderLanguages(languages) {
+        const tbody = document.getElementById('languagesTableBody');
+        
+        // Remove existing rows except empty state
+        const existingRows = tbody.querySelectorAll('tr:not(#emptyState)');
+        existingRows.forEach(row => row.remove());
+
+        // Remove empty state if it exists
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.remove();
+
+        if (languages && languages.length > 0) {
+            languages.forEach(language => {
+                const row = this.createLanguageRow(language);
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+            this.bindTableEvents();
+        } else {
+            this.renderEmptyState();
+        }
+    }
+
+    createLanguageRow(language) {
+        const isActive = language.isActive;
+        const languageName = this.escapeHtml(language.languageName || 'N/A');
+        const languageCode = this.escapeHtml(language.languageCode);
+        const unicodeRange = this.escapeHtml(language.unicodeRange || 'N/A');
+
+        return `
+            <tr class="${isActive ? '' : 'table-secondary'}">
+                <td>
+                    <span class="${isActive ? '' : 'text-muted'}">
+                        <strong>${languageName}</strong>
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${isActive ? 'bg-primary' : 'bg-secondary'}">
+                        ${languageCode.toUpperCase()}
+                    </span>
+                </td>
+                <td>
+                    <code class="text-muted">${unicodeRange}</code>
+                </td>
+                <td>
+                    ${isActive 
+                        ? '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>'
+                        : '<span class="badge bg-secondary"><i class="fas fa-times-circle"></i> Inactive</span>'
+                    }
+                </td>
+                <td>
+                    ${isActive 
+                        ? `<button class="btn btn-sm btn-outline-warning deactivate-btn" data-code="${languageCode}" data-name="${languageName}">
+                             <i class="fas fa-pause"></i> Deactivate
+                           </button>`
+                        : `<button class="btn btn-sm btn-outline-success activate-btn" data-code="${languageCode}" data-name="${languageName}">
+                             <i class="fas fa-play"></i> Activate
+                           </button>`
+                    }
+                </td>
+            </tr>
+        `;
+    }
+
+    bindTableEvents() {
+        // Deactivate buttons
+        document.querySelectorAll('.deactivate-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const languageCode = btn.getAttribute('data-code');
+                const languageName = btn.getAttribute('data-name');
+                showDeactivateModal(languageCode, languageName);
+            });
+        });
+
+        // Activate buttons
+        document.querySelectorAll('.activate-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const languageCode = btn.getAttribute('data-code');
+                const languageName = btn.getAttribute('data-name');
+                showActivateModal(languageCode, languageName);
+            });
+        });
+    }
+
+    renderEmptyState() {
+        const tbody = document.getElementById('languagesTableBody');
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr id="emptyState">
+                <td colspan="5" class="text-center text-muted py-4">
+                    <i class="fas fa-search fa-3x mb-3"></i>
+                    <div>No languages found matching your filters</div>
+                </td>
+            </tr>
+        `);
+    }
+
+    renderPagination(responseData) {
+        const { currentPage, totalPages, totalCount } = responseData;
+        const container = document.getElementById('paginationContainer');
+        
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const showingStart = (currentPage - 1) * this.pageSize + 1;
+        const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
+        
+        let html = `
+            <nav class="mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
+                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
+                </div>
+                <ul class="pagination justify-content-center">
+        `;
+        
+        // First & Previous
+        if (currentPage > 1) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="1">
+                        <i class="fas fa-angle-double-left"></i> First
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            `;
+        }
+
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+            } else {
+                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
+            }
+        }
+
+        // Next & Last
+        if (currentPage < totalPages) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
+                        Last <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
+            `;
+        }
+
+        html += '</ul></nav>';
+        container.innerHTML = html;
+        
+        // Rebind pagination events
+        this.bindPaginationEvents();
+    }
+
+    renderPageSizeSelector(responseData) {
+        const container = document.getElementById('pageSizeContainer');
+        
+        if (!responseData.data || responseData.data.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        const html = `
+            <div class="d-flex justify-content-end align-items-center mt-3">
+                <label class="form-label me-2 mb-0">Show:</label>
+                <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                    <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
+                    <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
+                    <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
+                    <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
+                </select>
+            </div>
+        `;
+        container.innerHTML = html;
+        
+        // Rebind page size change event
+        const select = document.getElementById('pageSizeSelect');
+        if (select) {
+            select.addEventListener('change', (e) => {
+                this.pageSize = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadData();
+            });
+        }
+    }
+
+    bindPaginationEvents() {
+        document.querySelectorAll('.page-link-custom').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = parseInt(link.getAttribute('data-page'));
+                if (page && page !== this.currentPage) {
+                    this.currentPage = page;
+                    this.loadData();
+                }
+            });
+        });
+    }
+
+    async deactivateLanguage(languageCode) {
+        const btn = document.getElementById('confirmDeactivateBtn');
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('code', languageCode);
+
+            const response = await fetch('/Languages/Deactivate', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showSuccess(result.message);
+                const modal = document.getElementById('deactivateLanguageModal');
+                if (window.bootstrap) {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) bsModal.hide();
+                }
+                this.loadData();
+            } else {
+                this.showError(result.message);
+            }
+        } catch (error) {
+            console.error('Error deactivating language:', error);
+            this.showError('Failed to deactivate language');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    async activateLanguage(languageCode) {
+        const btn = document.getElementById('confirmActivateBtn');
+        btn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('code', languageCode);
+
+            const response = await fetch('/Languages/Activate', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showSuccess(result.message);
+                const modal = document.getElementById('activateLanguageModal');
+                if (window.bootstrap) {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) bsModal.hide();
+                }
+                this.loadData();
+            } else {
+                this.showError(result.message);
+            }
+        } catch (error) {
+            console.error('Error activating language:', error);
+            this.showError('Failed to activate language');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    showSuccess(message) { this.showAlert(message, 'success'); }
+    showError(message) { this.showAlert(message, 'danger'); }
+
+    showAlert(message, type) {
+        const container = document.getElementById('alertContainer');
+        container.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${this.escapeHtml(message)}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) alert.remove();
+        }, 5000);
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Global functions for modal compatibility
+function showDeactivateModal(languageCode, languageName) {
+    document.getElementById('languageCodeToDeactivate').textContent = languageCode.toUpperCase();
+    document.getElementById('languageNameToDeactivate').textContent = languageName || 'N/A';
+    
+    const modal = new bootstrap.Modal(document.getElementById('deactivateLanguageModal'));
+    modal.show();
+}
+
+function showActivateModal(languageCode, languageName) {
+    document.getElementById('languageCodeToActivate').textContent = languageCode.toUpperCase();
+    document.getElementById('languageNameToActivate').textContent = languageName || 'N/A';
+    
+    const modal = new bootstrap.Modal(document.getElementById('activateLanguageModal'));
+    modal.show();
+}
+
+// Initialize
+let languagesManager;
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎉 DOM loaded, initializing LanguagesManager...');
+    languagesManager = new LanguagesManager();
+
+    // Auto-hide TempData alerts
+    const successAlert = document.querySelector('.alert-success');
+    if (successAlert) {
+        setTimeout(() => new bootstrap.Alert(successAlert).close(), 5000);
+    }
+
+    const errorAlert = document.querySelector('.alert-danger');
+    if (errorAlert) {
+        setTimeout(() => new bootstrap.Alert(errorAlert).close(), 5000);
+    }
+});
 </script>
 
 <style>

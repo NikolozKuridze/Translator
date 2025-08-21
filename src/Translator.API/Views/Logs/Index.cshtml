@@ -13,19 +13,19 @@
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-file-alt"></i> System Logs <small class="text-muted">(@totalCount total)</small></h2>
+    <h2><i class="fas fa-file-alt"></i> System Logs <small class="text-muted" id="totalCountInfo">(@totalCount total)</small></h2>
     <div class="d-flex gap-2">
-        <button class="btn btn-outline-secondary" onclick="clearFilters()">
+        <button class="btn btn-outline-secondary" id="clearFiltersBtn">
             <i class="fas fa-times"></i> Clear Filters
         </button>
-        <button class="btn btn-primary" onclick="refreshLogs()">
+        <button class="btn btn-primary" id="refreshBtn">
             <i class="fas fa-sync-alt"></i> Refresh
         </button>
         
         <!-- Quick Hours Filter -->
-        <form id="lastHoursForm" method="get" action="@Url.Action("Index", "Logs")" class="ms-2">
+        <div class="ms-2">
             <div class="input-group">
-                <select name="lastHours" id="lastHoursSelect" class="form-select form-select-sm" onchange="submitLastHours()" style="min-width: 180px;">
+                <select id="lastHoursSelect" class="form-select form-select-sm" style="min-width: 180px;">
                     <option value="">Show logs for period...</option>
                     <option value="1" @(selectedLastHours == "1" ? "selected" : "")>Last 1 hour</option>
                     <option value="3" @(selectedLastHours == "3" ? "selected" : "")>Last 3 hours</option>
@@ -34,19 +34,20 @@
                     <option value="24" @(selectedLastHours == "24" ? "selected" : "")>Last 24 hours</option>
                 </select>
             </div>
-            <input type="hidden" name="pageSize" value="@pageSize" />
-            <input type="hidden" name="pageNumber" value="1" />
-        </form>
+        </div>
     </div>
 </div>
 
-@if (TempData["ErrorMessage"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
+<!-- Alert container -->
+<div id="alertContainer">
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+</div>
 
 <!-- Logs Table with integrated filters -->
 <div class="card">
@@ -57,46 +58,24 @@
                     <tr>
                         <th width="15%">
                             Timestamp
-                            @using (Html.BeginForm("Index", "Logs", FormMethod.Get, new { @class = "d-inline" }))
-                            {
-                                @Html.Hidden("pageNumber", 1)
-                                @Html.Hidden("pageSize", pageSize, null)
-                                @Html.Hidden("dateTo", dateTo)
-                                @Html.Hidden("lastHours", selectedLastHours)
-                                <div class="mt-1">
-                                    @Html.TextBox("dateFrom", dateFrom, new { 
-                                        @class = "form-control form-control-sm", 
-                                        type = "date",
-                                        onchange = "this.form.submit();",
-                                        title = "Filter from date"
-                                    })
-                                </div>
-                            }
+                            <div class="mt-1">
+                                <input type="date" id="dateFromFilter" class="form-control form-control-sm" 
+                                       value="@dateFrom" title="Filter from date" />
+                            </div>
                         </th>
                         <th width="10%">Level</th>
                         <th width="45%">Message</th>
                         <th width="15%">
                             Until Date
-                            @using (Html.BeginForm("Index", "Logs", FormMethod.Get, new { @class = "d-inline" }))
-                            {
-                                @Html.Hidden("pageNumber", 1)
-                                @Html.Hidden("pageSize", pageSize, null)
-                                @Html.Hidden("dateFrom", dateFrom, null)
-                                @Html.Hidden("lastHours", selectedLastHours)
-                                <div class="mt-1">
-                                    @Html.TextBox("dateTo", dateTo, new { 
-                                        @class = "form-control form-control-sm", 
-                                        type = "date",
-                                        onchange = "this.form.submit();",
-                                        title = "Filter until date"
-                                    })
-                                </div>
-                            }
+                            <div class="mt-1">
+                                <input type="date" id="dateToFilter" class="form-control form-control-sm" 
+                                       value="@dateTo" title="Filter until date" />
+                            </div>
                         </th>
                         <th width="15%">Actions</th>
                     </tr>
                 </thead>
-                <tbody>
+                <tbody id="logsTableBody">
                     @if (Model != null && Model.Any())
                     {
                         foreach (var log in Model)
@@ -129,17 +108,17 @@
                                     <small class="text-muted">@log.Timestamp.ToString("dd/MM HH:mm")</small>
                                 </td>
                                 <td>
-                                    <a href="@Url.Action("Details", new { logId = 1, timestamp = log.Timestamp })" 
-                                       class="btn btn-sm btn-outline-primary">
+                                    <button class="btn btn-sm btn-outline-primary view-log-btn" 
+                                            data-timestamp="@log.Timestamp.ToString("yyyy-MM-ddTHH:mm:ss")">
                                         <i class="fas fa-eye"></i> View
-                                    </a>
+                                    </button>
                                 </td>
                             </tr>
                         }
                     }
                     else
                     {
-                        <tr>
+                        <tr id="emptyState">
                             <td colspan="5" class="text-center text-muted py-4">
                                 <i class="fas fa-search fa-3x mb-3"></i>
                                 <div>No logs found matching your filters</div>
@@ -152,151 +131,125 @@
     </div>
 </div>
 
-<!-- Pagination -->
-@if (Model != null && Model.Any())
-{
-    <nav class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <small class="text-muted">
-                Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount logs
-            </small>
-            <small class="text-muted">Page @currentPage of @totalPages</small>
-        </div>
-        
-        <ul class="pagination justify-content-center">
-            <!-- First page button -->
-            @if (currentPage > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = 1, 
-                        pageSize, 
-                        dateFrom,
-                        dateTo,
-                        lastHours = selectedLastHours
-                    })" title="First page">
-                        <i class="fas fa-angle-double-left"></i> First
-                    </a>
-                </li>
-            }
-            else
-            {
-                <li class="page-item disabled">
-                    <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
-                </li>
-            }
-
-            <!-- Previous button -->
-            @if (currentPage > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = currentPage - 1, 
-                        pageSize,
-                        dateFrom,
-                        dateTo,
-                        lastHours = selectedLastHours
-                    })">Previous</a>
-                </li>
-            }
-            else 
-            { 
-                <li class="page-item disabled">
-                    <span class="page-link">Previous</span>
-                </li> 
-            }
-
-            <!-- Page numbers -->
-            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
-            {
-                if (i == currentPage)
+<!-- Pagination container -->
+<div id="paginationContainer">
+    @if (Model != null && Model.Any())
+    {
+        <nav class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">
+                    Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount logs
+                </small>
+                <small class="text-muted">Page @currentPage of @totalPages</small>
+            </div>
+            
+            <ul class="pagination justify-content-center">
+                @if (currentPage > 1)
                 {
-                    <li class="page-item active">
-                        <span class="page-link">@i</span>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
+                            <i class="fas fa-angle-double-left"></i> First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
                     </li>
                 }
                 else
                 {
-                    <li class="page-item">
-                        <a class="page-link" href="@Url.Action("Index", new { 
-                            pageNumber = i, 
-                            pageSize,
-                            dateFrom,
-                            dateTo,
-                            lastHours = selectedLastHours
-                        })">@i</a>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
                     </li>
                 }
-            }
 
-            <!-- Next button -->
-            @if (currentPage < totalPages)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = currentPage + 1, 
-                        pageSize,
-                        dateFrom,
-                        dateTo,
-                        lastHours = selectedLastHours
-                    })">Next</a>
-                </li>
-            }
-            else
-            {
-                <li class="page-item disabled">
-                    <span class="page-link">Next</span>
-                </li>
-            }
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    if (i == currentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link page-link-custom" href="#" data-page="@i">@i</a>
+                        </li>
+                    }
+                }
 
-            <!-- Last page button -->
-            @if (currentPage < totalPages)
-            {
-                <li class="page-item">
-                    <a class="page-link" href="@Url.Action("Index", new { 
-                        pageNumber = totalPages, 
-                        pageSize,
-                        dateFrom,
-                        dateTo,
-                        lastHours = selectedLastHours
-                    })" title="Last page">
-                        Last <i class="fas fa-angle-double-right"></i>
-                    </a>
-                </li>
-            }
-            else
-            {
-                <li class="page-item disabled">
-                    <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
-                </li>
-            }
-        </ul>
-    </nav>
+                @if (currentPage < totalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@totalPages" title="Last page">
+                            Last <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>
 
-    <!-- Page size selector -->
-    <div class="d-flex justify-content-end align-items-center mt-3">
-        @using (Html.BeginForm("Index", "Logs", FormMethod.Get, new { @class = "d-flex align-items-center" }))
-        {
-            @Html.Hidden("pageNumber", 1)
-            @Html.Hidden("dateFrom", dateFrom)
-            @Html.Hidden("dateTo", dateTo)
-            @Html.Hidden("lastHours", selectedLastHours)
-            
+<!-- Page size selector container -->
+<div id="pageSizeContainer">
+    @if (Model != null && Model.Any())
+    {
+        <div class="d-flex justify-content-end align-items-center mt-3">
             <label class="form-label me-2 mb-0">Show:</label>
-            @Html.DropDownList("pageSize", new List<SelectListItem>
-            {
-                new SelectListItem { Text = "10", Value = "10", Selected = pageSize == 10 },
-                new SelectListItem { Text = "25", Value = "25", Selected = pageSize == 25 },
-                new SelectListItem { Text = "50", Value = "50", Selected = pageSize == 50 },
-                new SelectListItem { Text = "100", Value = "100", Selected = pageSize == 100 }
-            }, new { 
-                @class = "form-select form-select-sm", 
-                style = "width: 80px;",
-                onchange = "this.form.submit();" 
-            })
-        }
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
+                <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
+                <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
+                <option value="100" @(pageSize == 100 ? "selected" : "")>100</option>
+            </select>
+        </div>
+    }
+</div>
+
+<!-- Log Details Modal -->
+<div class="modal fade" id="logDetailsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="fas fa-file-alt"></i> Log Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="logDetailsContent">
+                <div class="text-center py-4">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading log details...</p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-outline-primary" id="copyLogBtn" style="display: none;">
+                    <i class="fas fa-copy"></i> Copy Message
+                </button>
+                <button type="button" class="btn btn-outline-danger" id="copyExceptionBtn" style="display: none;">
+                    <i class="fas fa-bug"></i> Copy Exception
+                </button>
+            </div>
+        </div>
     </div>
-}
+</div>
 
 @functions {
     string GetLogLevel(string message)
@@ -325,27 +278,665 @@
 }
 
 <script>
-    function clearFilters() {
-        window.location.href = '@Url.Action("Index")';
+// Debounce utility function
+function debounce(func, delay) {
+    let timeoutId;
+    return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+}
+
+class LogsManager {
+    constructor() {
+        this.currentPage = @currentPage;
+        this.pageSize = @pageSize;
+        this.dateFrom = '@dateFrom';
+        this.dateTo = '@dateTo';
+        this.lastHours = '@selectedLastHours';
+        this.totalCount = @totalCount;
+        this.totalPages = @totalPages;
+        this.currentLogData = null;
+        
+        // Create debounced filter function
+        this.debouncedFilter = debounce(this.applyFilters.bind(this), 300);
+        
+        this.init();
     }
 
-    function refreshLogs() {
-        window.location.reload();
+    init() {
+        console.log('🚀 Initializing LogsManager...');
+        this.bindEvents();
+        this.updateUI();
     }
 
-    function submitLastHours() {
-        document.getElementById('lastHoursForm').submit();
-    }
+    bindEvents() {
+        // Date filters with debounce
+        document.getElementById('dateFromFilter').addEventListener('change', (e) => {
+            this.dateFrom = e.target.value;
+            this.currentPage = 1;
+            this.lastHours = ''; // Clear lastHours when manual date selected
+            this.debouncedFilter();
+        });
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const errorAlert = document.querySelector('.alert-danger');
-        if (errorAlert) {
-            setTimeout(() => {
-                const alert = new bootstrap.Alert(errorAlert);
-                alert.close();
-            }, 5000);
+        document.getElementById('dateToFilter').addEventListener('change', (e) => {
+            this.dateTo = e.target.value;
+            this.currentPage = 1;
+            this.lastHours = ''; // Clear lastHours when manual date selected
+            this.debouncedFilter();
+        });
+
+        // Last hours filter
+        document.getElementById('lastHoursSelect').addEventListener('change', (e) => {
+            this.lastHours = e.target.value;
+            this.currentPage = 1;
+            if (this.lastHours) {
+                // Clear manual date filters when using lastHours
+                this.dateFrom = '';
+                this.dateTo = '';
+                document.getElementById('dateFromFilter').value = '';
+                document.getElementById('dateToFilter').value = '';
+            }
+            this.loadData();
+        });
+
+        // Clear filters button
+        document.getElementById('clearFiltersBtn').addEventListener('click', () => {
+            this.clearFilters();
+        });
+
+        // Refresh button
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            this.loadData();
+        });
+
+        // Page size selector
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', (e) => {
+                this.pageSize = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadData();
+            });
         }
-    });
+
+        // Copy buttons in modal
+        document.getElementById('copyLogBtn').addEventListener('click', () => {
+            this.copyLogMessage();
+        });
+
+        document.getElementById('copyExceptionBtn').addEventListener('click', () => {
+            this.copyException();
+        });
+
+        // Bind pagination and table events
+        this.bindPaginationEvents();
+        this.bindTableEvents();
+    }
+
+    applyFilters() {
+        console.log('🔍 Applying filters...');
+        this.loadData();
+    }
+
+    clearFilters() {
+        this.dateFrom = '';
+        this.dateTo = '';
+        this.lastHours = '';
+        this.currentPage = 1;
+        
+        document.getElementById('dateFromFilter').value = '';
+        document.getElementById('dateToFilter').value = '';
+        document.getElementById('lastHoursSelect').value = '';
+        
+        this.loadData();
+    }
+
+    async loadData() {
+        console.log('Loading logs...');
+        
+        try {
+            const params = new URLSearchParams({
+                pageNumber: this.currentPage,
+                pageSize: this.pageSize
+            });
+
+            if (this.dateFrom) params.append('dateFrom', this.dateFrom);
+            if (this.dateTo) params.append('dateTo', this.dateTo);
+            if (this.lastHours) params.append('lastHours', this.lastHours);
+
+            const response = await fetch(`/Logs/?${params}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('Logs loaded:', result);
+
+            if (result.success) {
+                this.updatePageData(result);
+                this.renderLogs(result.data || []);
+                this.renderPagination(result);
+                this.renderPageSizeSelector(result);
+                this.updateUI();
+            } else {
+                this.showError('Failed to load logs: ' + (result.message || 'Unknown error'));
+                this.renderEmptyState();
+            }
+        } catch (error) {
+            console.error('Error loading logs:', error);
+            this.showError('Network error: ' + error.message);
+            this.renderEmptyState();
+        }
+    }
+
+    updatePageData(data) {
+        this.currentPage = data.currentPage || 1;
+        this.totalPages = data.totalPages || 1;
+        this.totalCount = data.totalCount || 0;
+        this.pageSize = data.pageSize || 10;
+        if (data.dateFrom !== undefined) this.dateFrom = data.dateFrom;
+        if (data.dateTo !== undefined) this.dateTo = data.dateTo;
+        if (data.lastHours !== undefined) this.lastHours = data.lastHours;
+    }
+
+    updateUI() {
+        // Update total count
+        document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
+        
+        // Update filter inputs
+        document.getElementById('dateFromFilter').value = this.dateFrom;
+        document.getElementById('dateToFilter').value = this.dateTo;
+        document.getElementById('lastHoursSelect').value = this.lastHours;
+    }
+
+    renderLogs(logs) {
+        const tbody = document.getElementById('logsTableBody');
+        
+        // Remove existing rows except empty state
+        const existingRows = tbody.querySelectorAll('tr:not(#emptyState)');
+        existingRows.forEach(row => row.remove());
+
+        // Remove empty state if it exists
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.remove();
+
+        if (logs && logs.length > 0) {
+            logs.forEach(log => {
+                const row = this.createLogRow(log);
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+            this.bindTableEvents();
+        } else {
+            this.renderEmptyState();
+        }
+    }
+
+    createLogRow(log) {
+        const logLevel = this.getLogLevel(log.message);
+        const logLevelBadge = this.getLogLevelBadge(logLevel);
+        const rowClass = logLevel === "Error" ? "table-danger" : logLevel === "Warning" ? "table-warning" : "";
+        
+        const timestamp = new Date(log.timestamp);
+        const dateStr = timestamp.toLocaleDateString('en-GB');
+        const timeStr = timestamp.toLocaleTimeString('en-GB');
+        const shortDateStr = `${timestamp.getDate().toString().padStart(2, '0')}/${(timestamp.getMonth()+1).toString().padStart(2, '0')} ${timeStr.substring(0,5)}`;
+
+        return `
+            <tr class="${rowClass}">
+                <td>
+                    <small class="text-muted">
+                        ${dateStr}<br>
+                        <strong>${timeStr}</strong>
+                    </small>
+                </td>
+                <td>
+                    <span class="badge ${logLevelBadge}">${logLevel}</span>
+                </td>
+                <td>
+                    <div class="text-truncate" style="max-width: 400px;">
+                        ${this.escapeHtml(log.message)}
+                    </div>
+                    ${log.exception ? '<small class="text-danger"><i class="fas fa-exclamation-triangle"></i> Has Exception</small>' : ''}
+                </td>
+                <td>
+                    <small class="text-muted">${shortDateStr}</small>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-outline-primary view-log-btn" 
+                            data-timestamp="${log.timestamp}">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>
+        `;
+    }
+
+    bindTableEvents() {
+        // View log buttons
+        document.querySelectorAll('.view-log-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const timestamp = btn.getAttribute('data-timestamp');
+                this.showLogDetails(timestamp);
+            });
+        });
+    }
+
+    async showLogDetails(timestamp) {
+        console.log('👁️ Showing log details for:', timestamp);
+        
+        // Show modal with loading state
+        const modal = new bootstrap.Modal(document.getElementById('logDetailsModal'));
+        const content = document.getElementById('logDetailsContent');
+        const copyLogBtn = document.getElementById('copyLogBtn');
+        const copyExceptionBtn = document.getElementById('copyExceptionBtn');
+        
+        // Reset modal content
+        content.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading log details...</p>
+            </div>
+        `;
+        
+        copyLogBtn.style.display = 'none';
+        copyExceptionBtn.style.display = 'none';
+        
+        modal.show();
+
+        try {
+            const response = await fetch(`/Logs/Details?timestamp=${encodeURIComponent(timestamp)}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.currentLogData = result.data;
+                this.renderLogDetails(result.data, result.totalCount);
+                
+                // Show copy buttons
+                copyLogBtn.style.display = 'inline-block';
+                if (result.data.exception) {
+                    copyExceptionBtn.style.display = 'inline-block';
+                }
+            } else {
+                content.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        ${this.escapeHtml(result.message || 'Failed to load log details')}
+                    </div>
+                `;
+            }
+        } catch (error) {
+            console.error('Error loading log details:', error);
+            content.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Network error: ${this.escapeHtml(error.message)}
+                </div>
+            `;
+        }
+    }
+
+    renderLogDetails(log, totalCount) {
+        const logLevel = this.getLogLevel(log.message);
+        const logLevelBadge = this.getLogLevelBadge(logLevel);
+        const timestamp = new Date(log.timestamp);
+        
+        const content = document.getElementById('logDetailsContent');
+        content.innerHTML = `
+            <!-- Meta info bar -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3">
+                            <strong>Timestamp:</strong>
+                            <div>
+                                <span class="badge bg-info">${timestamp.toLocaleString()}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Level:</strong>
+                            <div>
+                                <span class="badge ${logLevelBadge}">${logLevel}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Has Exception:</strong>
+                            <div>
+                                <span class="badge ${log.exception ? 'bg-danger' : 'bg-success'}">${log.exception ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <strong>Has Properties:</strong>
+                            <div>
+                                <span class="badge ${log.properties ? 'bg-info' : 'bg-secondary'}">${log.properties ? 'Yes' : 'No'}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <small class="text-muted">Total logs: ${totalCount}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main log message -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-comment-alt"></i> Log Message</h6>
+                </div>
+                <div class="card-body">
+                    <div class="p-3 bg-light border rounded">
+                        <pre class="mb-0 log-content">${this.escapeHtml(log.message)}</pre>
+                    </div>
+                </div>
+            </div>
+
+            ${log.properties ? `
+            <!-- Properties -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-cog"></i> Properties</h6>
+                </div>
+                <div class="card-body">
+                    <div class="p-3 bg-light border rounded">
+                        <pre class="mb-0 log-content text-info">${this.escapeHtml(log.properties)}</pre>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+            ${log.exception ? `
+            <!-- Exception -->
+            <div class="card mb-3">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Exception Details</h6>
+                </div>
+                <div class="card-body">
+                    <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded">
+                        <pre class="mb-0 log-content text-danger">${this.escapeHtml(log.exception)}</pre>
+                    </div>
+                </div>
+            </div>
+            ` : ''}
+
+            <!-- Additional info -->
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Additional Information</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong>UTC Time:</strong><br>
+                            <small class="text-muted">${timestamp.toISOString()}</small>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Local Time:</strong><br>
+                            <small class="text-muted">${timestamp.toLocaleString()}</small>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Total Logs:</strong><br>
+                            <small class="text-muted">${totalCount} logs in system</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    copyLogMessage() {
+        if (this.currentLogData && this.currentLogData.message) {
+            navigator.clipboard.writeText(this.currentLogData.message).then(() => {
+                this.showToast('📋 Log message copied to clipboard!', 'success');
+            }).catch(() => {
+                this.showToast('Failed to copy to clipboard', 'error');
+            });
+        }
+    }
+
+    copyException() {
+        if (this.currentLogData && this.currentLogData.exception) {
+            navigator.clipboard.writeText(this.currentLogData.exception).then(() => {
+                this.showToast('📋 Exception copied to clipboard!', 'success');
+            }).catch(() => {
+                this.showToast('Failed to copy to clipboard', 'error');
+            });
+        }
+    }
+
+    renderEmptyState() {
+        const tbody = document.getElementById('logsTableBody');
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr id="emptyState">
+                <td colspan="5" class="text-center text-muted py-4">
+                    <i class="fas fa-search fa-3x mb-3"></i>
+                    <div>No logs found matching your filters</div>
+                </td>
+            </tr>
+        `);
+    }
+
+    renderPagination(responseData) {
+        const { currentPage, totalPages, totalCount } = responseData;
+        const container = document.getElementById('paginationContainer');
+        
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const showingStart = (currentPage - 1) * this.pageSize + 1;
+        const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
+        
+        let html = `
+            <nav class="mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} logs</small>
+                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
+                </div>
+                <ul class="pagination justify-content-center">
+        `;
+        
+        // First & Previous
+        if (currentPage > 1) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="1">
+                        <i class="fas fa-angle-double-left"></i> First
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            `;
+        }
+
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+            } else {
+                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
+            }
+        }
+
+        // Next & Last
+        if (currentPage < totalPages) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
+                        Last <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
+            `;
+        }
+
+        html += '</ul></nav>';
+        container.innerHTML = html;
+        
+        // Rebind pagination events
+        this.bindPaginationEvents();
+    }
+
+    renderPageSizeSelector(responseData) {
+        const container = document.getElementById('pageSizeContainer');
+        
+        if (!responseData.data || responseData.data.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        const html = `
+            <div class="d-flex justify-content-end align-items-center mt-3">
+                <label class="form-label me-2 mb-0">Show:</label>
+                <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                    <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
+                    <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
+                    <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
+                    <option value="100" ${this.pageSize == 100 ? 'selected' : ''}>100</option>
+                </select>
+            </div>
+        `;
+        container.innerHTML = html;
+        
+        // Rebind page size change event
+        const select = document.getElementById('pageSizeSelect');
+        if (select) {
+            select.addEventListener('change', (e) => {
+                this.pageSize = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadData();
+            });
+        }
+    }
+
+    bindPaginationEvents() {
+        document.querySelectorAll('.page-link-custom').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = parseInt(link.getAttribute('data-page'));
+                if (page && page !== this.currentPage) {
+                    this.currentPage = page;
+                    this.loadData();
+                }
+            });
+        });
+    }
+
+    getLogLevel(message) {
+        if (message.includes('Error') || message.includes('Exception')) return 'Error';
+        if (message.includes('Warning') || message.includes('Warn')) return 'Warning';
+        if (message.includes('Info')) return 'Info';
+        return 'Debug';
+    }
+
+    getLogLevelBadge(level) {
+        switch(level) {
+            case 'Error': return 'bg-danger';
+            case 'Warning': return 'bg-warning text-dark';
+            case 'Info': return 'bg-info';
+            default: return 'bg-secondary';
+        }
+    }
+
+    showError(message) { this.showAlert(message, 'danger'); }
+    showSuccess(message) { this.showAlert(message, 'success'); }
+
+    showAlert(message, type) {
+        const container = document.getElementById('alertContainer');
+        container.innerHTML = `
+            <div class="alert alert-${type} alert-dismissible fade show">
+                ${this.escapeHtml(message)}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) alert.remove();
+        }, 5000);
+    }
+
+    showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+        
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+        
+        toast.innerHTML = `
+            <div class="toast show ${bgClass} text-white" role="alert">
+                <div class="toast-header ${bgClass} text-white border-0">
+                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                    <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                    <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
+                </div>
+                <div class="toast-body">${message}</div>
+            </div>
+        `;
+        
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 3000);
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Initialize
+let logsManager;
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎉 DOM loaded, initializing LogsManager...');
+    logsManager = new LogsManager();
+
+    // Auto-hide TempData alerts
+    const errorAlert = document.querySelector('.alert-danger');
+    if (errorAlert) {
+        setTimeout(() => new bootstrap.Alert(errorAlert).close(), 5000);
+    }
+});
 </script>
 
 <style>
@@ -365,5 +956,27 @@
 
     .badge {
         font-size: 0.75em;
+    }
+
+    .log-content {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        word-break: break-word;
+        max-height: 400px;
+        overflow-y: auto;
+        font-family: 'Courier New', monospace;
+        font-size: 0.9em;
+        line-height: 1.4;
+        padding: 1rem;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        width: 100%;
+        box-sizing: border-box;
+        overflow-x: auto; 
+    }
+
+    .modal-xl {
+        max-width: 1200px;
     }
 </style>

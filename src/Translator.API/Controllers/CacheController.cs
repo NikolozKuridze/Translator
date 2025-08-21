@@ -27,14 +27,13 @@ public class CacheController : Controller
     }
 
     [HttpGet("")]
-    public async Task<IActionResult> Index(int pageNumber = 1, int pageSize = 10)
+    public async Task<IActionResult> Index(
+        int pageNumber = 1, int pageSize = 10)
     {
         try
         {
-            var skip = (pageNumber - 1) * pageSize;
-            
-            var templatesTask = _mediator.Send(new GetCachedTemplatesCommand(new PaginationRequest(skip, pageSize, null, null, null, null)));
-            var valuesTask = _mediator.Send(new GetCachedValueCommand(new PaginationRequest(skip, pageSize, null, null, null, null)));
+            var templatesTask = _mediator.Send(new GetCachedTemplatesCommand(new PaginationRequest(1, int.MaxValue, null, null, null, null)));
+            var valuesTask = _mediator.Send(new GetCachedValueCommand(new PaginationRequest(1, int.MaxValue, null, null, null, null)));
             
             await Task.WhenAll(templatesTask, valuesTask);
             
@@ -61,7 +60,6 @@ public class CacheController : Controller
                 TotalCount = values.TotalItems
             }));
             
-            
             cachedItems = cachedItems.OrderBy(x => x.Name).ToList();
             
             var totalItems = cachedItems.Count;
@@ -72,20 +70,42 @@ public class CacheController : Controller
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
                 .ToList();
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { 
+                    success = true, 
+                    data = pagedItems,
+                    currentPage = pageNumber,
+                    totalPages = totalPages,
+                    totalCount = totalItems,
+                    pageSize = pageSize,
+                    templatesCount = templates.Items.Count(),
+                    valuesCount = values.Items.Count()        
+                });
+            }
             
             ViewBag.CurrentPage = pageNumber;
             ViewBag.PageSize = pageSize;
             ViewBag.TotalPages = totalPages;
             ViewBag.TotalCount = totalItems;
+            ViewBag.TemplatesCount = templates.Items.Count(); 
+            ViewBag.ValuesCount = values.Items.Count();       
             
             return View(pagedItems);
         }
         catch (Exception ex)
         {
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = false, message = ex.Message });
+            }
+            
             TempData["ErrorMessage"] = $"Failed to load cached items: {ex.Message}";
             return View(new List<CachedItemViewModel>());
         }
     }
+
 
     [HttpPost("CacheTemplate/{templateId:guid}")]
     public async Task<IActionResult> CacheTemplate(Guid templateId)
@@ -204,6 +224,7 @@ public class CacheController : Controller
         }
     }
 }
+
 public class CachedItemViewModel
 {
     public Guid Id { get; set; }

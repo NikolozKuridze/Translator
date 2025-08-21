@@ -22,18 +22,18 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
         _templateCacheService = templateCacheService;
     }
 
-    public async Task<PaginatedResponse<ValueDto>> Handle(GetTemplateCommand request, CancellationToken cancellationToken)
+    public async Task<PaginatedResponse<ValueDto>> Handle(GetTemplateCommand request,
+        CancellationToken cancellationToken)
     {
-        
         var cachedResult = await _templateCacheService.GetTranslationsAsync(request.TemplateId);
         if (cachedResult != null)
             return await HandleCachedResult(cachedResult, request);
-        
+
         return await HandleDatabaseQuery(request, cancellationToken);
     }
 
     private Task<PaginatedResponse<ValueDto>> HandleCachedResult(
-        TemplateCacheDto cachedResult, 
+        TemplateCacheDto cachedResult,
         GetTemplateCommand request)
     {
         IEnumerable<ValueDto> translations;
@@ -56,10 +56,10 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
                 t.Key.Contains(request.Pagination.Search, StringComparison.OrdinalIgnoreCase) ||
                 t.Value.Contains(request.Pagination.Search, StringComparison.OrdinalIgnoreCase));
         }
-        
+
         translations = ApplySorting(translations, request.Pagination!)
             .ToList();
-        
+
         var totalItems = translations.Count();
         var pagedItems = translations
             .Skip((request.Pagination!.Page - 1) * request.Pagination.PageSize)
@@ -78,44 +78,44 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
     }
 
     private async Task<PaginatedResponse<ValueDto>> HandleDatabaseQuery(
-        GetTemplateCommand request, 
+        GetTemplateCommand request,
         CancellationToken cancellationToken)
     {
-         var languageCode = string.IsNullOrEmpty(request.LanguageCode) 
-        ? DefaultLanguageCode 
-        : request.LanguageCode;
+        var languageCode = string.IsNullOrEmpty(request.LanguageCode)
+            ? DefaultLanguageCode
+            : request.LanguageCode;
 
         IQueryable<ValueDto> query;
 
         if (request.AllTranslates)
         {
             query = from t in _templateRepository
-                    where t.Id == request.TemplateId
-                    from tv in t.Values
-                    from tr in tv.Translations
-                    select new ValueDto(
-                        tv.Key,
-                        tr.Value.Id,
-                        tr.TranslationValue ?? string.Empty,
-                        tr.Language.Code);
+                where t.Id == request.TemplateId
+                from tv in t.Values
+                from tr in tv.Translations
+                select new ValueDto(
+                    tv.Key,
+                    tr.Value.Id,
+                    tr.TranslationValue ?? string.Empty,
+                    tr.Language.Code);
         }
         else
         {
             query = from t in _templateRepository
-                    where t.Id == request.TemplateId
-                    from tv in t.Values
-                    from tr in tv.Translations
-                        .Where(translation => translation.Language.Code == languageCode)
-                    select new ValueDto(
-                        tv.Key,
-                        tr.Value.Id,
-                        tr.TranslationValue ?? string.Empty,
-                        tr.Language.Code);
+                where t.Id == request.TemplateId
+                from tv in t.Values
+                from tr in tv.Translations
+                    .Where(translation => translation.Language.Code == languageCode)
+                select new ValueDto(
+                    tv.Key,
+                    tr.Value.Id,
+                    tr.TranslationValue ?? string.Empty,
+                    tr.Language.Code);
         }
 
         if (!string.IsNullOrEmpty(request.Pagination?.Search))
         {
-            query = query.Where(v => 
+            query = query.Where(v =>
                 v.Key.Contains(request.Pagination.Search) ||
                 v.Value.Contains(request.Pagination.Search));
         }
@@ -126,10 +126,10 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
             throw new TemplateNotFoundException(request.TemplateId.ToString());
 
         var sortedItems = ApplySorting(allItems, request.Pagination!).ToList();
-        
+
         var totalItems = sortedItems.Count;
         var pagedItems = sortedItems
-            .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
+            .Skip((request.Pagination!.Page - 1) * request.Pagination.PageSize)
             .Take(request.Pagination.PageSize)
             .ToList();
 
@@ -145,11 +145,11 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
     }
 
     private static IEnumerable<ValueDto> ApplySorting(
-        IEnumerable<ValueDto> query, 
+        IEnumerable<ValueDto> query,
         PaginationRequest? pagination)
     {
         if (pagination?.SortBy is null)
-            return query.OrderBy(x => x.Key); 
+            return query.OrderBy(x => x.Key);
 
         var isDescending = pagination.SortDirection?.ToLower() == "desc";
 
@@ -157,12 +157,14 @@ public class GetTemplateHandler : IRequestHandler<GetTemplateCommand, PaginatedR
         {
             "key" => isDescending ? query.OrderByDescending(x => x.Key) : query.OrderBy(x => x.Key),
             "value" => isDescending ? query.OrderByDescending(x => x.Value) : query.OrderBy(x => x.Value),
-            "languagecode" => isDescending ? query.OrderByDescending(x => x.LanguageCode) : query.OrderBy(x => x.LanguageCode),
+            "languagecode" => isDescending
+                ? query.OrderByDescending(x => x.LanguageCode)
+                : query.OrderBy(x => x.LanguageCode),
             _ => query.OrderBy(x => x.Key)
         };
     }
-    
 }
 
 public record TemplateDto(string Name, IList<ValueDto> Values);
+
 public record ValueDto(string Key, Guid ValueId, string Value, string? LanguageCode);
