@@ -10,6 +10,7 @@ using Translator.Application.Features.CategoryTypes.Queries;
 using Translator.Application.Features.CategoryTypes.Commands.CreateCategoryType;
 using Translator.Application.Features.CategoryTypes.Commands.DeleteCategoryType;
 using Translator.Application.Features.CategoryTypes.Commands.CreateBulkCategoryType;
+using Translator.Application.Exceptions;
 
 namespace Translator.API.Controllers;
 
@@ -32,19 +33,25 @@ public class CategoriesController(IMediator mediator) : Controller
                 return Json(new
                 {
                     success = true,
-                    categories = categories,
-                    categoryTypes = categoryTypes
+                    categories = categories ?? new List<RootCategoryDto>(),
+                    categoryTypes = categoryTypes ?? new List<string>()
                 });
             }
             
-            ViewBag.CategoryTypes = categoryTypes;
-            return View(categories);
+            ViewBag.CategoryTypes = categoryTypes ?? new List<string>();
+            return View(categories ?? new List<RootCategoryDto>());
         }
         catch (Exception ex)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new 
+                { 
+                    success = false, 
+                    message = ex.Message,
+                    categories = new List<RootCategoryDto>(),
+                    categoryTypes = new List<string>()
+                });
             }
             
             ViewBag.ErrorMessage = ex.Message;
@@ -89,7 +96,7 @@ public class CategoriesController(IMediator mediator) : Controller
                         message = "Category created successfully.",
                         categoryId = result,
                         treeData = treeCategory,
-                        categoryTypes = categoryTypes
+                        categoryTypes = categoryTypes ?? new List<string>()
                     });
                 }
                 else
@@ -101,8 +108,8 @@ public class CategoriesController(IMediator mediator) : Controller
                         success = true, 
                         message = "Category created successfully.",
                         categoryId = result,
-                        categories = categories,
-                        categoryTypes = categoryTypes
+                        categories = categories ?? new List<RootCategoryDto>(),
+                        categoryTypes = categoryTypes ?? new List<string>()
                     });
                 }
             }
@@ -148,7 +155,7 @@ public class CategoriesController(IMediator mediator) : Controller
                         success = true, 
                         message = "Category updated successfully.",
                         treeData = treeCategory,
-                        categoryTypes = categoryTypes
+                        categoryTypes = categoryTypes ?? new List<string>()
                     });
                 }
                 else
@@ -159,8 +166,8 @@ public class CategoriesController(IMediator mediator) : Controller
                     { 
                         success = true, 
                         message = "Category updated successfully.",
-                        categories = categories,
-                        categoryTypes = categoryTypes
+                        categories = categories ?? new List<RootCategoryDto>(),
+                        categoryTypes = categoryTypes ?? new List<string>()
                     });
                 }
             }
@@ -206,7 +213,7 @@ public class CategoriesController(IMediator mediator) : Controller
                         success = true, 
                         message = "Category deleted successfully.",
                         treeData = treeCategory,
-                        categoryTypes = categoryTypes
+                        categoryTypes = categoryTypes ?? new List<string>()
                     });
                 }
                 else
@@ -217,8 +224,8 @@ public class CategoriesController(IMediator mediator) : Controller
                     { 
                         success = true, 
                         message = "Category deleted successfully.",
-                        categories = categories,
-                        categoryTypes = categoryTypes
+                        categories = categories ?? new List<RootCategoryDto>(),
+                        categoryTypes = categoryTypes ?? new List<string>()
                     });
                 }
             }
@@ -265,8 +272,8 @@ public class CategoriesController(IMediator mediator) : Controller
             {
                 success = true,
                 message = "Category type created successfully.",
-                categoryTypes = categoryTypes,
-                categories = categories
+                categoryTypes = categoryTypes ?? new List<string>(),
+                categories = categories ?? new List<RootCategoryDto>()
             });
         }
         catch (Exception ex)
@@ -321,8 +328,8 @@ public class CategoriesController(IMediator mediator) : Controller
                     warning = $"The following {existingCount} type(s) already exist: {string.Join(", ", result.ExistingTypeNames)}",
                     existingTypes = result.ExistingTypeNames.ToArray(),
                     createdTypes = result.CreatedTypeNames.ToArray(),
-                    categoryTypes = categoryTypes,
-                    categories = categories
+                    categoryTypes = categoryTypes ?? new List<string>(),
+                    categories = categories ?? new List<RootCategoryDto>()
                 });
             }
             else if (createdCount > 0)
@@ -332,8 +339,8 @@ public class CategoriesController(IMediator mediator) : Controller
                     success = true,
                     message = $"Successfully created {createdCount} category type(s).",
                     createdTypes = result.CreatedTypeNames.ToArray(),
-                    categoryTypes = categoryTypes,
-                    categories = categories
+                    categoryTypes = categoryTypes ?? new List<string>(),
+                    categories = categories ?? new List<RootCategoryDto>()
                 });
             }
             else
@@ -369,7 +376,7 @@ public class CategoriesController(IMediator mediator) : Controller
             var command = new DeleteCategoryTypeCommand(typeNames);
             await mediator.Send(command);
 
-            // Return updated data
+            // Return updated data - ensure we always return consistent data structures
             var categoryTypes = await mediator.Send(new GetAllTypesQuery());
             var categories = await mediator.Send(new GetRootCategoriesQuery());
 
@@ -382,8 +389,17 @@ public class CategoriesController(IMediator mediator) : Controller
             {
                 success = true,
                 message = message,
-                categoryTypes = categoryTypes,
-                categories = categories
+                categoryTypes = categoryTypes ?? new List<string>(),
+                categories = categories ?? new List<RootCategoryDto>()
+            });
+        }
+        catch (TypeNotFoundException ex)
+        {
+            // Handle the specific case where types are not found
+            return Json(new
+            {
+                success = false,
+                error = ex.Message
             });
         }
         catch (Exception ex)
@@ -410,11 +426,11 @@ public class CategoriesController(IMediator mediator) : Controller
                 {
                     success = true,
                     treeData = category,
-                    categoryTypes = categoryTypes
+                    categoryTypes = categoryTypes ?? new List<string>()
                 });
             }
             
-            ViewBag.CategoryTypes = categoryTypes;
+            ViewBag.CategoryTypes = categoryTypes ?? new List<string>();
 
             if (TempData["SuccessMessage"] != null)
             {

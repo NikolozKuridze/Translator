@@ -16,9 +16,8 @@ public class DeleteCategoryTypeCommandHandler(IRepository<CategoryType> typeRepo
 
         var notFoundTypes = request.TypeNames.Except(typesToDelete.Select(t => t.Name)).ToList();
         if (notFoundTypes.Count != 0)
-            throw new TypeNotFoundException(string.Join(", ", notFoundTypes));
+            throw new TypeNotFoundException($"Category types not found: {string.Join(", ", notFoundTypes)}");
 
-        
         await typeRepository.DeleteAsync(typesToDelete);
         await typeRepository.SaveChangesAsync(cancellationToken);
     }
