@@ -1,6 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.Application.Features.Logs.Queries;
+using Translator.Application.Features.Logs.Queries.GetLogs;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;

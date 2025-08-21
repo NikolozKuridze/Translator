@@ -353,35 +353,40 @@ ViewBag.Title = "Templates";
 
         createTemplateRow(template) {
             return `
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary">${this.escapeHtml(template.templateName)}</span>
-                        <button class="btn btn-sm btn-outline-secondary copy-id-btn" 
-                                data-id="${template.templateId}" 
-                                title="Copy Template ID">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </td>
-                <td>
-                    <span class="badge bg-secondary">${template.valueCount}</span>
-                </td>
-                <td>
-                    <div class="d-flex gap-1">
-                        <a href="/Templates/Details/${template.templateId}?lang= " 
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger delete-template-btn" 
-                                data-template="${this.escapeHtml(template.templateName)}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary">${this.escapeHtml(template.templateName)}</span>
+                            <button class="btn btn-sm btn-outline-secondary copy-id-btn" 
+                                    data-id="${template.templateId}" 
+                                    title="Copy Template ID">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="badge bg-secondary">${template.valueCount}</span>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <form method="get" action="/Templates/Details" class="d-inline">
+                                <input type="hidden" name="templateId" value="${template.templateId}">
+                                <input type="hidden" name="lang" value="">
+                                <input type="hidden" name="templateName" value="${template.templateName}" />
+                                <button type="submit" class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                            </form>
+                            <button class="btn btn-sm btn-outline-danger delete-template-btn" 
+                                    data-template="${this.escapeHtml(template.templateName)}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+`;
         }
+
 
         bindTableEvents() {
             // Copy buttons

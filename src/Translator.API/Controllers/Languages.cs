@@ -112,7 +112,7 @@ public class Languages : Controller
     {
         try
         {
-            var command = new DeleteLanguageCommand(code);
+            var command = new DeleteLanguageCommand(code.ToLower());
             await _mediator.Send(command);
 
             var successMsg = "Language deactivated successfully!";

@@ -6,10 +6,18 @@ namespace Translator.API.Middlewares;
 
 public class MvcExceptionFilter : IExceptionFilter
 {
+    private readonly ILogger<MvcExceptionFilter> _logger;
+
+    public MvcExceptionFilter(ILogger<MvcExceptionFilter> logger)
+    {
+        _logger = logger;
+    }
     public void OnException(ExceptionContext context)
     {
         if (context.HttpContext.Request.Path.StartsWithSegments("/api"))
             return;
+     
+        _logger.LogError(context.Exception, context.Exception.Message);
         
         var model = new ErrorViewModel
         {

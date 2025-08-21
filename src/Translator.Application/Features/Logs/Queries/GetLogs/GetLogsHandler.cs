@@ -1,23 +1,20 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Postgres;
 
-namespace Translator.Application.Features.Logs.Queries;
+namespace Translator.Application.Features.Logs.Queries.GetLogs;
 
-public class GetLogsHandler : IRequestHandler<GetLogsCommand, PaginatedResponse<GetLogsResponse>>
+public class GetLogsHandler : IRequestHandler<GetLogs.GetLogsCommand, PaginatedResponse<GetLogsResponse>>
 {
     private readonly LogsDbContext _dbContext;
-    private readonly ILogger<GetLogsHandler> _logger;
 
-    public GetLogsHandler(LogsDbContext dbContext, ILogger<GetLogsHandler> logger)
+    public GetLogsHandler(LogsDbContext dbContext)
     {
         _dbContext = dbContext;
-        _logger = logger;
     }
     
-    public async Task<PaginatedResponse<GetLogsResponse>> Handle(GetLogsCommand request, CancellationToken cancellationToken)
+    public async Task<PaginatedResponse<GetLogsResponse>> Handle(GetLogs.GetLogsCommand request, CancellationToken cancellationToken)
     {
         var query = _dbContext.Logs.AsQueryable();
         
@@ -25,11 +22,16 @@ public class GetLogsHandler : IRequestHandler<GetLogsCommand, PaginatedResponse<
         
         query = query.OrderByDescending(t => t.Timestamp);
         
+        if (request.Level != null)
+            query = query.Where(t => t.Level == request.Level);
+        
         var items = await query
             .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
             .Take(request.Pagination.PageSize)
             .Select(t => new GetLogsResponse(
+                t.Id,
                 t.Message, 
+                t.Level,
                 t.Timestamp, 
                 t.Exception, 
                 t.LogEvent
@@ -49,7 +51,9 @@ public class GetLogsHandler : IRequestHandler<GetLogsCommand, PaginatedResponse<
 }
 
 public record GetLogsResponse(
+    long Id,
     string Message, 
+    int Level,
     DateTimeOffset Timestamp, 
     string? Exception,
     string? Properties);

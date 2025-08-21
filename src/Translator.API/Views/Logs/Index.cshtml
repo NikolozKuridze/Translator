@@ -1,4 +1,4 @@
-@model IEnumerable<Translator.Application.Features.Logs.Queries.GetLogsResponse>
+@model IEnumerable<Translator.Application.Features.Logs.Queries.GetLogs.GetLogsResponse>
 
 @{
     Layout = "_Layout";
@@ -10,6 +10,7 @@
     var dateFrom = ViewBag.DateFrom as string ?? "";
     var dateTo = ViewBag.DateTo as string ?? "";
     var selectedLastHours = ViewBag.LastHours as string ?? "";
+    var selectedLevel = ViewBag.Level as string ?? "";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -63,7 +64,20 @@
                                        value="@dateFrom" title="Filter from date" />
                             </div>
                         </th>
-                        <th width="10%">Level</th>
+                        <th width="10%">
+                            Level
+                            <div class="mt-1">
+                                <select id="levelSelect" class="form-select form-select-sm">
+                                    <option value="">All Levels</option>
+                                    <option value="5" @(selectedLevel == "5" ? "selected" : "")>Critical</option>
+                                    <option value="4" @(selectedLevel == "4" ? "selected" : "")>Error</option>
+                                    <option value="3" @(selectedLevel == "3" ? "selected" : "")>Warning</option>
+                                    <option value="2" @(selectedLevel == "2" ? "selected" : "")>Information</option>
+                                    <option value="1" @(selectedLevel == "1" ? "selected" : "")>Debug</option>
+                                    <option value="0" @(selectedLevel == "0" ? "selected" : "")>Trace</option>
+                                </select>
+                            </div>
+                        </th>
                         <th width="45%">Message</th>
                         <th width="15%">
                             Until Date
@@ -80,10 +94,10 @@
                     {
                         foreach (var log in Model)
                         {
-                            var logLevel = GetLogLevel(log.Message);
-                            var logLevelBadge = GetLogLevelBadge(logLevel);
+                            var logLevel = GetLogLevelName(log.Level);
+                            var logLevelBadge = GetLogLevelBadge(log.Level);
                             
-                            <tr class="@(logLevel == "Error" ? "table-danger" : logLevel == "Warning" ? "table-warning" : "")">
+                            <tr class="@(log.Level >= 4 ? "table-danger" : log.Level == 3 ? "table-warning" : "")">
                                 <td>
                                     <small class="text-muted">
                                         @log.Timestamp.ToString("dd/MM/yyyy")<br>
@@ -109,7 +123,7 @@
                                 </td>
                                 <td>
                                     <button class="btn btn-sm btn-outline-primary view-log-btn" 
-                                            data-timestamp="@log.Timestamp.ToString("yyyy-MM-ddTHH:mm:ss")">
+                                            data-log-id="@log.Id">
                                         <i class="fas fa-eye"></i> View
                                     </button>
                                 </td>
@@ -252,32 +266,41 @@
 </div>
 
 @functions {
-    string GetLogLevel(string message)
-    {
-        if (message.Contains("Error", StringComparison.OrdinalIgnoreCase) || 
-            message.Contains("Exception", StringComparison.OrdinalIgnoreCase))
-            return "Error";
-        if (message.Contains("Warning", StringComparison.OrdinalIgnoreCase) || 
-            message.Contains("Warn", StringComparison.OrdinalIgnoreCase))
-            return "Warning";
-        if (message.Contains("Info", StringComparison.OrdinalIgnoreCase))
-            return "Info";
-        return "Debug";
-    }
-
-    string GetLogLevelBadge(string level)
+    string GetLogLevelName(int level)
     {
         return level switch
         {
-            "Error" => "bg-danger",
-            "Warning" => "bg-warning text-dark",
-            "Info" => "bg-info",
+            5 => "Critical",
+            4 => "Error", 
+            3 => "Warning",
+            2 => "Information",
+            1 => "Debug",
+            0 => "Trace",
+            _ => "Unknown"
+        };
+    }
+
+    string GetLogLevelBadge(int level)
+    {
+        return level switch
+        {
+            5 => "bg-danger", // Critical
+            4 => "bg-danger", // Error
+            3 => "bg-warning text-dark", // Warning
+            2 => "bg-info", // Information
+            1 => "bg-secondary", // Debug
+            0 => "bg-light text-dark", // Trace
             _ => "bg-secondary"
         };
     }
 }
 
 <script>
+document.getElementById('dateFromFilter').value = '';
+document.getElementById('dateToFilter').value = '';
+document.getElementById('lastHoursSelect').value = '';
+document.getElementById('levelSelect').value = '';
+    
 // Debounce utility function
 function debounce(func, delay) {
     let timeoutId;
@@ -294,6 +317,7 @@ class LogsManager {
         this.dateFrom = '@dateFrom';
         this.dateTo = '@dateTo';
         this.lastHours = '@selectedLastHours';
+        this.level = '@selectedLevel';
         this.totalCount = @totalCount;
         this.totalPages = @totalPages;
         this.currentLogData = null;
@@ -307,6 +331,7 @@ class LogsManager {
     init() {
         console.log('🚀 Initializing LogsManager...');
         this.bindEvents();
+        this.clearFilters();
         this.updateUI();
     }
 
@@ -315,15 +340,22 @@ class LogsManager {
         document.getElementById('dateFromFilter').addEventListener('change', (e) => {
             this.dateFrom = e.target.value;
             this.currentPage = 1;
-            this.lastHours = ''; // Clear lastHours when manual date selected
+            this.lastHours = '';
             this.debouncedFilter();
         });
 
         document.getElementById('dateToFilter').addEventListener('change', (e) => {
             this.dateTo = e.target.value;
             this.currentPage = 1;
-            this.lastHours = ''; // Clear lastHours when manual date selected
+            this.lastHours = '';
             this.debouncedFilter();
+        });
+
+        // Level filter
+        document.getElementById('levelSelect').addEventListener('change', (e) => {
+            this.level = e.target.value;
+            this.currentPage = 1;
+            this.loadData();
         });
 
         // Last hours filter
@@ -331,7 +363,6 @@ class LogsManager {
             this.lastHours = e.target.value;
             this.currentPage = 1;
             if (this.lastHours) {
-                // Clear manual date filters when using lastHours
                 this.dateFrom = '';
                 this.dateTo = '';
                 document.getElementById('dateFromFilter').value = '';
@@ -383,11 +414,13 @@ class LogsManager {
         this.dateFrom = '';
         this.dateTo = '';
         this.lastHours = '';
+        this.level = '';
         this.currentPage = 1;
         
         document.getElementById('dateFromFilter').value = '';
         document.getElementById('dateToFilter').value = '';
         document.getElementById('lastHoursSelect').value = '';
+        document.getElementById('levelSelect').value = '';
         
         this.loadData();
     }
@@ -404,6 +437,7 @@ class LogsManager {
             if (this.dateFrom) params.append('dateFrom', this.dateFrom);
             if (this.dateTo) params.append('dateTo', this.dateTo);
             if (this.lastHours) params.append('lastHours', this.lastHours);
+            if (this.level) params.append('level', this.level);
 
             const response = await fetch(`/Logs/?${params}`, {
                 method: 'GET',
@@ -445,6 +479,7 @@ class LogsManager {
         if (data.dateFrom !== undefined) this.dateFrom = data.dateFrom;
         if (data.dateTo !== undefined) this.dateTo = data.dateTo;
         if (data.lastHours !== undefined) this.lastHours = data.lastHours;
+        if (data.level !== undefined) this.level = data.level;
     }
 
     updateUI() {
@@ -455,6 +490,7 @@ class LogsManager {
         document.getElementById('dateFromFilter').value = this.dateFrom;
         document.getElementById('dateToFilter').value = this.dateTo;
         document.getElementById('lastHoursSelect').value = this.lastHours;
+        document.getElementById('levelSelect').value = this.level;
     }
 
     renderLogs(logs) {
@@ -480,9 +516,9 @@ class LogsManager {
     }
 
     createLogRow(log) {
-        const logLevel = this.getLogLevel(log.message);
-        const logLevelBadge = this.getLogLevelBadge(logLevel);
-        const rowClass = logLevel === "Error" ? "table-danger" : logLevel === "Warning" ? "table-warning" : "";
+        const logLevel = this.getLogLevelName(log.level);
+        const logLevelBadge = this.getLogLevelBadge(log.level);
+        const rowClass = log.level >= 4 ? "table-danger" : log.level === 3 ? "table-warning" : "";
         
         const timestamp = new Date(log.timestamp);
         const dateStr = timestamp.toLocaleDateString('en-GB');
@@ -511,7 +547,7 @@ class LogsManager {
                 </td>
                 <td>
                     <button class="btn btn-sm btn-outline-primary view-log-btn" 
-                            data-timestamp="${log.timestamp}">
+                            data-log-id="${log.id}">
                         <i class="fas fa-eye"></i> View
                     </button>
                 </td>
@@ -523,14 +559,14 @@ class LogsManager {
         // View log buttons
         document.querySelectorAll('.view-log-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
-                const timestamp = btn.getAttribute('data-timestamp');
-                this.showLogDetails(timestamp);
+                const logId = btn.getAttribute('data-log-id');
+                this.showLogDetails(logId);
             });
         });
     }
 
-    async showLogDetails(timestamp) {
-        console.log('👁️ Showing log details for:', timestamp);
+    async showLogDetails(logId) {
+        console.log('👁️ Showing log details for ID:', logId);
         
         // Show modal with loading state
         const modal = new bootstrap.Modal(document.getElementById('logDetailsModal'));
@@ -554,7 +590,7 @@ class LogsManager {
         modal.show();
 
         try {
-            const response = await fetch(`/Logs/Details?timestamp=${encodeURIComponent(timestamp)}`, {
+            const response = await fetch(`/Logs/Details?id=${logId}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -596,9 +632,9 @@ class LogsManager {
         }
     }
 
-    renderLogDetails(log, totalCount) {
-        const logLevel = this.getLogLevel(log.message);
-        const logLevelBadge = this.getLogLevelBadge(logLevel);
+    renderLogDetails(log) {
+        const logLevel = this.getLogLevelName(log.level);
+        const logLevelBadge = this.getLogLevelBadge(log.level);
         const timestamp = new Date(log.timestamp);
         
         const content = document.getElementById('logDetailsContent');
@@ -607,6 +643,12 @@ class LogsManager {
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="row align-items-center">
+                        <div class="col-md-2">
+                            <strong>ID:</strong>
+                            <div>
+                                <span class="badge bg-secondary">${log.id}</span>
+                            </div>
+                        </div>
                         <div class="col-md-3">
                             <strong>Timestamp:</strong>
                             <div>
@@ -625,14 +667,11 @@ class LogsManager {
                                 <span class="badge ${log.exception ? 'bg-danger' : 'bg-success'}">${log.exception ? 'Yes' : 'No'}</span>
                             </div>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-3">
                             <strong>Has Properties:</strong>
                             <div>
                                 <span class="badge ${log.properties ? 'bg-info' : 'bg-secondary'}">${log.properties ? 'Yes' : 'No'}</span>
                             </div>
-                        </div>
-                        <div class="col-md-3">
-                            <small class="text-muted">Total logs: ${totalCount}</small>
                         </div>
                     </div>
                 </div>
@@ -658,7 +697,7 @@ class LogsManager {
                 </div>
                 <div class="card-body">
                     <div class="p-3 bg-light border rounded">
-                        <pre class="mb-0 log-content text-info">${this.escapeHtml(log.properties)}</pre>
+                        <pre class="mb-0 log-content text-info">${this.formatJsonContent(log.properties)}</pre>
                     </div>
                 </div>
             </div>
@@ -672,35 +711,65 @@ class LogsManager {
                 </div>
                 <div class="card-body">
                     <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded">
-                        <pre class="mb-0 log-content text-danger">${this.escapeHtml(log.exception)}</pre>
+                        <pre class="mb-0 log-content text-danger">${this.formatExceptionContent(log.exception)}</pre>
                     </div>
                 </div>
             </div>
             ` : ''}
+`;
+    }
 
-            <!-- Additional info -->
-            <div class="card">
-                <div class="card-header">
-                    <h6 class="mb-0"><i class="fas fa-info-circle"></i> Additional Information</h6>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-4">
-                            <strong>UTC Time:</strong><br>
-                            <small class="text-muted">${timestamp.toISOString()}</small>
-                        </div>
-                        <div class="col-md-4">
-                            <strong>Local Time:</strong><br>
-                            <small class="text-muted">${timestamp.toLocaleString()}</small>
-                        </div>
-                        <div class="col-md-4">
-                            <strong>Total Logs:</strong><br>
-                            <small class="text-muted">${totalCount} logs in system</small>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `;
+    // Метод для форматирования JSON контента
+    formatJsonContent(jsonString) {
+        if (!jsonString) return '';
+        
+        try {
+            // Попробуем распарсить как JSON
+            const parsed = JSON.parse(jsonString);
+            return this.escapeHtml(JSON.stringify(parsed, null, 2));
+        } catch (e) {
+            // Если не JSON, то форматируем как обычный текст с переносами
+            return this.escapeHtml(this.formatKeyValuePairs(jsonString));
+        }
+    }
+
+    // Метод для форматирования Exception деталей
+    formatExceptionContent(exceptionString) {
+        if (!exceptionString) return '';
+        
+        let formatted = exceptionString;
+        
+        // Добавляем переносы строк перед ключевыми словами
+        formatted = formatted
+            .replace(/(\s+at\s)/g, '\n   at ')  // Stack trace formatting
+            .replace(/(\s+in\s)/g, '\n   in ')  // File paths
+            .replace(/(\s+line\s\d+)/g, '\n   line')  // Line numbers
+            .replace(/(Exception:|Error:|Message:)/g, '\n$1')  // Exception headers
+            .replace(/(\\\r\\\n|\\\n)/g, '\n')  // Convert escaped newlines
+            .replace(/\s{2,}/g, ' ')  // Remove excessive spaces
+            .trim();
+        
+        return this.escapeHtml(formatted);
+    }
+
+    // Метод для форматирования key-value пар
+    formatKeyValuePairs(text) {
+        if (!text) return '';
+        
+        let formatted = text;
+        
+        // Форматируем типичные patterns из логов
+        formatted = formatted
+            .replace(/("?\w+"?\s*:\s*"?[^,}]+"?)/g, '$1\n')  // Key-value pairs
+            .replace(/,\s*/g, ',\n  ')  // Commas with newlines
+            .replace(/{/g, '{\n  ')  // Opening braces
+            .replace(/}/g, '\n}')  // Closing braces
+            .replace(/\[/g, '[\n  ')  // Opening brackets
+            .replace(/\]/g, '\n]')  // Closing brackets
+            .replace(/\n\s*\n/g, '\n')  // Remove excessive newlines
+            .trim();
+        
+        return formatted;
     }
 
     copyLogMessage() {
@@ -858,20 +927,28 @@ class LogsManager {
         });
     }
 
-    getLogLevel(message) {
-        if (message.includes('Error') || message.includes('Exception')) return 'Error';
-        if (message.includes('Warning') || message.includes('Warn')) return 'Warning';
-        if (message.includes('Info')) return 'Info';
-        return 'Debug';
+    getLogLevelName(level) {
+        const levels = {
+            5: 'Critical',
+            4: 'Error', 
+            3: 'Warning',
+            2: 'Information',
+            1: 'Debug',
+            0: 'Trace'
+        };
+        return levels[level] || 'Unknown';
     }
 
     getLogLevelBadge(level) {
-        switch(level) {
-            case 'Error': return 'bg-danger';
-            case 'Warning': return 'bg-warning text-dark';
-            case 'Info': return 'bg-info';
-            default: return 'bg-secondary';
-        }
+        const badges = {
+            5: 'bg-danger', // Critical
+            4: 'bg-danger', // Error
+            3: 'bg-warning text-dark', // Warning
+            2: 'bg-info', // Information
+            1: 'bg-secondary', // Debug
+            0: 'bg-light text-dark' // Trace
+        };
+        return badges[level] || 'bg-secondary';
     }
 
     showError(message) { this.showAlert(message, 'danger'); }
@@ -962,21 +1039,44 @@ document.addEventListener('DOMContentLoaded', function() {
         white-space: pre-wrap;
         word-wrap: break-word;
         word-break: break-word;
-        max-height: 400px;
+        max-height: 500px;
         overflow-y: auto;
         font-family: 'Courier New', monospace;
-        font-size: 0.9em;
-        line-height: 1.4;
+        font-size: 0.85em;
+        line-height: 1.5;
         padding: 1rem;
         background-color: #f8f9fa;
         border: 1px solid #dee2e6;
         border-radius: 8px;
         width: 100%;
         box-sizing: border-box;
-        overflow-x: auto; 
+        overflow-x: auto;
+        color: #333;
+    }
+
+    .log-content.text-info {
+        background-color: #e3f2fd;
+        border-color: #2196f3;
+        color: #1565c0;
+    }
+
+    .log-content.text-danger {
+        background-color: #ffebee;
+        border-color: #f44336;
+        color: #c62828;
     }
 
     .modal-xl {
         max-width: 1200px;
+    }
+
+    .log-content pre {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        border: none;
+        font-family: inherit;
+        font-size: inherit;
+        line-height: inherit;
     }
 </style>

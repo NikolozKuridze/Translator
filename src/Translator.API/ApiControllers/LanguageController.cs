@@ -29,7 +29,7 @@ public class LanguageController : ControllerBase
     public async Task<IResult> Handle(
         [FromBody] DeleteLanguageModel request)
     {
-        var command = new DeleteLanguageCommand(request.Code);
+        var command = new DeleteLanguageCommand(request.Code.ToLower());
         await _mediator.Send(command);
         return Results.NoContent();
     }

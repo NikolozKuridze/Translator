@@ -2,6 +2,8 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
 using Translator.Application.Features.Logs.Queries;
+using Translator.Application.Features.Logs.Queries.GetLogById;
+using Translator.Application.Features.Logs.Queries.GetLogs;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
@@ -21,7 +23,8 @@ public class LogsController : Controller
         DateTime? dateTo = null,
         int pageNumber = 1,
         int pageSize = 10,
-        int? lastHours = null)
+        int? lastHours = null,
+        int? level = null)
     {
         try
         {
@@ -38,7 +41,7 @@ public class LogsController : Controller
                     dateFrom: dateFrom,
                     dateTo: dateTo,
                     null,
-                    null));
+                    null), level);
             var logs = await _mediator.Send(command);
 
             var totalCount = logs.TotalItems;
@@ -57,7 +60,8 @@ public class LogsController : Controller
                     pageSize = pageSize,
                     dateFrom = dateFrom?.ToString("yyyy-MM-dd") ?? "",
                     dateTo = dateTo?.ToString("yyyy-MM-dd") ?? "",
-                    lastHours = lastHours?.ToString() ?? ""
+                    lastHours = lastHours?.ToString() ?? "",
+                    level = level?.ToString() ?? ""
                 });
             }
 
@@ -68,6 +72,7 @@ public class LogsController : Controller
             ViewBag.DateFrom = dateFrom?.ToString("yyyy-MM-dd") ?? "";
             ViewBag.DateTo = dateTo?.ToString("yyyy-MM-dd") ?? "";
             ViewBag.LastHours = lastHours?.ToString() ?? "";
+            ViewBag.Level = level?.ToString() ?? "";
 
             return View(logs.Items);
         }
@@ -84,15 +89,13 @@ public class LogsController : Controller
     }
 
     [HttpGet("Details")]
-    public async Task<IActionResult> Details(DateTime timestamp)
+    public async Task<IActionResult> Details(long id)
     {
         try
         {
-            var command = new GetLogsCommand(new PaginationRequest(1, 100, null, null, null, null));
-            var allLogs = await _mediator.Send(command);
-
-            var targetLog = allLogs.Items.FirstOrDefault(l =>
-                Math.Abs((l.Timestamp - timestamp).TotalSeconds) < 1);
+            // Создаем запрос для получения конкретного лога по ID
+            var command = new GetLogByIdCommand(id);
+            var targetLog = await _mediator.Send(command);
 
             if (targetLog == null)
             {
@@ -105,18 +108,22 @@ public class LogsController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
+            // Получаем общее количество логов для статистики
+            var statsCommand = new GetLogsCommand(new PaginationRequest(1, 1, null, null, null, null));
+            var statsResult = await _mediator.Send(statsCommand);
+
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 return Json(new
                 {
                     success = true,
                     data = targetLog,
-                    totalCount = allLogs.TotalItems
+                    totalCount = statsResult.TotalItems
                 });
             }
 
-            ViewBag.LogTimestamp = timestamp;
-            ViewBag.TotalCount = allLogs.TotalItems;
+            ViewBag.LogId = id;
+            ViewBag.TotalCount = statsResult.TotalItems;
             return View(targetLog);
         }
         catch (Exception ex)

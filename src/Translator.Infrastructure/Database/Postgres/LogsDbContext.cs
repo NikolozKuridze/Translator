@@ -11,11 +11,11 @@ public class LogsDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.Entity<LogEntry>()
-            .HasNoKey();
+        modelBuilder.Entity<LogEntry>().Property(l => l.Id).HasColumnName("id");
+        modelBuilder.Entity<LogEntry>().Property(l => l.Id).ValueGeneratedOnAdd();
+        modelBuilder.Entity<LogEntry>().HasKey(l => l.Id);
         modelBuilder.Entity<LogEntry>()
             .ToTable("logs");
-        
         modelBuilder.Entity<LogEntry>().Property(l => l.Timestamp).HasColumnName("timestamp");
         modelBuilder.Entity<LogEntry>().Property(l => l.Level).HasColumnName("level");
         modelBuilder.Entity<LogEntry>().Property(l => l.MessageTemplate).HasColumnName("message_template");

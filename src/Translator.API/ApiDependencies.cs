@@ -1,4 +1,5 @@
 using System.Net;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Scalar.AspNetCore;
 using Serilog;
 using Translator.API.Attributes;
@@ -36,10 +37,12 @@ public static class ApiDependencies
             Log.Logger = new LoggerConfiguration()
                 .ReadFrom.Configuration(builder.Configuration)
                 .CreateLogger());
-
+        
+        builder.Services.AddScoped<MvcExceptionFilter>();
+        
         builder.Services.AddControllersWithViews(o =>
         {
-            o.Filters.Add(new MvcExceptionFilter());
+            o.Filters.Add<MvcExceptionFilter>();
         });
 
         builder.Services.Configure<CORSPolicy>(
@@ -75,7 +78,7 @@ public static class ApiDependencies
                     .AllowCredentials();
             });
         });
-        
+
     }
 
     public static void UseApiDependencies(this WebApplication app)

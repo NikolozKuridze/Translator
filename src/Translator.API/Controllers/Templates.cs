@@ -66,9 +66,9 @@ public class Templates : Controller
         return View(templates.Items);
     }
 
-    [HttpGet("Details/{templateId:guid}")]
+    [HttpGet("Details")]
     public async Task<IActionResult> Details(
-        Guid templateId, string? lang = "en",
+        Guid templateId, string? lang = "en", string templateName = "",
         int pageNumber = 1, int pageSize = 10)
     {
         if (templateId == Guid.Empty)
@@ -97,7 +97,6 @@ public class Templates : Controller
             .Take(pageSize)
             .ToList();
 
-        var templateName = allTemplateData.Items.FirstOrDefault()?.Key ?? "Unknown template";
 
         if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
         {

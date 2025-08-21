@@ -47,7 +47,6 @@
                         type="button" 
                         id="languageDropdown" 
                         data-bs-toggle="dropdown" 
-                        data-bs-auto-close="true"
                         aria-expanded="false">
                     <i class="fas fa-language"></i>
                     <span id="languageButtonText">@(string.IsNullOrEmpty(currentLanguage) ? "Select Language" : currentLanguage.ToUpper())</span>
@@ -55,7 +54,8 @@
                 <ul class="dropdown-menu" aria-labelledby="languageDropdown">
                     <li>
                         <a class="dropdown-item language-link @(string.IsNullOrEmpty(currentLanguage) ? "active" : "")"
-                           href="#" data-lang="">
+                           href="/Templates/Details?templateId=@templateId&lang=&templateName=@ViewBag.TemplateName&pageNumber=@currentPage&pageSize=@pageSize"
+                           data-lang="">
                             <i class="fas fa-globe"></i> All Languages
                         </a>
                     </li>
@@ -66,7 +66,8 @@
                     {
                         <li>
                             <a class="dropdown-item language-link @(currentLanguage == language.LanguageCode ? "active" : "")"
-                               href="#" data-lang="@language.LanguageCode">
+                               href="@Url.Action("Details", new { templateId = templateId, lang = language.LanguageCode, templateName, pageNumber = currentPage, pageSize })"
+                               data-lang="@language.LanguageCode">
                                 <span class="badge bg-primary me-2">@language.LanguageCode.ToUpper()</span>
                                 @(string.IsNullOrEmpty(language.LanguageName) ? "N/A" : language.LanguageName)
                             </a>
@@ -371,15 +372,6 @@ class TemplateDetailsManager {
 
     bindEvents() {
         console.log('📎 Binding events...');
-        
-        // Language selector - AJAX transitions
-        document.querySelectorAll('.language-link').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const selectedLang = link.getAttribute('data-lang');
-                this.changeLanguage(selectedLang);
-            });
-        });
 
         // Page size selector
         const pageSizeSelect = document.getElementById('pageSizeSelect');
