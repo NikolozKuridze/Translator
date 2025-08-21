@@ -1656,8 +1656,6 @@
                     this.renderCategoryTypes(categoryTypes);
                     this.renderCategories(categories);
                     this.populateTypeSelect(categoryTypes);
-
-                    this.toggleTypeForm();
                 } else {
                     if (response.existingTypes && response.existingTypes.length > 0) {
                         const existingTypesText = response.existingTypes.join(', ');
@@ -1666,14 +1664,23 @@
                         this.showError(response.error);
                     }
                 }
+
+                // Always close the modal after processing (success or error)
+                this.toggleTypeForm();
+
             } catch (error) {
                 console.error('Error:', error);
                 this.showError('An error occurred while creating category types.');
+
+                // Close modal on network/unexpected errors too
+                this.toggleTypeForm();
             } finally {
                 submitBtn.prop('disabled', false);
                 submitBtn.html(originalText);
             }
         }
+
+
 
         async handleCreateCategory(e) {
             e.preventDefault();
