@@ -1,3 +1,4 @@
+using System.Net;
 using Scalar.AspNetCore;
 using Serilog;
 using Translator.API.Attributes;
@@ -8,7 +9,6 @@ namespace Translator.API;
 
 public static class ApiDependencies
 {
-    private const int SessionTimeout = 1;
     
     public static void AddApiDependencies(this WebApplicationBuilder builder)
     {
@@ -40,7 +40,41 @@ public static class ApiDependencies
         builder.Services.AddControllersWithViews(o =>
         {
             o.Filters.Add(new MvcExceptionFilter());
-        }); 
+        });
+
+        builder.Services.Configure<CORSPolicy>(
+            builder.Configuration.GetSection(nameof(CORSPolicy)));
+        
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("IPWhitelistPolicy", policy =>
+            {
+                var corsSettings = builder.Configuration.GetSection(nameof(CORSPolicy)).Get<CORSPolicy>();
+                if (corsSettings is null)
+                    return;
+                
+                policy.SetIsOriginAllowed(origin =>
+                    {
+                        if (string.IsNullOrEmpty(origin)) 
+                            return false;
+                        try
+                        {
+                            var host = new Uri(origin).Host;
+                            var hostIPs = Dns.GetHostAddresses(host);
+                            var whitelistIPs = corsSettings.AllowedIPs.Select(IPAddress.Parse).ToList();
+                
+                            return hostIPs.Any(ip => whitelistIPs.Contains(ip));
+                        }
+                        catch
+                        {
+                            return false;
+                        }
+                    })
+                    .AllowAnyMethod()
+                    .AllowAnyHeader()
+                    .AllowCredentials();
+            });
+        });
         
     }
 
