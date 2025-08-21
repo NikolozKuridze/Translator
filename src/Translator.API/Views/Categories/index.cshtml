@@ -1,8 +1,8 @@
 @model IEnumerable<Translator.Application.Features.Category.Queries.GetRootCategories.RootCategoryDto>
 @{
-    ViewData["Title"] = "Categories Management";
-    Layout = "_Layout";
-    var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
+ViewData["Title"] = "Categories Management";
+Layout = "_Layout";
+var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 }
 
 <style>
@@ -209,6 +209,24 @@
         background-color: #10b981;
         border-color: #10b981;
         color: white;
+    }
+
+    .btn-outline-success:disabled {
+        background-color: #f8fafc;
+        border-color: #e2e8f0;
+        color: #94a3b8;
+        cursor: not-allowed;
+        opacity: 0.6;
+    }
+
+    .duplicate-warning {
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-weight: 500;
     }
 
     /* Buttons */
@@ -805,18 +823,18 @@
     <div id="alertContainer">
         @if (ViewBag.ErrorMessage != null)
         {
-            <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                @ViewBag.ErrorMessage
-            </div>
+        <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @ViewBag.ErrorMessage
+        </div>
         }
 
         @if (ViewBag.SuccessMessage != null)
         {
-            <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                @ViewBag.SuccessMessage
-            </div>
+        <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @ViewBag.SuccessMessage
+        </div>
         }
     </div>
 
@@ -846,6 +864,11 @@
                                     title="Add to list">
                                 <i class="fas fa-plus"></i> Add More
                             </button>
+                        </div>
+                        <!-- Add this warning message container -->
+                        <div id="duplicateWarning" class="duplicate-warning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            Adding duplicate types is not allowed
                         </div>
 
                         <!-- List of added types -->
@@ -1178,20 +1201,19 @@
         renderCategoryTypes(types) {
             const container = $('#categoryTypesSection');
 
-            // ISSUE 1 FIX: Don't show "No Categories Found" error for empty types
             if (!types || types.length === 0) {
                 container.html(`
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="fas fa-tags"></i>
-                    </div>
-                    <h4>No Category Types Found</h4>
-                    <p>Start by creating your first category type.</p>
-                    <button type="button" class="add-btn" onclick="categoriesManager.addCategoryType()">
-                        <i class="fas fa-plus me-1"></i>Create First Type
-                    </button>
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-tags"></i>
                 </div>
-            `);
+                <h4>No Category Types Found</h4>
+                <p>Start by creating your first category type.</p>
+                <button type="button" class="add-btn" onclick="categoriesManager.addCategoryType()">
+                    <i class="fas fa-plus me-1"></i>Create First Type
+                </button>
+            </div>
+        `);
                 return;
             }
 
@@ -1199,23 +1221,27 @@
             let html = '<div class="types-list" id="categoryTypesList">';
 
             sortedTypes.forEach((type, index) => {
+                // Store the original type as string, not lowercase
+                const typeAsString = String(type); // Ensure it's always a string
                 html += `
-                <div class="type-item ${index >= 10 ? 'hidden' : ''}" data-index="${index}" data-type="${type.toLowerCase()}">
-                    <i class="fas fa-tag me-1"></i>
-                    ${type}
-                </div>
-            `;
+            <div class="type-item ${index >= 10 ? 'hidden' : ''}" 
+                 data-index="${index}" 
+                 data-type="${this.escapeHtml(typeAsString)}">
+                <i class="fas fa-tag me-1"></i>
+                ${this.escapeHtml(typeAsString)}
+            </div>
+        `;
             });
 
             html += '</div>';
 
             if (types.length > 10) {
                 html += `
-                <button type="button" class="show-all-btn" id="showAllTypesBtn" onclick="categoriesManager.toggleShowAllTypes()">
-                    <i class="fas fa-eye me-1"></i>
-                    Show All (${types.length})
-                </button>
-            `;
+            <button type="button" class="show-all-btn" id="showAllTypesBtn" onclick="categoriesManager.toggleShowAllTypes()">
+                <i class="fas fa-eye me-1"></i>
+                Show All (${types.length})
+            </button>
+        `;
             }
 
             container.html(html);
@@ -1340,7 +1366,16 @@
         }
 
         toggleTypeSelection(typeElement) {
-            const typeName = $(typeElement).data('type') || $(typeElement).text().trim();
+            // Always get the type name as a string from data-type attribute first
+            let typeName = $(typeElement).data('type');
+
+            // If data-type is not available, fall back to text content
+            if (!typeName) {
+                typeName = $(typeElement).text().trim();
+            }
+
+            // Ensure typeName is always a string
+            typeName = String(typeName);
 
             if (selectedTypes.has(typeName)) {
                 selectedTypes.delete(typeName);
@@ -1466,14 +1501,14 @@
             const input = $('#typeNameInput');
             const typeName = input.val().trim();
 
-            if (typeName && !typesList.includes(typeName.toLowerCase())) {
-                typesList.push(typeName.toLowerCase());
+            if (typeName && !typesList.some(type => type.toLowerCase() === typeName.toLowerCase())) {
+                typesList.push(typeName); // Store original case
                 input.val('');
                 this.updateTypesDisplay();
                 this.updateAddMoreButton();
                 this.updateSubmitButton();
                 input.focus();
-            } else if (typesList.includes(typeName.toLowerCase())) {
+            } else if (typesList.some(type => type.toLowerCase() === typeName.toLowerCase())) {
                 this.showError('This type already exists in the list!');
                 input.select();
             }
@@ -1483,6 +1518,7 @@
             typesList = typesList.filter(type => type !== typeName);
             this.updateTypesDisplay();
             this.updateSubmitButton();
+            this.updateAddMoreButton(); // Add this line to refresh button state
             $('#typeNameInput').focus();
         }
 
@@ -1512,11 +1548,30 @@
         updateAddMoreButton() {
             const input = $('#typeNameInput');
             const addMoreBtn = $('#addMoreBtn');
+            const duplicateWarning = $('#duplicateWarning');
+            const inputValue = input.val().trim();
 
-            if (input.val().trim()) {
+            if (inputValue) {
                 addMoreBtn.show();
+
+                // Check if it's a duplicate
+                const isDuplicate = typesList.some(type => type.toLowerCase() === inputValue.toLowerCase());
+
+                if (isDuplicate) {
+                    // Show button but disable it and show warning
+                    addMoreBtn.prop('disabled', true);
+                    addMoreBtn.attr('title', 'Cannot add duplicate type');
+                    duplicateWarning.show();
+                } else {
+                    // Enable button and hide warning
+                    addMoreBtn.prop('disabled', false);
+                    addMoreBtn.attr('title', 'Add to list');
+                    duplicateWarning.hide();
+                }
             } else {
+                // No text, hide button and warning
                 addMoreBtn.hide();
+                duplicateWarning.hide();
             }
         }
 
@@ -1643,9 +1698,12 @@
             const input = $('#typeNameInput');
             const currentInput = input.val().trim();
 
+            // Create a copy of the existing types list (which now stores original case)
             let allTypeNames = [...typesList];
-            if (currentInput && !allTypeNames.includes(currentInput.toLowerCase())) {
-                allTypeNames.push(currentInput.toLowerCase());
+
+            // Add current input if it exists and isn't a duplicate (case-insensitive check)
+            if (currentInput && !allTypeNames.some(type => type.toLowerCase() === currentInput.toLowerCase())) {
+                allTypeNames.push(currentInput); // Store original case
             }
 
             if (allTypeNames.length === 0) {
@@ -1664,14 +1722,14 @@
                     response = await $.ajax({
                         url: '/Categories/CreateCategoryType',
                         method: 'POST',
-                        data: {typeName: allTypeNames[0]},
+                        data: {typeName: allTypeNames[0]}, // Send original case
                         headers: {'X-Requested-With': 'XMLHttpRequest'}
                     });
                 } else {
                     response = await $.ajax({
                         url: '/Categories/CreateBulkCategoryType',
                         method: 'POST',
-                        data: {typeNames: allTypeNames},
+                        data: {typeNames: allTypeNames}, // Send original case array
                         headers: {'X-Requested-With': 'XMLHttpRequest'}
                     });
                 }
@@ -1716,7 +1774,6 @@
             }
         }
 
-        
         async handleCreateCategory(e) {
             e.preventDefault();
 
@@ -1847,7 +1904,8 @@
         async handleDeleteTypes(e) {
             e.preventDefault();
 
-            const selectedTypeNames = Array.from(selectedTypes);
+            // Convert Set to Array and ensure all items are strings
+            const selectedTypeNames = Array.from(selectedTypes).map(type => String(type));
 
             if (selectedTypeNames.length === 0) {
                 this.showError('No types selected for deletion.');
@@ -1864,11 +1922,11 @@
                     url: '/Categories/DeleteCategoryTypes',
                     method: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify(selectedTypeNames),
+                    data: JSON.stringify(selectedTypeNames), // Array of strings
                     headers: {'X-Requested-With': 'XMLHttpRequest'}
                 });
 
-                // ISSUE 2 & 3 FIX: Always close modal and clear selections first
+                // Always close modal and clear selections first
                 this.closeDeleteTypeModal();
                 this.clearAllSelections();
 
@@ -1885,25 +1943,19 @@
                     this.populateTypeSelect(categoryTypes);
                 } else {
                     this.showError(response.error || 'Failed to delete category types');
-
-                    // If deletion failed, we might need to reload data to ensure UI is in sync
                     await this.loadData();
                 }
             } catch (error) {
                 console.error('Error deleting types:', error);
-
-                // Close modal even on error
                 this.closeDeleteTypeModal();
                 this.clearAllSelections();
 
-                // Show error message
                 if (error.responseJSON && error.responseJSON.error) {
                     this.showError(error.responseJSON.error);
                 } else {
                     this.showError('An error occurred while deleting category types: ' + error.message);
                 }
 
-                // Reload data to ensure UI is in sync with database
                 try {
                     await this.loadData();
                 } catch (loadError) {

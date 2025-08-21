@@ -14,9 +14,6 @@ public class GetAllTypesQueryHandler(IRepository<CategoryType> typeRepository) :
             .OrderBy(t => t.Name)
             .ToListAsync(cancellationToken: cancellationToken);
         
-        if(types.Count == 0)
-            throw new Exception("No categories found.");
-
         List<string> typesAsStrings = [];
         
         var textInfo = CultureInfo.CurrentCulture.TextInfo;
