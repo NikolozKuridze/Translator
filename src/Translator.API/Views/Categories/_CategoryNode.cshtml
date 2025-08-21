@@ -35,6 +35,15 @@
 
                     <span class="category-type-badge">@Model.TypeName</span>
 
+                    @* Add order display *@
+                    @if (Model.Order.HasValue)
+                    {
+                        <span class="category-order-badge"
+                              style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-weight: 500; font-size: 0.65rem;">
+                            Order: @Model.Order
+                        </span>
+                    }
+
                     @if (childrenCount > 0)
                     {
                         <span class="children-count">
@@ -43,10 +52,11 @@
                         </span>
                     }
                 </div>
+
             </div>
 
             <div class="node-actions">
-                
+
                 <button type="button"
                         class="node-action-btn btn-copy"
                         onclick="copyToClipboard('@Model.Id', this)"
@@ -71,7 +81,7 @@
 
                 <form action="@Url.Action("Delete", "Categories")" method="post" style="display: inline;">
                     <input type="hidden" name="id" value="@Model.Id"/>
-                    <input type="hidden" name="returnToTreeId" value="@Model.Id"/>
+                    <input type="hidden" name="returnToTreeId" value="@ViewData["RootCategoryId"]"/>
                     <button type="button"
                             class="node-action-btn btn-delete"
                             onclick="showDeleteConfirmation('@Model.Id', '@Html.Raw(Html.Encode(Model.Value))', this.closest('form'))"
@@ -79,6 +89,7 @@
                         <i class="fas fa-trash"></i>
                     </button>
                 </form>
+
             </div>
         </div>
     </div>
@@ -89,8 +100,9 @@
         <div class="tree-children" id="children-@Model.Id">
             @foreach (var child in Model.Children.OrderBy(c => c.Order ?? int.MaxValue))
             {
-                @await Html.PartialAsync("_CategoryNode", child)
+                @await Html.PartialAsync("_CategoryNode", child, ViewData)
             }
         </div>
     }
+
 </div>

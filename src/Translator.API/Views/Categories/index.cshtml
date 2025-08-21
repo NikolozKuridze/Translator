@@ -1,8 +1,8 @@
 @model IEnumerable<Translator.Application.Features.Category.Queries.GetRootCategories.RootCategoryDto>
 @{
-ViewData["Title"] = "Categories Management";
-Layout = "_Layout";
-var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
+    ViewData["Title"] = "Categories Management";
+    Layout = "_Layout";
+    var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 }
 
 <style>
@@ -17,7 +17,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         padding: 2rem 0;
         margin-bottom: 2rem;
         border-radius: 0.5rem;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
     .categories-header h1 {
@@ -57,7 +57,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     .form-container {
         background: white;
         border-radius: 0.5rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         width: 100%;
         max-width: 500px;
         max-height: 90vh;
@@ -129,6 +129,87 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         gap: 1rem;
     }
 
+    /* Compact Type list styles */
+    .type-list-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.25rem 0.5rem;
+        margin: 0.125rem 0.25rem 0.125rem 0;
+        background: linear-gradient(135deg, #e0f2fe 0%, #b3e5fc 100%);
+        border: 1px solid #0284c7;
+        border-radius: 1rem;
+        font-size: 0.75rem;
+        font-weight: 500;
+        color: #0369a1;
+        transition: all 0.2s ease;
+    }
+
+    .type-list-item:hover {
+        background: linear-gradient(135deg, #b3e5fc 0%, #81d4fa 100%);
+        border-color: #0369a1;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(3, 105, 161, 0.15);
+    }
+
+    .type-list-text {
+        line-height: 1;
+        color: #0369a1;
+        font-weight: 500;
+    }
+
+    .type-remove-btn {
+        background: #ef4444;
+        color: white;
+        border: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.625rem;
+        flex-shrink: 0;
+    }
+
+    .type-remove-btn:hover {
+        background: #dc2626;
+        transform: scale(1.2);
+    }
+
+    #typesContainer {
+        background-color: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.375rem;
+        padding: 0.5rem;
+        max-height: 120px;
+        overflow-y: auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        min-height: 2rem;
+    }
+
+    #typesContainer:empty::before {
+        content: 'No types added yet...';
+        color: #94a3b8;
+        font-size: 0.75rem;
+        font-style: italic;
+    }
+
+    .input-group .btn-outline-success {
+        border-color: #10b981;
+        color: #10b981;
+    }
+
+    .input-group .btn-outline-success:hover {
+        background-color: #10b981;
+        border-color: #10b981;
+        color: white;
+    }
+
     /* Buttons */
     .btn-base {
         padding: 0.75rem 1.5rem;
@@ -162,18 +243,18 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     .btn-save, .btn-create, .btn-update {
         background: linear-gradient(135deg, #10b981 0%, #059669 100%);
         color: white;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
 
     .btn-save:hover, .btn-create:hover, .btn-update:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
     .section-card {
         background: white;
         border-radius: 0.5rem;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         overflow: hidden;
         margin-bottom: 2rem;
         border: 1px solid #f1f5f9;
@@ -218,7 +299,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         align-items: center;
         gap: 0.375rem;
         border: none;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
 
     .add-btn {
@@ -231,9 +312,51 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
     .add-btn:hover, .delete-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
         color: white;
         text-decoration: none;
+    }
+
+    .delete-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+        transform: none;
+    }
+
+    /* Show All Button */
+    .show-all-btn {
+        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+        color: white;
+        border: none;
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.375rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        margin: 1rem 1.5rem;
+    }
+
+    .show-all-btn:hover {
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .show-all-btn:focus {
+        outline: 2px solid #4f46e5;
+        outline-offset: 2px;
+    }
+
+    /* Hide items initially */
+    .type-item.hidden,
+    .category-row.hidden {
+        display: none;
     }
 
     /* Category Types */
@@ -256,13 +379,54 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         display: flex;
         align-items: center;
         gap: 0.5rem;
+        cursor: pointer;
+        user-select: none;
     }
 
     .type-item:hover {
         background: linear-gradient(135deg, #e2e8f0 0%, #cbd5e1 100%);
         border-color: #cbd5e1;
         transform: translateY(-2px);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+    }
+
+    .type-item.selected {
+        border: 2px solid #3b82f6 !important;
+        background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+    }
+
+    /* Selection counter */
+    .selection-count {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #3b82f6;
+        color: white;
+        padding: 0.75rem 1rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.25);
+        z-index: 1000;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .selection-count button {
+        background: none;
+        border: none;
+        color: white;
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: 0.25rem;
+        transition: background-color 0.2s ease;
+    }
+
+    .selection-count button:hover {
+        background: rgba(255, 255, 255, 0.1);
     }
 
     /* Table Styles */
@@ -296,7 +460,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     .category-table tbody tr:hover {
         background-color: #f8fafc;
         transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
 
     .category-table tbody td {
@@ -367,13 +531,13 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         align-items: center;
         justify-content: center;
         gap: 0.25rem;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         white-space: nowrap;
     }
 
     .copy-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
     .copy-btn.copied {
@@ -401,12 +565,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         font-size: 0.875rem;
         text-decoration: none;
         cursor: pointer;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
     }
 
     .action-btn:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
         text-decoration: none;
     }
 
@@ -482,7 +646,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     .modal-content {
         background: white;
         border-radius: 0.5rem;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         width: 100%;
         max-width: 450px;
         max-height: 90vh;
@@ -511,22 +675,20 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         gap: 0.5rem;
     }
 
-
-
     /* Alerts */
     .alert {
         border: none;
         border-radius: 0.5rem;
         padding: 1rem 1.25rem;
         margin-bottom: 1.5rem;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         border-left: 4px solid;
     }
 
     .form-actions, .modal-actions {
         display: flex;
         gap: 0.75rem;
-        justify-content: center; /* Changed from flex-end to center */
+        justify-content: center;
         padding: 1.5rem;
         border-top: 1px solid #e2e8f0;
         background: #f8fafc;
@@ -534,9 +696,9 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
     .form-actions .btn-base,
     .modal-actions .btn-base {
-        min-width: 140px; /* Ensure consistent button widths */
+        min-width: 140px;
     }
-    
+
     .alert-success {
         background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
         color: #065f46;
@@ -549,7 +711,25 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         border-left-color: #ef4444;
     }
 
-  
+    .alert-warning {
+        background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        color: #92400e;
+        border-left-color: #f59e0b;
+    }
+
+    .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        color: inherit;
+        opacity: 0.7;
+        transition: opacity 0.2s ease;
+    }
+
+    .btn-close:hover {
+        opacity: 1;
+    }
 
     /* Loading states */
     .loading {
@@ -623,146 +803,167 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     <!-- Error Message -->
     @if (ViewBag.ErrorMessage != null)
     {
-    <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
-        <i class="fas fa-exclamation-circle me-2"></i>
-        @ViewBag.ErrorMessage
-    </div>
+        <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @ViewBag.ErrorMessage
+        </div>
     }
 
     <!-- Success Message -->
     @if (ViewBag.SuccessMessage != null)
     {
-    <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
-        <i class="fas fa-check-circle me-2"></i>
-        @ViewBag.SuccessMessage
-    </div>
+        <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @ViewBag.SuccessMessage
+        </div>
     }
 
-  <div class="form-overlay" id="typeForm">
-    <div class="form-container">
-        <div class="form-header">
-            <h5><i class="fas fa-tags me-2"></i>Add New Category Type</h5>
-        </div>
-        <form action="@Url.Action("CreateCategoryType", "Categories")" method="post">
-            <div class="form-body">
-                <div class="form-group">
-                    <label for="typeName" class="form-label">
-                        Type Name <span class="required">*</span>
-                    </label>
-                    <input type="text"
-                           class="form-control"
-                           id="typeName"
-                           name="typeName"
-                           required
-                           placeholder="Enter category type name">
-                </div>
+    <!-- Category Type Form Overlay -->
+    <div class="form-overlay" id="typeForm">
+        <div class="form-container">
+            <div class="form-header">
+                <h5><i class="fas fa-tags me-2"></i>Add Category Type(s)</h5>
             </div>
-            <div class="form-actions">
-                <button type="button" class="btn-base btn-cancel" onclick="toggleTypeForm()">
-                    <i class="fas fa-times me-1"></i>Cancel
-                </button>
-                <button type="submit" class="btn-base btn-save">
-                    <i class="fas fa-save me-1"></i>Create Type
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<!-- Create Category Form Overlay -->
-<div class="form-overlay" id="createForm">
-    <div class="form-container">
-        <div class="form-header">
-            <h5><i class="fas fa-plus me-2"></i>Create New Category</h5>
-        </div>
-        <form action="@Url.Action("Create", "Categories")" method="post">
-            <div class="form-body">
-                <div class="form-group">
-                    <label for="value" class="form-label">
-                        Value <span class="required">*</span>
-                    </label>
-                    <input type="text"
-                           class="form-control"
-                           id="value"
-                           name="value"
-                           required
-                           placeholder="Enter category value">
-                </div>
-                
-                <div class="form-group">
-                    <label for="type" class="form-label">
-                        Type <span class="required">*</span>
-                    </label>
-                    <select class="form-control" id="type" name="type" required>
-                        <option value="">Select a type</option>
-                        @foreach (var type in categoryTypes)
-                        {
-                            <option value="@type">@type</option>
-                        }
-                    </select>
-                </div>
-                
-                <div class="form-group">
-                    <label for="order" class="form-label">Order</label>
-                    <input type="number"
-                           class="form-control"
-                           id="order"
-                           name="order"
-                           min="0"
-                           placeholder="Display order">
-                </div>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn-base btn-cancel" onclick="toggleCreateForm()">
-                    <i class="fas fa-times me-1"></i>Cancel
-                </button>
-                <button type="submit" class="btn-base btn-create">
-                    <i class="fas fa-save me-1"></i>Create Category
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-<!-- Edit Category Form Overlay -->
-<div class="form-overlay" id="editForm">
-    <div class="form-container">
-        <div class="form-header">
-            <h5><i class="fas fa-edit me-2"></i>Update Category</h5>
-        </div>
-        <form action="@Url.Action("Update", "Categories")" method="post">
-            <input type="hidden" id="editId" name="id" />
-            <div class="form-body">
-                <div class="form-row">
+            <form id="categoryTypeForm" method="post">
+                <div class="form-body">
                     <div class="form-group">
-                        <label for="editValue" class="form-label">Value</label>
+                        <label class="form-label">
+                            Type Name <span class="required">*</span>
+                        </label>
+                        <div class="input-group mb-2">
+                            <input type="text"
+                                   class="form-control"
+                                   id="typeNameInput"
+                                   placeholder="Enter category type name"
+                                   maxlength="100">
+                            <button type="button"
+                                    id="addMoreBtn"
+                                    class="btn btn-outline-success"
+                                    onclick="addTypeToList()"
+                                    style="display: none;"
+                                    title="Add to list">
+                                <i class="fas fa-plus"></i> Add More
+                            </button>
+                        </div>
+
+                        <!-- List of added types -->
+                        <div id="typesList" style="display: none;">
+                            <label class="form-label mb-2" style="font-size: 0.875rem; color: #64748b;">
+                                <i class="fas fa-list me-1"></i>Types to Create:
+                            </label>
+                            <div id="typesContainer">
+                                <!-- Types will be added here dynamically as compact chips -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-base btn-cancel" onclick="toggleTypeForm()">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn-base btn-save" id="submitBtn" disabled>
+                        <i class="fas fa-save me-1"></i><span id="submitButtonText">Create Type</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Create Category Form Overlay -->
+    <div class="form-overlay" id="createForm">
+        <div class="form-container">
+            <div class="form-header">
+                <h5><i class="fas fa-plus me-2"></i>Create New Category</h5>
+            </div>
+            <form action="@Url.Action("Create", "Categories")" method="post">
+                <div class="form-body">
+                    <div class="form-group">
+                        <label for="value" class="form-label">
+                            Value <span class="required">*</span>
+                        </label>
                         <input type="text"
                                class="form-control"
-                               id="editValue"
+                               id="value"
                                name="value"
+                               required
                                placeholder="Enter category value">
                     </div>
+
                     <div class="form-group">
-                        <label for="editOrder" class="form-label">Order</label>
+                        <label for="type" class="form-label">
+                            Type <span class="required">*</span>
+                        </label>
+                        <select class="form-control" id="type" name="type" required>
+                            <option value="">Select a type</option>
+                            @foreach (var type in categoryTypes)
+                            {
+                                <option value="@type">@type</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="order" class="form-label">Order</label>
                         <input type="number"
                                class="form-control"
-                               id="editOrder"
+                               id="order"
                                name="order"
                                min="0"
                                placeholder="Display order">
                     </div>
                 </div>
-            </div>
-            <div class="form-actions">
-                <button type="button" class="btn-base btn-cancel" onclick="toggleEditForm()">
-                    <i class="fas fa-times me-1"></i>Cancel
-                </button>
-                <button type="submit" class="btn-base btn-update">
-                    <i class="fas fa-save me-1"></i>Update Category
-                </button>
-            </div>
-        </form>
+                <div class="form-actions">
+                    <button type="button" class="btn-base btn-cancel" onclick="toggleCreateForm()">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn-base btn-create">
+                        <i class="fas fa-save me-1"></i>Create Category
+                    </button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
+
+    <!-- Edit Category Form Overlay -->
+    <div class="form-overlay" id="editForm">
+        <div class="form-container">
+            <div class="form-header">
+                <h5><i class="fas fa-edit me-2"></i>Update Category</h5>
+            </div>
+            <form action="@Url.Action("Update", "Categories")" method="post">
+                <input type="hidden" id="editId" name="id"/>
+                <div class="form-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="editValue" class="form-label">Value</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="editValue"
+                                   name="value"
+                                   placeholder="Enter category value">
+                        </div>
+                        <div class="form-group">
+                            <label for="editOrder" class="form-label">Order</label>
+                            <input type="number"
+                                   class="form-control"
+                                   id="editOrder"
+                                   name="order"
+                                   min="0"
+                                   placeholder="Display order">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn-base btn-cancel" onclick="toggleEditForm()">
+                        <i class="fas fa-times me-1"></i>Cancel
+                    </button>
+                    <button type="submit" class="btn-base btn-update">
+                        <i class="fas fa-save me-1"></i>Update Category
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 
     <div class="row">
         <div class="col-12">
@@ -778,7 +979,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                             <i class="fas fa-plus"></i>
                             Add Type
                         </button>
-                        <button type="button" class="delete-btn" onclick="deleteCategoryType()">
+                        <button type="button" class="delete-btn" onclick="deleteCategoryType()" disabled>
                             <i class="fas fa-trash"></i>
                             Delete Type
                         </button>
@@ -787,28 +988,40 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
                 @if (!categoryTypes.Any())
                 {
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="fas fa-tags"></i>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-tags"></i>
+                        </div>
+                        <h4>No Category Types Found</h4>
+                        <p>Start by creating your first category type.</p>
+                        <button type="button" class="add-btn" onclick="addCategoryType()">
+                            <i class="fas fa-plus me-1"></i>Create First Type
+                        </button>
                     </div>
-                    <h4>No Category Types Found</h4>
-                    <p>Start by creating your first category type.</p>
-                    <button type="button" class="add-btn" onclick="addCategoryType()">
-                        <i class="fas fa-plus me-1"></i>Create First Type
-                    </button>
-                </div>
                 }
                 else
                 {
-                <div class="types-list">
-                    @foreach (var type in categoryTypes.OrderBy(t => t))
-                    {
-                    <div class="type-item">
-                        <i class="fas fa-tag me-1"></i>
-                        @type
+                    <div class="types-list" id="categoryTypesList">
+                        @{
+                            var sortedTypes = categoryTypes.OrderBy(t => t).ToArray();
+                        }
+                        @for (int i = 0; i < sortedTypes.Length; i++)
+                        {
+                            <div class="type-item @(i >= 10 ? "hidden" : "")" data-index="@i"
+                                 data-type="@sortedTypes[i].ToLower()">
+                                <i class="fas fa-tag me-1"></i>
+                                @sortedTypes[i]
+                            </div>
+                        }
                     </div>
+
+                    @if (categoryTypes.Count > 10)
+                    {
+                        <button type="button" class="show-all-btn" id="showAllTypesBtn" onclick="toggleShowAllTypes()">
+                            <i class="fas fa-eye me-1"></i>
+                            Show All (@categoryTypes.Count)
+                        </button>
                     }
-                </div>
                 }
             </div>
 
@@ -829,91 +1042,105 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
                 @if (!Model.Any())
                 {
-                <div class="empty-state">
-                    <div class="empty-state-icon">
-                        <i class="fas fa-folder-open"></i>
+                    <div class="empty-state">
+                        <div class="empty-state-icon">
+                            <i class="fas fa-folder-open"></i>
+                        </div>
+                        <h4>No Categories Found</h4>
+                        <p>Start by creating your first category.</p>
+                        <button type="button" class="add-btn" onclick="toggleCreateForm()">
+                            <i class="fas fa-plus me-1"></i>Create First Category
+                        </button>
                     </div>
-                    <h4>No Categories Found</h4>
-                    <p>Start by creating your first category.</p>
-                    <button type="button" class="add-btn" onclick="toggleCreateForm()">
-                        <i class="fas fa-plus me-1"></i>Create First Category
-                    </button>
-                </div>
                 }
                 else
                 {
-                <div class="category-table">
-                    <table class="table table-hover mb-0 table-sm">
-                        <thead>
-                        <tr>
-                            <th style="width: 8%;">Order</th>
-                            <th style="width: 22%;">Value</th>
-                            <th style="width: 12%;">Type</th>
-                            <th style="width: 33%;">ID</th>
-                            <th style="width: 25%;" class="text-center">Actions</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        @foreach (var category in Model.OrderBy(c => c.Order ?? int.MaxValue))
-                        {
-                        <tr>
-                            <td>
-                                @if (category.Order.HasValue)
-                                {
-                                <span class="category-order-badge">@category.Order</span>
-                                }
-                                else
-                                {
-                                <span class="text-muted">—</span>
-                                }
-                            </td>
-                            <td>
-                                <div class="category-value">@category.Value</div>
-                            </td>
-                            <td>
-                                <span class="category-type-badge">@category.TypeName</span>
-                            </td>
-                            <td>
-                                <div class="category-id-container">
-                                    <code class="category-id">@category.Id</code>
-                                    <button type="button"
-                                            class="copy-btn"
-                                            onclick="copyToClipboard('@category.Id', this)"
-                                            title="Copy ID">
-                                        <i class="fas fa-copy"></i>
-                                        <span class="copy-text d-none d-md-inline">Copy</span>
-                                    </button>
-                                </div>
-                            </td>
-                            <td>
-                                <div class="action-buttons">
-                                    <button type="button"
-                                            class="action-btn btn-edit"
-                                            onclick="showEditForm('@category.Id', '@Html.Raw(Html.Encode(category.Value))', @(category.Order?.ToString() ?? "null"))"
-                                            title="Update Category">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <a href="@Url.Action("Tree", "Categories", new { id = category.Id })"
-                                       class="action-btn btn-tree"
-                                       title="Show Tree">
-                                        <i class="fas fa-sitemap"></i>
-                                    </a>
-                                    <form action="@Url.Action("Delete", "Categories")" method="post" style="display: inline;">
-                                        <input type="hidden" name="id" value="@category.Id" />
-                                        <button type="button"
-                                                class="action-btn btn-delete"
-                                                onclick="showDeleteConfirmation('@category.Id', '@Html.Raw(Html.Encode(category.Value))', this.closest('form'))"
-                                                title="Delete @category.Value">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        }
-                        </tbody>
-                    </table>
-                </div>
+                    <div class="category-table">
+                        <table class="table table-hover mb-0 table-sm" id="categoriesTable">
+                            <thead>
+                            <tr>
+                                <th style="width: 8%;">Order</th>
+                                <th style="width: 22%;">Value</th>
+                                <th style="width: 12%;">Type</th>
+                                <th style="width: 33%;">ID</th>
+                                <th style="width: 25%;" class="text-center">Actions</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            @{
+                                var sortedCategories = Model.OrderBy(c => c.Order ?? int.MaxValue).ToArray();
+                            }
+                            @for (int i = 0; i < sortedCategories.Length; i++)
+                            {
+                                var category = sortedCategories[i];
+                                <tr class="category-row @(i >= 10 ? "hidden" : "")" data-index="@i">
+                                    <td>
+                                        @if (category.Order.HasValue)
+                                        {
+                                            <span class="category-order-badge">@category.Order</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">—</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="category-value">@category.Value</div>
+                                    </td>
+                                    <td>
+                                        <span class="category-type-badge">@category.TypeName</span>
+                                    </td>
+                                    <td>
+                                        <div class="category-id-container">
+                                            <code class="category-id">@category.Id</code>
+                                            <button type="button"
+                                                    class="copy-btn"
+                                                    onclick="copyToClipboard('@category.Id', this)"
+                                                    title="Copy ID">
+                                                <i class="fas fa-copy"></i>
+                                                <span class="copy-text d-none d-md-inline">Copy</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <button type="button"
+                                                    class="action-btn btn-edit"
+                                                    onclick="showEditForm('@category.Id', '@Html.Raw(Html.Encode(category.Value))', @(category.Order?.ToString() ?? "null"))"
+                                                    title="Update Category">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <a href="@Url.Action("Tree", "Categories", new { id = category.Id })"
+                                               class="action-btn btn-tree"
+                                               title="Show Tree">
+                                                <i class="fas fa-sitemap"></i>
+                                            </a>
+                                            <form action="@Url.Action("Delete", "Categories")" method="post"
+                                                  style="display: inline;">
+                                                <input type="hidden" name="id" value="@category.Id"/>
+                                                <button type="button"
+                                                        class="action-btn btn-delete"
+                                                        onclick="showDeleteConfirmation('@category.Id', '@Html.Raw(Html.Encode(category.Value))', this.closest('form'))"
+                                                        title="Delete @category.Value">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </form>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (Model.Count() > 10)
+                    {
+                        <button type="button" class="show-all-btn" id="showAllCategoriesBtn"
+                                onclick="toggleShowAllCategories()">
+                            <i class="fas fa-eye me-1"></i>
+                            Show All (@Model.Count())
+                        </button>
+                    }
                 }
             </div>
         </div>
@@ -926,19 +1153,16 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         <div class="modal-header">
             <h4><i class="fas fa-trash me-2"></i>Delete Category Type</h4>
         </div>
-        <form action="@Url.Action("DeleteCategoryType", "Categories")" method="post">
+        <form action="@Url.Action("DeleteCategoryTypes", "Categories")" method="post">
             <div class="form-body">
                 <div class="form-group">
-                    <label for="deleteTypeName" class="form-label">
-                        Select Type to Delete <span class="required">*</span>
+                    <label class="form-label">
+                        Selected Types to Delete:
                     </label>
-                    <select class="form-control" id="deleteTypeName" name="typeName" required>
-                        <option value="">Select a type to delete</option>
-                        @foreach (var type in categoryTypes)
-                        {
-                            <option value="@type">@type</option>
-                        }
-                    </select>
+                    <div id="selectedTypesContainer"
+                         style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.75rem; max-height: 150px; overflow-y: auto;">
+                        <!-- Selected types will be populated here -->
+                    </div>
                 </div>
             </div>
             <div class="modal-actions">
@@ -946,7 +1170,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                     <i class="fas fa-times me-1"></i>Cancel
                 </button>
                 <button type="submit" class="btn-base btn-delete">
-                    <i class="fas fa-trash me-1"></i>Delete Type
+                    <i class="fas fa-trash me-1"></i>Delete Types
                 </button>
             </div>
         </form>
@@ -976,8 +1200,157 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 <script>
     let deleteFormToSubmit = null;
     let categoryToDelete = null;
-    
-    // Close overlays when clicking outside
+    let typesList = [];
+    let selectedTypes = new Set();
+
+    let showingAllTypes = false;
+
+    function toggleShowAllTypes() {
+        const button = document.getElementById('showAllTypesBtn');
+        const hiddenTypes = document.querySelectorAll('#categoryTypesList .type-item.hidden');
+        const icon = button.querySelector('i');
+
+        showingAllTypes = !showingAllTypes;
+
+        if (showingAllTypes) {
+            hiddenTypes.forEach(item => {
+                item.classList.remove('hidden');
+            });
+            button.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Show Less';
+            icon.className = 'fas fa-eye-slash me-1';
+        } else {
+            const allTypes = document.querySelectorAll('#categoryTypesList .type-item');
+            allTypes.forEach((item, index) => {
+                if (index >= 10) {
+                    item.classList.add('hidden');
+                }
+            });
+            const totalCount = allTypes.length;
+            button.innerHTML = `<i class="fas fa-eye me-1"></i>Show All (${totalCount})`;
+        }
+    }
+
+    let showingAllCategories = false;
+
+    function toggleShowAllCategories() {
+        const button = document.getElementById('showAllCategoriesBtn');
+        const hiddenRows = document.querySelectorAll('#categoriesTable .category-row.hidden');
+        const icon = button.querySelector('i');
+
+        showingAllCategories = !showingAllCategories;
+
+        if (showingAllCategories) {
+            hiddenRows.forEach(row => {
+                row.classList.remove('hidden');
+            });
+            button.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Show Less';
+        } else {
+            const allRows = document.querySelectorAll('#categoriesTable .category-row');
+            allRows.forEach((row, index) => {
+                if (index >= 10) {
+                    row.classList.add('hidden');
+                }
+            });
+            const totalCount = allRows.length;
+            button.innerHTML = `<i class="fas fa-eye me-1"></i>Show All (${totalCount})`;
+        }
+    }
+
+    function initializeCategoryTypeSelection() {
+        const typeItems = document.querySelectorAll('.type-item');
+        typeItems.forEach(item => {
+            item.addEventListener('click', function () {
+                toggleTypeSelection(this);
+            });
+        });
+        updateDeleteButtonState();
+    }
+
+    function toggleTypeSelection(typeElement) {
+        const typeName = typeElement.dataset.type || typeElement.textContent.trim();
+
+        if (selectedTypes.has(typeName)) {
+            selectedTypes.delete(typeName);
+            typeElement.classList.remove('selected');
+        } else {
+            selectedTypes.add(typeName);
+            typeElement.classList.add('selected');
+        }
+
+        updateDeleteButtonState();
+        showSelectionCount();
+    }
+
+    function clearAllSelections() {
+        selectedTypes.clear();
+        const typeItems = document.querySelectorAll('.type-item');
+        typeItems.forEach(item => {
+            item.classList.remove('selected');
+        });
+        updateDeleteButtonState();
+        hideSelectionCount();
+    }
+
+    function updateDeleteButtonState() {
+        const deleteBtn = document.querySelector('.delete-btn');
+
+        if (selectedTypes.size === 0) {
+            deleteBtn.disabled = true;
+            deleteBtn.style.opacity = '0.5';
+            deleteBtn.style.cursor = 'not-allowed';
+            deleteBtn.style.pointerEvents = 'none';
+        } else {
+            deleteBtn.disabled = false;
+            deleteBtn.style.opacity = '1';
+            deleteBtn.style.cursor = 'pointer';
+            deleteBtn.style.pointerEvents = 'auto';
+        }
+    }
+
+    function showSelectionCount() {
+        hideSelectionCount();
+        if (selectedTypes.size > 0) {
+            const countDiv = document.createElement('div');
+            countDiv.className = 'selection-count';
+            countDiv.innerHTML = `
+                <i class="fas fa-check-circle me-2"></i>
+                ${selectedTypes.size} type${selectedTypes.size > 1 ? 's' : ''} selected
+                <button onclick="clearAllSelections()" title="Clear selection">
+                    <i class="fas fa-times"></i>
+                </button>
+            `;
+            document.body.appendChild(countDiv);
+        }
+    }
+
+    function hideSelectionCount() {
+        const existingCount = document.querySelector('.selection-count');
+        if (existingCount) {
+            existingCount.remove();
+        }
+    }
+
+    function updateDeleteModal() {
+        const container = document.getElementById('selectedTypesContainer');
+        const selectedArray = Array.from(selectedTypes);
+
+        if (selectedArray.length === 0) return;
+
+        container.innerHTML = selectedArray.map(type => `
+            <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <i class="fas fa-tag" style="color: #3b82f6;"></i>
+                <span style="font-weight: 500;">${type}</span>
+            </div>
+        `).join('');
+
+        const isMultiple = selectedArray.length > 1;
+        const modalHeader = document.querySelector('#deleteTypeModal .modal-header h4');
+        const deleteButton = document.querySelector('#deleteTypeModal .btn-delete');
+
+        modalHeader.innerHTML = `<i class="fas fa-trash me-2"></i>${isMultiple ? 'Delete Category Types' : 'Delete Category Type'}`;
+        deleteButton.innerHTML = `<i class="fas fa-trash me-1"></i>${isMultiple ? 'Delete Types' : 'Delete Type'}`;
+    }
+
     function closeOnOutsideClick(event, overlayId) {
         const overlay = document.getElementById(overlayId);
         if (event.target === overlay) {
@@ -985,12 +1358,91 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         }
     }
 
-    // Category Type Functions
     function addCategoryType() {
         closeAllForms();
+        resetTypeForm();
         const typeForm = document.getElementById('typeForm');
         typeForm.classList.add('show');
-        setTimeout(() => document.getElementById('typeName').focus(), 300);
+        setTimeout(() => document.getElementById('typeNameInput').focus(), 300);
+    }
+
+    function resetTypeForm() {
+        document.getElementById('typeNameInput').value = '';
+        typesList = [];
+        updateTypesDisplay();
+        updateAddMoreButton();
+        updateSubmitButton();
+    }
+
+    function addTypeToList() {
+        const input = document.getElementById('typeNameInput');
+        const typeName = input.value.trim();
+
+        if (typeName && !typesList.includes(typeName.toLowerCase())) {
+            typesList.push(typeName.toLowerCase());
+            input.value = '';
+            updateTypesDisplay();
+            updateAddMoreButton();
+            updateSubmitButton();
+            input.focus();
+        } else if (typesList.includes(typeName.toLowerCase())) {
+            alert('This type already exists in the list!');
+            input.select();
+        }
+    }
+
+    function removeTypeFromList(typeName) {
+        typesList = typesList.filter(type => type !== typeName);
+        updateTypesDisplay();
+        updateSubmitButton();
+        document.getElementById('typeNameInput').focus();
+    }
+
+    function updateTypesDisplay() {
+        const typesList_div = document.getElementById('typesList');
+        const typesContainer = document.getElementById('typesContainer');
+
+        if (typesList.length === 0) {
+            typesList_div.style.display = 'none';
+            typesContainer.innerHTML = '';
+        } else {
+            typesList_div.style.display = 'block';
+            typesContainer.innerHTML = typesList.map(type => `
+                <span class="type-list-item">
+                    <span class="type-list-text">${type}</span>
+                    <button type="button" 
+                            class="type-remove-btn" 
+                            onclick="removeTypeFromList('${type}')"
+                            title="Remove ${type}">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </span>
+            `).join('');
+        }
+    }
+
+    function updateAddMoreButton() {
+        const input = document.getElementById('typeNameInput');
+        const addMoreBtn = document.getElementById('addMoreBtn');
+
+        if (input.value.trim()) {
+            addMoreBtn.style.display = 'block';
+        } else {
+            addMoreBtn.style.display = 'none';
+        }
+    }
+
+    function updateSubmitButton() {
+        const submitBtn = document.getElementById('submitBtn');
+        const submitText = document.getElementById('submitButtonText');
+        const input = document.getElementById('typeNameInput');
+        const hasInputValue = input.value.trim();
+        const hasListItems = typesList.length > 0;
+
+        submitBtn.disabled = !hasInputValue && !hasListItems;
+
+        const totalCount = typesList.length + (hasInputValue ? 1 : 0);
+        submitText.textContent = totalCount > 1 ? 'Create Types' : 'Create Type';
     }
 
     function toggleTypeForm() {
@@ -998,7 +1450,75 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         typeForm.classList.remove('show');
     }
 
-    // Root Category Functions
+    function showSuccessAlert(message) {
+        showAlert(message, 'success');
+    }
+
+    function showWarningAlert(message) {
+        showAlert(message, 'warning');
+    }
+
+    function showErrorAlert(message) {
+        showAlert(message, 'error');
+    }
+
+    function showAlert(message, type) {
+        const existingAlerts = document.querySelectorAll('.dynamic-alert');
+        existingAlerts.forEach(alert => alert.remove());
+
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert dynamic-alert ${getAlertClass(type)}`;
+        alertDiv.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 9999;
+            max-width: 400px;
+            white-space: pre-line;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        `;
+
+        alertDiv.innerHTML = `
+            <i class="${getAlertIcon(type)} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" style="float: right; margin-left: 10px;" onclick="this.parentElement.remove()"></button>
+        `;
+
+        document.body.appendChild(alertDiv);
+
+        setTimeout(() => {
+            if (alertDiv.parentNode) {
+                alertDiv.remove();
+            }
+        }, 5000);
+    }
+
+    function getAlertClass(type) {
+        switch (type) {
+            case 'success':
+                return 'alert-success';
+            case 'warning':
+                return 'alert-warning';
+            case 'error':
+                return 'alert-danger';
+            default:
+                return 'alert-info';
+        }
+    }
+
+    function getAlertIcon(type) {
+        switch (type) {
+            case 'success':
+                return 'fas fa-check-circle';
+            case 'warning':
+                return 'fas fa-exclamation-triangle';
+            case 'error':
+                return 'fas fa-exclamation-circle';
+            default:
+                return 'fas fa-info-circle';
+        }
+    }
+
     function toggleCreateForm() {
         const createForm = document.getElementById('createForm');
         createForm.classList.remove('show');
@@ -1010,21 +1530,19 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     }
 
     function openCreateForm() {
-        closeAllForms(); // Close any open modals first
+        closeAllForms();
         const createForm = document.getElementById('createForm');
         createForm.classList.add('show');
         setTimeout(() => document.getElementById('value').focus(), 300);
     }
-    
+
     function showEditForm(id, value, order) {
         closeAllForms();
-        
-        // Populate form fields
+
         document.getElementById('editId').value = id;
         document.getElementById('editValue').value = value;
         document.getElementById('editOrder').value = order === null ? '' : order;
 
-        // Show form
         const editForm = document.getElementById('editForm');
         editForm.classList.add('show');
         setTimeout(() => document.getElementById('editValue').focus(), 300);
@@ -1034,14 +1552,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         deleteFormToSubmit = deleteForm;
         categoryToDelete = categoryValue;
 
-        // Update the confirmation message
         document.getElementById('deleteConfirmMessage').textContent =
             `Are you sure you want to delete the category "${categoryValue}"?`;
 
-        // Show the modal
         document.getElementById('deleteConfirmModal').classList.add('show');
     }
-    
+
     function closeDeleteConfirmModal() {
         document.getElementById('deleteConfirmModal').classList.remove('show');
         deleteFormToSubmit = null;
@@ -1056,7 +1572,15 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     }
 
     function deleteCategoryType() {
+        if (selectedTypes.size === 0) {
+            showErrorAlert('Please select at least one category type to delete.');
+            return;
+        }
+
+        console.log('Selected types for deletion:', Array.from(selectedTypes));
+
         closeAllForms();
+        updateDeleteModal();
         const modal = document.getElementById('deleteTypeModal');
         modal.classList.add('show');
     }
@@ -1067,13 +1591,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     }
 
     function closeAllForms() {
-        document.getElementById('typeForm').classList.remove('show');
-        document.getElementById('createForm').classList.remove('show');
-        document.getElementById('editForm').classList.remove('show');
-        document.getElementById('deleteTypeModal').classList.remove('show');
+        document.getElementById('typeForm')?.classList.remove('show');
+        document.getElementById('createForm')?.classList.remove('show');
+        document.getElementById('editForm')?.classList.remove('show');
+        document.getElementById('deleteTypeModal')?.classList.remove('show');
     }
 
-    // Copy to clipboard function (enhanced)
     async function copyToClipboard(text, button) {
         try {
             if (navigator.clipboard && window.isSecureContext) {
@@ -1104,7 +1627,6 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
         } catch (err) {
             console.error('Failed to copy text: ', err);
-            // Fallback notification
             const notification = document.createElement('div');
             notification.textContent = 'Failed to copy to clipboard';
             notification.style.cssText = 'position:fixed;top:20px;right:20px;background:#ef4444;color:white;padding:1rem;border-radius:0.5rem;z-index:9999';
@@ -1113,16 +1635,172 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         }
     }
 
-    // Event listeners
-    document.addEventListener('DOMContentLoaded', function() {
-        // Auto-hide alerts after 5 seconds
+    document.addEventListener('DOMContentLoaded', function () {
+        initializeCategoryTypeSelection();
+
+        const typeNameInput = document.getElementById('typeNameInput');
+        if (typeNameInput) {
+            typeNameInput.addEventListener('input', function () {
+                updateAddMoreButton();
+                updateSubmitButton();
+            });
+
+            typeNameInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (this.value.trim()) {
+                        addTypeToList();
+                    }
+                }
+            });
+        }
+
+        const categoryTypeForm = document.getElementById('categoryTypeForm');
+        if (categoryTypeForm) {
+            categoryTypeForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const input = document.getElementById('typeNameInput');
+                const currentInput = input.value.trim();
+
+                let allTypeNames = [...typesList];
+                if (currentInput && !allTypeNames.includes(currentInput.toLowerCase())) {
+                    allTypeNames.push(currentInput.toLowerCase());
+                }
+
+                if (allTypeNames.length === 0) {
+                    showErrorAlert('Please enter at least one category type name.');
+                    return;
+                }
+
+                const submitBtn = document.getElementById('submitBtn');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+
+                const formData = new FormData();
+
+                let actionUrl;
+                if (allTypeNames.length === 1) {
+                    actionUrl = '@Url.Action("CreateCategoryType", "Categories")';
+                    formData.append('typeName', allTypeNames[0]);
+                } else {
+                    actionUrl = '@Url.Action("CreateBulkCategoryType", "Categories")';
+                    allTypeNames.forEach(name => {
+                        formData.append('typeNames', name);
+                    });
+                }
+
+                fetch(actionUrl, {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+
+                        if (data.success) {
+                            if (data.warning) {
+                                showSuccessAlert(data.message);
+                                showWarningAlert(data.warning);
+                            } else {
+                                showSuccessAlert(data.message);
+                            }
+
+                            setTimeout(() => {
+                                toggleTypeForm();
+                                window.location.reload();
+                            }, 2000);
+
+                        } else {
+                            if (data.existingTypes && data.existingTypes.length > 0) {
+                                const existingTypesText = data.existingTypes.join(', ');
+                                showErrorAlert(`${data.error}\n\nExisting types: ${existingTypesText}`);
+                            } else {
+                                showErrorAlert(data.error);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                        showErrorAlert('An error occurred while creating category types.');
+                    });
+            });
+        }
+
+        const deleteForm = document.querySelector('#deleteTypeModal form');
+        if (deleteForm) {
+            deleteForm.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                const selectedTypeNames = Array.from(selectedTypes);
+
+                console.log('Submitting deletion for types:', selectedTypeNames);
+
+                if (selectedTypeNames.length === 0) {
+                    showErrorAlert('No types selected for deletion.');
+                    return;
+                }
+
+                const submitBtn = this.querySelector('.btn-delete');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Deleting...';
+
+                const formData = new FormData();
+                selectedTypeNames.forEach(typeName => {
+                    formData.append('typeNames', typeName);
+                });
+
+                fetch('@Url.Action("DeleteCategoryTypes", "Categories")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(selectedTypeNames)
+                })
+                    .then(response => {
+                        console.log('Response status:', response.status);
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Response data:', data);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+
+                        if (data.success) {
+                            showSuccessAlert(data.message);
+                            setTimeout(() => {
+                                closeDeleteTypeModal();
+                                clearAllSelections();
+                                window.location.reload();
+                            }, 2000);
+                        } else {
+                            showErrorAlert(data.error);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = originalText;
+                        showErrorAlert('An error occurred while deleting category types: ' + error.message);
+                    });
+            });
+        }
+
         const alerts = document.querySelectorAll('.alert');
-        alerts.forEach(function(alert) {
-            setTimeout(function() {
+        alerts.forEach(function (alert) {
+            setTimeout(function () {
                 if (alert && alert.parentNode) {
                     alert.style.opacity = '0';
                     alert.style.transition = 'opacity 0.3s';
-                    setTimeout(function() {
+                    setTimeout(function () {
                         if (alert.parentNode) {
                             alert.parentNode.removeChild(alert);
                         }
@@ -1131,32 +1809,33 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             }, 5000);
         });
 
-        // Close overlays when clicking outside
         ['typeForm', 'createForm', 'editForm', 'deleteTypeModal'].forEach(id => {
-            document.getElementById(id).addEventListener('click', function(e) {
-                closeOnOutsideClick(e, id);
+            const element = document.getElementById(id);
+            if (element) {
+                element.addEventListener('click', function (e) {
+                    closeOnOutsideClick(e, id);
+                });
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                if (selectedTypes.size > 0) {
+                    clearAllSelections();
+                } else {
+                    closeAllForms();
+                    closeDeleteConfirmModal();
+                }
+            }
+        });
+
+        const deleteConfirmModal = document.getElementById('deleteConfirmModal');
+        if (deleteConfirmModal) {
+            deleteConfirmModal.addEventListener('click', function (e) {
+                if (e.target === this) {
+                    closeDeleteConfirmModal();
+                }
             });
-        });
-
-        // Close overlays with Escape key
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeAllForms();
-            }
-        });
-
-        document.getElementById('deleteConfirmModal').addEventListener('click', function(e) {
-            if (e.target === this) {
-                closeDeleteConfirmModal();
-            }
-        });
-
-// Close all modals with Escape key (update existing function)
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape') {
-                closeAllForms();
-                closeDeleteConfirmModal();
-            }
-        });
+        }
     });
 </script>
