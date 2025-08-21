@@ -10,13 +10,16 @@ public class DeleteCategoryTypeCommandHandler(IRepository<CategoryType> typeRepo
 {
     public async Task Handle(DeleteCategoryTypeCommand request, CancellationToken cancellationToken)
     {
-        var typeExists = await typeRepository.AsQueryable()
-            .FirstOrDefaultAsync(t => t.Name == request.TypeName, cancellationToken: cancellationToken);
-        
-        if(typeExists is null)
-            throw new TypeNotFoundException(request.TypeName);
+        var typesToDelete = await typeRepository.AsQueryable()
+            .Where(t => request.TypeNames.Contains(t.Name))
+            .ToArrayAsync(cancellationToken);
 
-        await typeRepository.DeleteAsync([typeExists]);
+        var notFoundTypes = request.TypeNames.Except(typesToDelete.Select(t => t.Name)).ToList();
+        if (notFoundTypes.Count != 0)
+            throw new TypeNotFoundException(string.Join(", ", notFoundTypes));
+
+        
+        await typeRepository.DeleteAsync(typesToDelete);
         await typeRepository.SaveChangesAsync(cancellationToken);
     }
 }
