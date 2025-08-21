@@ -2,6 +2,6 @@ namespace Translator.Application.Exceptions;
 
 public class CategoryNotFoundException : ApplicationLayerException
 {
-    public CategoryNotFoundException(Guid? Id)
-        : base(ErrorCodes.NotFound, $"Category '{Id}' was not found.") { }
+    public CategoryNotFoundException(Guid? id)
+        : base(ErrorCodes.NotFound, $"Category '{id}' was not found.") { }
 }
