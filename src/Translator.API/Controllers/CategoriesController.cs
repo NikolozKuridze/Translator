@@ -2,14 +2,11 @@ using FluentValidation;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
-using Translator.Application.Features.Category.Commands.DeleteCategory;
-using Translator.Application.Features.Category.Commands.AddCategory;
-using Translator.Application.Features.Category.Commands.UpdateCategory;
-using Translator.Application.Features.Category.Queries.GetCategoryTree;
-using Translator.Application.Features.CategoryTypes.Queries;
 using Translator.Application.Exceptions;
+using Translator.Application.Features.Category.Commands;
 using Translator.Application.Features.Category.Queries;
 using Translator.Application.Features.CategoryTypes.Commands;
+using Translator.Application.Features.CategoryTypes.Queries;
 
 namespace Translator.API.Controllers;
 
@@ -28,23 +25,20 @@ public class CategoriesController(IMediator mediator) : Controller
             var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new
                 {
                     success = true,
-                    categories = categories?.ToList() ?? new List<GetRootCategories.Response>(),
-                    categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>()
+                    categories = categories.ToList(),
+                    categoryTypes = categoryTypes.TypeNames.ToList()
                 });
-            }
 
             // Ensure ViewBag has proper data
-            ViewBag.CategoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>();
-            return View(categories?.ToList() ?? new List<GetRootCategories.Response>());
+            ViewBag.CategoryTypes = categoryTypes.TypeNames.ToList();
+            return View(categories.ToList());
         }
         catch (Exception ex)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new
                 {
                     success = false,
@@ -52,7 +46,6 @@ public class CategoriesController(IMediator mediator) : Controller
                     categories = new List<GetRootCategories.Response>(),
                     categoryTypes = new List<string>()
                 });
-            }
 
             ViewBag.ErrorMessage = ex.Message;
             ViewBag.CategoryTypes = new List<string>();
@@ -70,9 +63,7 @@ public class CategoriesController(IMediator mediator) : Controller
             {
                 var errorMessage = "Value and Type are required.";
                 if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
                     return Json(new { success = false, message = errorMessage });
-                }
 
                 TempData["ErrorMessage"] = errorMessage;
                 return returnToTreeId.HasValue
@@ -80,14 +71,14 @@ public class CategoriesController(IMediator mediator) : Controller
                     : RedirectToAction("Index");
             }
 
-            var command = new CreateCategoryCommand(value.ToLower().Trim(), type.ToLower().Trim(), order, parentId);
+            var command = new AddCategory.Command(value, type, order, parentId);
             var result = await mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 if (returnToTreeId.HasValue)
                 {
-                    var treeCategory = await mediator.Send(new GetCategoryTreeQuery(returnToTreeId.Value));
+                    var treeCategory = await mediator.Send(new GetCategoryTree.Query(returnToTreeId.Value));
                     var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
                     return Json(new
                     {
@@ -95,7 +86,7 @@ public class CategoriesController(IMediator mediator) : Controller
                         message = "Category created successfully.",
                         categoryId = result,
                         treeData = treeCategory,
-                        categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>()
+                        categoryTypes = categoryTypes.TypeNames.ToList()
                     });
                 }
 
@@ -106,8 +97,8 @@ public class CategoriesController(IMediator mediator) : Controller
                     success = true,
                     message = "Category created successfully.",
                     categoryId = result,
-                    categories = categories ?? new List<GetRootCategories.Response>(),
-                    categoryTypes = updatedCategoryTypes?.TypeNames?.ToList() ?? new List<string>()
+                    categories,
+                    categoryTypes = updatedCategoryTypes.TypeNames.ToList()
                 });
             }
 
@@ -120,9 +111,7 @@ public class CategoriesController(IMediator mediator) : Controller
         {
             var errorMessage = "An error occurred while creating the category: " + ex.Message;
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new { success = false, message = errorMessage });
-            }
 
             TempData["ErrorMessage"] = errorMessage;
             return returnToTreeId.HasValue
@@ -137,21 +126,21 @@ public class CategoriesController(IMediator mediator) : Controller
     {
         try
         {
-            var command = new UpdateCategoryCommand(id, value?.ToLower().Trim(), order);
+            var command = new UpdateCategory.Command(id, value, order);
             await mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 if (returnToTreeId.HasValue)
                 {
-                    var treeCategory = await mediator.Send(new GetCategoryTreeQuery(returnToTreeId.Value));
+                    var treeCategory = await mediator.Send(new GetCategoryTree.Query(returnToTreeId.Value));
                     var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
                     return Json(new
                     {
                         success = true,
                         message = "Category updated successfully.",
                         treeData = treeCategory,
-                        categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>()
+                        categoryTypes = categoryTypes.TypeNames.ToList()
                     });
                 }
 
@@ -161,8 +150,8 @@ public class CategoriesController(IMediator mediator) : Controller
                 {
                     success = true,
                     message = "Category updated successfully.",
-                    categories = categories ?? new List<GetRootCategories.Response>(),
-                    categoryTypes = updatedCategoryTypes?.TypeNames?.ToList() ?? new List<string>()
+                    categories,
+                    categoryTypes = updatedCategoryTypes.TypeNames.ToList()
                 });
             }
 
@@ -175,9 +164,7 @@ public class CategoriesController(IMediator mediator) : Controller
         {
             var errorMessage = "An error occurred while updating the category: " + ex.Message;
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new { success = false, message = errorMessage });
-            }
 
             TempData["ErrorMessage"] = errorMessage;
             return returnToTreeId.HasValue
@@ -191,21 +178,21 @@ public class CategoriesController(IMediator mediator) : Controller
     {
         try
         {
-            var command = new DeleteCategoryCommand(id);
+            var command = new DeleteCategory.Command(id);
             await mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
                 if (returnToTreeId.HasValue)
                 {
-                    var treeCategory = await mediator.Send(new GetCategoryTreeQuery(returnToTreeId.Value));
+                    var treeCategory = await mediator.Send(new GetCategoryTree.Query(returnToTreeId.Value));
                     var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
                     return Json(new
                     {
                         success = true,
                         message = "Category deleted successfully.",
                         treeData = treeCategory,
-                        categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>()
+                        categoryTypes = categoryTypes.TypeNames.ToList()
                     });
                 }
 
@@ -215,8 +202,8 @@ public class CategoriesController(IMediator mediator) : Controller
                 {
                     success = true,
                     message = "Category deleted successfully.",
-                    categories = categories,
-                    categoryTypes = updatedCategoryTypes?.TypeNames?.ToList() ?? new List<string>()
+                    categories,
+                    categoryTypes = updatedCategoryTypes.TypeNames.ToList()
                 });
             }
 
@@ -229,9 +216,7 @@ public class CategoriesController(IMediator mediator) : Controller
         {
             var errorMessage = "An error occurred while deleting the category: " + ex.Message;
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new { success = false, message = errorMessage });
-            }
 
             TempData["ErrorMessage"] = errorMessage;
             return returnToTreeId.HasValue
@@ -246,12 +231,10 @@ public class CategoriesController(IMediator mediator) : Controller
         try
         {
             if (string.IsNullOrWhiteSpace(typeName))
-            {
                 return Json(new { success = false, error = "Type name is required." });
-            }
 
             // The command handler will convert to lowercase
-            var command = new AddCategoryType.Command(typeName.Trim());
+            var command = new AddCategoryType.Command(typeName);
             await mediator.Send(command);
 
             var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
@@ -261,7 +244,7 @@ public class CategoriesController(IMediator mediator) : Controller
             {
                 success = true,
                 message = "Category type created successfully.",
-                categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>(),
+                categoryTypes = categoryTypes.TypeNames.ToList(),
                 categories
             });
         }
@@ -277,7 +260,8 @@ public class CategoriesController(IMediator mediator) : Controller
         }
         catch (TypeAlreadyExistsException ex)
         {
-            return Json(new { success = false, error = ex.Message, existingTypes = new[] { typeName.Trim().ToLower() } });
+            return Json(
+                new { success = false, error = ex.Message, existingTypes = new[] { typeName.Trim().ToLower() } });
         }
         catch (Exception ex)
         {
@@ -292,9 +276,7 @@ public class CategoriesController(IMediator mediator) : Controller
         try
         {
             if (typeNames == null || typeNames.All(string.IsNullOrWhiteSpace))
-            {
                 return Json(new { success = false, error = "At least one type name is required." });
-            }
 
             var cleanedTypeNames = typeNames.Where(n => !string.IsNullOrWhiteSpace(n)).Select(n => n.Trim()).ToArray();
 
@@ -318,16 +300,16 @@ public class CategoriesController(IMediator mediator) : Controller
                         $"The following {existingCount} type(s) already exist: {string.Join(", ", result.ExistingTypeNames)}",
                     existingTypes = result.ExistingTypeNames.ToArray(),
                     createdTypes = result.CreatedTypeNames.ToArray(),
-                    categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>(),
-                    categories = categories
+                    categoryTypes = categoryTypes.TypeNames.ToList(),
+                    categories
                 }),
                 > 0 => Json(new
                 {
                     success = true,
                     message = $"Successfully created {createdCount} category type(s).",
                     createdTypes = result.CreatedTypeNames.ToArray(),
-                    categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>(),
-                    categories = categories
+                    categoryTypes = categoryTypes.TypeNames.ToList(),
+                    categories
                 }),
                 _ => Json(new
                 {
@@ -360,9 +342,7 @@ public class CategoriesController(IMediator mediator) : Controller
         try
         {
             if (typeNames == null || typeNames.Count == 0)
-            {
                 return Json(new { success = false, error = "Please select at least one category type to delete." });
-            }
 
             var cleanedTypeNames = typeNames
                 .Where(name => !string.IsNullOrWhiteSpace(name))
@@ -382,7 +362,7 @@ public class CategoriesController(IMediator mediator) : Controller
             {
                 success = true,
                 message,
-                categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>(),
+                categoryTypes = categoryTypes.TypeNames.ToList(),
                 categories
             });
         }
@@ -412,20 +392,18 @@ public class CategoriesController(IMediator mediator) : Controller
     {
         try
         {
-            var category = await mediator.Send(new GetCategoryTreeQuery(id));
+            var category = await mediator.Send(new GetCategoryTree.Query(id));
             var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new
                 {
                     success = true,
                     treeData = category,
-                    categoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>()
+                    categoryTypes = categoryTypes.TypeNames.ToList()
                 });
-            }
 
-            ViewBag.CategoryTypes = categoryTypes?.TypeNames?.ToList() ?? new List<string>();
+            ViewBag.CategoryTypes = categoryTypes.TypeNames.ToList();
 
             if (TempData["SuccessMessage"] != null)
                 ViewBag.SuccessMessage = TempData["SuccessMessage"];
@@ -438,9 +416,7 @@ public class CategoriesController(IMediator mediator) : Controller
         catch (Exception ex)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new { success = false, message = ex.Message });
-            }
 
             ViewBag.ErrorMessage = ex.Message;
             return RedirectToAction("Index");
