@@ -3,6 +3,7 @@
 @{
 Layout = "_Layout";
 ViewBag.Title = "Templates";
+var searchKey = ViewBag.searchKey;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -51,6 +52,26 @@ ViewBag.Title = "Templates";
                 </div>
             </form>
         </div>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form id="searchForm" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Search by Key</label>
+                <input type="text" id="searchInput" name="TemplateName" 
+                       value="@searchKey" 
+                       class="form-control"
+                       placeholder="Enter key to search..." />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary" style="display: @(string.IsNullOrEmpty(searchKey) ? "none" : "inline-block")">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -122,9 +143,9 @@ ViewBag.Title = "Templates";
 
 <script>
     if (typeof jQuery === 'undefined') {
-        console.error('jQuery не загружен!');
+        console.error('jQuery is not loaded!');
     } else {
-        console.log('jQuery готов');
+        console.log('jQuery is ready');
     }
 
     class TemplateManager {
@@ -151,7 +172,7 @@ ViewBag.Title = "Templates";
             console.log('📎 Binding events...');
 
             const self = this;
-
+            
             const createForm = document.getElementById('createTemplateForm');
             if (createForm) {
                 createForm.addEventListener('submit', function(e) {
@@ -160,6 +181,21 @@ ViewBag.Title = "Templates";
                 });
             }
 
+            const searchInput = document.getElementById('searchInput');
+            let debounceTimeout;
+            
+            searchInput.addEventListener('input', () => {
+                clearTimeout(debounceTimeout);
+                debounceTimeout = setTimeout(() => {
+                    this.performSearch();
+                }, 300);
+            });
+
+            // Clear search
+            document.getElementById('clearSearchBtn').addEventListener('click', () => {
+                this.clearSearch();
+            });
+            
             // Sort buttons
             document.querySelectorAll('.sort-btn').forEach(btn => {
                 btn.addEventListener('click', function(e) {
@@ -225,6 +261,80 @@ ViewBag.Title = "Templates";
                 this.hideTableLoader();
             }
         }
+
+        async performSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+            this.searchKey = searchInput.value.trim();
+            this.currentPage = 1;
+
+            if (this.searchKey) {
+                clearSearchBtn.style.display = 'inline-block';
+            } else {
+                clearSearchBtn.style.display = 'none';
+                await this.loadTemplates();
+                return;
+            }
+
+            this.showTableLoader();
+
+            try {
+                const params = new URLSearchParams({
+                    templateName: this.searchKey,
+                    pageNumber: this.currentPage,
+                    pageSize: this.pageSize,
+                    sortBy: this.sortBy,
+                    sortDirection: this.sortDirection
+                });
+
+                const response = await fetch(`/Templates/Search?${params}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.renderTemplates(result.data || []);
+                    this.renderPagination({
+                        currentPage: result.pagination.Page,
+                        totalPages: result.pagination.TotalPages,
+                        totalCount: result.pagination.TotalItems
+                    });
+                    this.renderPageSizeSelector();
+                } else {
+                    this.showError('Search failed: ' + (result.message || 'Unknown error'));
+                    this.renderEmptyState();
+                }
+            } catch (error) {
+                console.error('Error searching templates:', error);
+                this.showError('Search error: ' + error.message);
+                this.renderEmptyState();
+            } finally {
+                this.hideTableLoader();
+            }
+        }
+
+        clearSearch() {
+            const searchInput = document.getElementById('searchInput');
+            const clearSearchBtn = document.getElementById('clearSearchBtn');
+
+            searchInput.value = '';
+            this.searchKey = '';
+            this.currentPage = 1;
+            clearSearchBtn.style.display = 'none';
+
+            this.loadTemplates();
+        }
+
 
         async createTemplate() {
             console.log('Creating template...');
