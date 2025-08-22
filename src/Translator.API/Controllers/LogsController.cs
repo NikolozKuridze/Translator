@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
-using Translator.Application.Features.Logs.Queries;
 using Translator.Application.Features.Logs.Queries.GetLogById;
 using Translator.Application.Features.Logs.Queries.GetLogs;
 using Translator.Domain.Pagination;
@@ -93,7 +92,6 @@ public class LogsController : Controller
     {
         try
         {
-            // Создаем запрос для получения конкретного лога по ID
             var command = new GetLogByIdCommand(id);
             var targetLog = await _mediator.Send(command);
 
@@ -107,8 +105,7 @@ public class LogsController : Controller
                 TempData["ErrorMessage"] = "Log entry not found.";
                 return RedirectToAction(nameof(Index));
             }
-
-            // Получаем общее количество логов для статистики
+            
             var statsCommand = new GetLogsCommand(new PaginationRequest(1, 1, null, null, null, null));
             var statsResult = await _mediator.Send(statsCommand);
 
