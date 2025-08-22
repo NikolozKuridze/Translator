@@ -6,6 +6,7 @@ using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetAllTemplates;
 using Translator.Application.Features.Template.Queries.GetTemplate;
+using Translator.Application.Features.Values.Commands.DeleteValueFromTemplate;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
@@ -182,4 +183,18 @@ public class Templates : Controller
             return RedirectToAction(nameof(Index));
         }
     }
+    
+    [HttpPost("DeleteValueFromTemplate")]
+    public async Task<IActionResult> DeleteValueFromTemplate([FromBody] DeleteValueFromTemplateCommand command)
+    {
+        try
+        {
+            await _mediator.Send(command);
+            return Json(new { success = true, message = "Value deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }     
 }

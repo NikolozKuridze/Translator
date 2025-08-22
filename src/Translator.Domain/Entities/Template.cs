@@ -34,4 +34,10 @@ public class Template : BaseEntity
             _values.Add(value);
         }
     }
+
+    public void RemoveValue(Value value)
+    {
+        if (value == null) throw new ArgumentNullException(nameof(value));
+        _values.Remove(value);
+    }
 }

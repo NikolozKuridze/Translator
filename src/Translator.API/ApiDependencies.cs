@@ -78,7 +78,6 @@ public static class ApiDependencies
                     .AllowCredentials();
             });
         });
-
     }
 
     public static void UseApiDependencies(this WebApplication app)

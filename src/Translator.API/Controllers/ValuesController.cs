@@ -8,6 +8,7 @@ using Translator.Application.Features.Values.Queries.GetAllValues;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 using Translator.Application.Features.Language.Queries.GetLanguages;
+using Translator.Application.Features.Values.Commands.DeleteValueFromTemplate;
 using Translator.Application.Features.Values.Queries.SearchValue;
 using Translator.Domain.Pagination;
 
@@ -138,6 +139,7 @@ public class ValuesController : Controller
 
             return View("Index", result.Items);
         }
+        
         catch (Exception ex)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -275,4 +277,5 @@ public class ValuesController : Controller
 
         return RedirectToAction("Details", new { valueId = ValueId });
     }
+    
 }
