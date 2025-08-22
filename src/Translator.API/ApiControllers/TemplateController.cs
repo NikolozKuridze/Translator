@@ -5,6 +5,7 @@ using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetAllTemplates;
 using Translator.Application.Features.Template.Queries.GetTemplate;
+using Translator.Application.Features.Template.Queries.SearchTemplate;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
@@ -27,6 +28,19 @@ public class TemplateController : ControllerBase
         await _mediator.Send(command);
         
         return Results.Ok();
+    }
+
+    [HttpGet("search-templates")]
+    public async Task<IResult> GetTemplates(
+        string templateName, int pageNumber, int pageSize)
+    {
+        var command = new SearchTemplateCommand(
+            templateName,
+            new PaginationRequest(pageNumber, pageSize, null, null, null, null));
+        
+        var result = await _mediator.Send(command);
+        
+        return Results.Ok(result);
     }
     
     [HttpGet("get-template/")]

@@ -5,7 +5,7 @@ using Translator.Infrastructure.Database.Postgres;
 
 namespace Translator.Application.Features.Logs.Queries.GetLogs;
 
-public class GetLogsHandler : IRequestHandler<GetLogs.GetLogsCommand, PaginatedResponse<GetLogsResponse>>
+public class GetLogsHandler : IRequestHandler<GetLogsCommand, PaginatedResponse<GetLogsResponse>>
 {
     private readonly LogsDbContext _dbContext;
 
@@ -14,16 +14,17 @@ public class GetLogsHandler : IRequestHandler<GetLogs.GetLogsCommand, PaginatedR
         _dbContext = dbContext;
     }
     
-    public async Task<PaginatedResponse<GetLogsResponse>> Handle(GetLogs.GetLogsCommand request, CancellationToken cancellationToken)
+    public async Task<PaginatedResponse<GetLogsResponse>> Handle(GetLogsCommand request, CancellationToken cancellationToken)
     {
         var query = _dbContext.Logs.AsQueryable();
         
-        var totalCount = await query.CountAsync(cancellationToken);
         
         query = query.OrderByDescending(t => t.Timestamp);
         
         if (request.Level != null)
             query = query.Where(t => t.Level == request.Level);
+
+        var totalCount = await query.CountAsync(cancellationToken);
         
         var items = await query
             .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
@@ -37,6 +38,7 @@ public class GetLogsHandler : IRequestHandler<GetLogs.GetLogsCommand, PaginatedR
                 t.LogEvent
             ))
             .ToArrayAsync(cancellationToken);
+
         
         return new PaginatedResponse<GetLogsResponse>
         {

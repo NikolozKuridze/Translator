@@ -297,7 +297,7 @@ class ValuesManager {
         this.bindEvents();
         this.updateUI();
     }
-
+    
     bindEvents() {
         // Search form
         document.getElementById('searchForm').addEventListener('submit', (e) => {
@@ -305,11 +305,20 @@ class ValuesManager {
             this.performSearch();
         });
 
+        const searchInput = document.getElementById('searchInput');
+        let debounceTimeout;
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                this.performSearch();
+            }, 300); 
+        });
+
         // Clear search
         document.getElementById('clearSearchBtn').addEventListener('click', () => {
             this.clearSearch();
         });
-
         // Create form
         document.getElementById('createValueForm').addEventListener('submit', (e) => {
             e.preventDefault();

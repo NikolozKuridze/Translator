@@ -37,7 +37,7 @@ public class MigrationsController : Controller
             return Results.BadRequest(new { success = false, message = ex.Message });
         }
     }
-
+    
     [HttpPost]
     public async Task<IResult> SeedFakeData()
     {

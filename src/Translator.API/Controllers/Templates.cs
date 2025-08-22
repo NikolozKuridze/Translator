@@ -6,6 +6,8 @@ using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetAllTemplates;
 using Translator.Application.Features.Template.Queries.GetTemplate;
+using Translator.Application.Features.Template.Queries.SearchTemplate;
+using Translator.Application.Features.Values.Commands.DeleteValueFromTemplate;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
@@ -66,6 +68,38 @@ public class Templates : Controller
         return View(templates.Items);
     }
 
+    [HttpGet("Search")]
+    public async Task<IActionResult> Search(
+        [FromQuery] string templateName,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string sortBy = "name",
+        [FromQuery] string sortDirection = "asc")
+    {
+        var command = new SearchTemplateCommand(
+            templateName,
+            new PaginationRequest(pageNumber, pageSize, null, null,null, null));
+
+        var result = await _mediator.Send(command);
+        ViewBag.searchKey = templateName;
+        return Json(new
+        {
+            success = true,
+            pagination = new
+            {
+                result.Page,
+                result.PageSize,
+                result.TotalItems,
+                result.TotalPages,
+                result.HasNextPage,
+                result.HasPreviousPage,
+                result.IsFirstPage,
+                result.IsLastPage
+            },
+            data = result.Items
+        });
+    }
+    
     [HttpGet("Details")]
     public async Task<IActionResult> Details(
         Guid templateId, string? lang = "en", string templateName = "",
@@ -182,4 +216,18 @@ public class Templates : Controller
             return RedirectToAction(nameof(Index));
         }
     }
+    
+    [HttpPost("DeleteValueFromTemplate")]
+    public async Task<IActionResult> DeleteValueFromTemplate([FromBody] DeleteValueFromTemplateCommand command)
+    {
+        try
+        {
+            await _mediator.Send(command);
+            return Json(new { success = true, message = "Value deleted successfully" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }     
 }

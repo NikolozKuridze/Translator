@@ -352,6 +352,9 @@
 </div>
 
 <script>
+
+    
+    
 class TemplateDetailsManager {
     constructor() {
         this.templateId = '@templateId';
@@ -394,13 +397,10 @@ class TemplateDetailsManager {
             });
         }
 
-        const deleteValueBtn = document.getElementById('confirmDeleteValueBtn');
-        if (deleteValueBtn) {
-            deleteValueBtn.addEventListener('click', () => {
+        document.getElementById('confirmDeleteValueBtn').addEventListener('click', () => {
                 const valueName = document.getElementById('valueNameToDelete').textContent;
                 this.deleteValue(valueName);
-            });
-        }
+        });
     }
 
     changeLanguage(language) {
@@ -421,7 +421,7 @@ class TemplateDetailsManager {
                 pageSize: this.pageSize
             });
 
-            const response = await fetch(`/Templates/Details/${this.templateId}?${params}`, {
+            const response = await fetch(`/Templates/Details?templateId=${this.templateId}&lang=${this.currentLanguage}&page=${this.currentPage}&pageSize${this.pageSize}`, {
                 method: 'GET',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest',
@@ -557,7 +557,8 @@ class TemplateDetailsManager {
             btn.addEventListener('click', async (e) => {
                 const valueId = btn.getAttribute('data-id');
                 await copyValueId(valueId);
-            });
+            })
+            
         });
 
         // Delete value buttons
@@ -696,7 +697,7 @@ class TemplateDetailsManager {
             });
         }
     }
-
+    
     updateLanguageDropdown() {
         document.querySelectorAll('.language-link').forEach(link => {
             const linkLang = link.getAttribute('data-lang');
@@ -758,26 +759,22 @@ class TemplateDetailsManager {
     }
 
     async deleteValue(valueName) {
-        console.log('🗑️ Deleting value:', valueName);
-        
         const deleteBtn = document.getElementById('confirmDeleteValueBtn');
         const spinner = deleteBtn.querySelector('.spinner-border');
-        
         deleteBtn.disabled = true;
         if (spinner) spinner.classList.remove('d-none');
 
         try {
-            const formData = new FormData();
-            formData.append('valueName', valueName);
-
-            const response = await fetch('/Values/Delete', {
+            const response = await fetch('/Templates/DeleteValueFromTemplate', {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    ValueName: valueName,
+                    TemplateId: '@templateId' 
+                })
             });
 
             const result = await response.json();
-            
             if (result.success) {
                 showToast(result.message, 'success');
                 const modal = document.getElementById('deleteValueModal');
@@ -785,18 +782,18 @@ class TemplateDetailsManager {
                     const bsModal = bootstrap.Modal.getInstance(modal);
                     if (bsModal) bsModal.hide();
                 }
-                this.loadTemplateDetails(); // Reload data
+                this.loadTemplateDetails();
             } else {
                 showToast(result.message, 'error');
             }
         } catch (error) {
-            console.error('Error deleting value:', error);
             showToast('Failed to delete value', 'error');
         } finally {
             deleteBtn.disabled = false;
             if (spinner) spinner.classList.add('d-none');
         }
     }
+
 
     showTableLoader() {
         const loader = document.getElementById('tableLoader');
