@@ -7,14 +7,14 @@ namespace Translator.Application.Features.CategoryTypes.Queries;
 
 public abstract class GetAllCategoryTypes
 {
-    public sealed record Command : IRequest<Response>;
+    public sealed record Query : IRequest<Response>;
 
     public sealed record Response(
         IEnumerable<string> TypeNames);
 
-    public class Handler(IRepository<CategoryType> typeRepository) : IRequestHandler<Command, Response>
+    public class Handler(IRepository<CategoryType> typeRepository) : IRequestHandler<Query, Response>
     {
-        public async Task<Response> Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Query request, CancellationToken cancellationToken)
         {
             var types = await typeRepository.AsQueryable()
                 .OrderBy(t => t.Name)

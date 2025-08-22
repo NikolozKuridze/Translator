@@ -45,9 +45,9 @@ public class CategoryTypeController(IMediator mediator) : ControllerBase
     [HttpGet]
     public async Task<IResult> GetAll()
     {
-        var command = new GetAllCategoryTypes.Command();
+        var query = new GetAllCategoryTypes.Query();
         
-        var result = await mediator.Send(command);
+        var result = await mediator.Send(query);
         
         return Results.Ok(result);
     }
