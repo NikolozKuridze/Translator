@@ -6,15 +6,20 @@ namespace Translator.Application.Features.Migrations.Commands.ApplyMigrations;
 
 public class ApplyMigrationsHandler : IRequestHandler<ApplyMigrationsCommand>
 {
-    private readonly ApplicationDbContext _dbContext;
+    private readonly ApplicationDbContext _applicationDbContext;
+    private readonly LogsDbContext _logsDbContext;
 
-    public ApplyMigrationsHandler(ApplicationDbContext dbContext)
+    public ApplyMigrationsHandler(
+        ApplicationDbContext applicationDbContext,
+        LogsDbContext logsDbContext)
     {
-        _dbContext = dbContext;
+        _applicationDbContext = applicationDbContext;
+        _logsDbContext = logsDbContext;
     }
     
     public async Task Handle(ApplyMigrationsCommand request, CancellationToken cancellationToken)
     {
-        await _dbContext.Database.MigrateAsync(cancellationToken);
+        await _applicationDbContext.Database.MigrateAsync(cancellationToken);
+        await _logsDbContext.Database.MigrateAsync(cancellationToken);
     }
 }
