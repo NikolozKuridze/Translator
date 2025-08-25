@@ -43,10 +43,8 @@ public class Languages : Controller
             }
 
             if (filterActive.HasValue)
-            {
                 filteredLanguages = filteredLanguages
                     .Where(l => l.IsActive == filterActive.Value);
-            }
 
             filteredLanguages = filteredLanguages
                 .OrderByDescending(l => l.IsActive)

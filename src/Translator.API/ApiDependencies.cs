@@ -106,6 +106,7 @@ public static class ApiDependencies
             options.Title = "Translator API";
             options.Theme = ScalarTheme.Mars;
             options.WithOpenApiRoutePattern("/openapi/v1.json");
+            options.WithBaseServerUrl("https://translator.salesvault.dev"); 
         });
         app.MapControllers();
         app.UseHttpsRedirection();
