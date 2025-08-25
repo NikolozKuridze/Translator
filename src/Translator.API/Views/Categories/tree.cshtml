@@ -724,6 +724,8 @@
                                class="form-control"
                                id="order"
                                name="order"
+                               onkeypress="return categoriesManager.allowOnlyNumbers(event)"
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                min="0"
                                placeholder="Display order">
                     </div>
@@ -773,6 +775,8 @@
                                class="form-control"
                                id="editOrder"
                                name="order"
+                               onkeypress="return categoriesManager.allowOnlyNumbers(event)"
+                               oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                min="0"
                                placeholder="Display order">
                     </div>
