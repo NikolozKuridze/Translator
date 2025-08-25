@@ -18,6 +18,14 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.Property(c => c.TypeId)
             .IsRequired();
 
+        builder.Property(c => c.Metadata)
+            .HasColumnType("jsonb");
+
+        builder.HasIndex(c => c.Shortcode);
+        
+        builder.Property(c => c.Shortcode)
+            .HasMaxLength(DatabaseConstants.Category.SHORT_CODE_MAX_LENGTH);
+
         builder.Property(c => c.Order);
 
         builder.HasOne(c => c.Type)
