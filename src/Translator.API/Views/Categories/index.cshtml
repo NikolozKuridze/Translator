@@ -1,4 +1,4 @@
-@model IEnumerable<Translator.Application.Features.Category.Queries.GetRootCategories.RootCategoryDto>
+@model IEnumerable<Translator.Application.Features.Category.Queries.GetRootCategories.Response>
 @{
 ViewData["Title"] = "Categories Management";
 Layout = "_Layout";
@@ -694,7 +694,27 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         gap: 0.5rem;
     }
 
-    /* Alerts */
+    /* Validation feedback styles */
+    .is-invalid {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+    }
+
+    .validation-feedback {
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-weight: 500;
+    }
+
+    .validation-feedback i {
+        font-size: 0.7rem;
+    }
+
+    /* Enhanced error alerts */
     .alert {
         border: none;
         border-radius: 0.5rem;
@@ -702,6 +722,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         margin-bottom: 1.5rem;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         border-left: 4px solid;
+        white-space: pre-line; /* Preserve line breaks */
     }
 
     .form-actions, .modal-actions {
@@ -865,6 +886,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                                 <i class="fas fa-plus"></i> Add More
                             </button>
                         </div>
+
+                        <!-- Add validation error container -->
+                        <div id="validationError" class="duplicate-warning" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span id="validationErrorText"></span>
+                        </div>
                         <!-- Add this warning message container -->
                         <div id="duplicateWarning" class="duplicate-warning" style="display: none;">
                             <i class="fas fa-exclamation-triangle"></i>
@@ -883,7 +910,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                     </div>
                 </div>
                 <div class="form-actions">
-                    <button type="button" class="btn-base btn-cancel" onclick="toggleTypeForm()">
+                    <button type="button" class="btn-base btn-cancel" onclick="categoriesManager.cancelTypeForm()">
                         <i class="fas fa-times me-1"></i>Cancel
                     </button>
                     <button type="submit" class="btn-base btn-save" id="submitBtn" disabled>
@@ -1092,19 +1119,32 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     let categoryToDelete = null;
     let typesList = [];
     let selectedTypes = new Set();
-    let categoryTypes = @Html.Raw(Json.Serialize(categoryTypes));
+    let categoryTypes = @Html.Raw(Json.Serialize(ViewBag.CategoryTypes ?? new List<string>()));
     let categories = @Html.Raw(Json.Serialize(Model));
-
     let showingAllTypes = false;
     let showingAllCategories = false;
 
+    // Add validation constants (adjust these values based on your DatabaseConstants)
+    const VALIDATION_CONSTANTS = {
+        TYPE_NAME_MIN_LENGTH: 2, // Replace with actual DatabaseConstants.Type.NAME_MIN_LENGTH
+        TYPE_NAME_MAX_LENGTH: 48, // Replace with actual DatabaseConstants.Type.NAME_MAX_LENGTH
+        TYPE_NAME_PATTERN: /^[a-zA-Z-]+$/
+    };
+
     class CategoriesManager {
         constructor() {
+            this.validationTimeout = null;
+            // Ensure we have valid arrays
+            if (!Array.isArray(categoryTypes)) {
+                categoryTypes = [];
+            }
+            if (!Array.isArray(categories)) {
+                categories = [];
+            }
             this.init();
         }
 
         init() {
-            console.log('🚀 Initializing CategoriesManager...');
             this.loadInitialData();
             this.bindEvents();
         }
@@ -1115,10 +1155,24 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             this.populateTypeSelect(categoryTypes);
         }
 
+        closeTypeForm() {
+            // Clear timeout when closing form
+            if (this.validationTimeout) {
+                clearTimeout(this.validationTimeout);
+                this.validationTimeout = null;
+            }
+            $('#typeForm').removeClass('show');
+        }
+
+        cancelTypeForm() {
+            this.resetTypeForm();
+            this.closeTypeForm();
+        }
+
         bindEvents() {
-            // Category Type Form
+            // Category Type Form - Updated with debounced validation
             $('#categoryTypeForm').on('submit', (e) => this.handleCreateTypes(e));
-            $('#typeNameInput').on('input', () => this.updateTypeForm());
+            $('#typeNameInput').on('input', () => this.debouncedUpdateTypeForm());
             $('#typeNameInput').on('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -1165,18 +1219,15 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                 });
 
                 if (response.success) {
-                    // ISSUE 1 FIX: Handle empty arrays properly
-                    categoryTypes = response.categoryTypes || [];
-                    categories = response.categories || [];
+                    // Ensure arrays are properly handled
+                    categoryTypes = Array.isArray(response.categoryTypes) ? response.categoryTypes : [];
+                    categories = Array.isArray(response.categories) ? response.categories : [];
 
                     this.renderCategoryTypes(categoryTypes);
                     this.renderCategories(categories);
                     this.populateTypeSelect(categoryTypes);
                 } else {
-                    // Don't show "No categories found" as an error - it's a normal state
                     console.warn('Load data response:', response.message || 'Failed to load data');
-
-                    // Set empty arrays and render empty states
                     categoryTypes = [];
                     categories = [];
                     this.renderCategoryTypes(categoryTypes);
@@ -1185,17 +1236,181 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                 }
             } catch (error) {
                 console.error('Error loading data:', error);
-
-                // On network error, show actual error but still render empty states
                 this.showError('Network error: ' + error.message);
-
-                // Set empty arrays to ensure UI shows empty states rather than old data
                 categoryTypes = [];
                 categories = [];
                 this.renderCategoryTypes(categoryTypes);
                 this.renderCategories(categories);
                 this.populateTypeSelect(categoryTypes);
             }
+        }
+
+        // Enhanced client-side validation
+        validateTypeName(typeName) {
+            const errors = [];
+
+            if (!typeName || typeName.trim() === '') {
+                errors.push('Type name is required.');
+                return errors;
+            }
+
+            const trimmed = typeName.trim();
+
+            if (trimmed.length < VALIDATION_CONSTANTS.TYPE_NAME_MIN_LENGTH) {
+                errors.push(`Type must be at least ${VALIDATION_CONSTANTS.TYPE_NAME_MIN_LENGTH} characters.`);
+            }
+
+            if (trimmed.length > VALIDATION_CONSTANTS.TYPE_NAME_MAX_LENGTH) {
+                errors.push(`Type cannot be longer than ${VALIDATION_CONSTANTS.TYPE_NAME_MAX_LENGTH} characters.`);
+            }
+
+            if (!VALIDATION_CONSTANTS.TYPE_NAME_PATTERN.test(trimmed)) {
+                errors.push('Type name can only contain letters and hyphens.');
+            }
+
+            return errors;
+        }
+
+        // New debounced update method
+        debouncedUpdateTypeForm() {
+            // Clear any existing timeout
+            if (this.validationTimeout) {
+                clearTimeout(this.validationTimeout);
+            }
+
+            // Clear validation errors immediately when typing
+            const input = $('#typeNameInput');
+            input.removeClass('is-invalid');
+            this.hideValidationError();
+
+            // Update button states immediately (but without validation errors)
+            this.updateAddMoreButtonImmediate();
+            this.updateSubmitButton();
+
+            // Set new timeout for validation
+            this.validationTimeout = setTimeout(() => {
+                this.updateTypeFormWithValidation();
+            }, 2000);
+        }
+
+        // Immediate button update without validation errors
+        updateAddMoreButtonImmediate() {
+            const input = $('#typeNameInput');
+            const addMoreBtn = $('#addMoreBtn');
+            const duplicateWarning = $('#duplicateWarning');
+            const inputValue = input.val().trim();
+
+            if (inputValue) {
+                addMoreBtn.show();
+
+                // Only check for duplicates, no validation errors yet
+                const isDuplicate = typesList.some(type => type.toLowerCase() === inputValue.toLowerCase());
+
+                if (isDuplicate) {
+                    addMoreBtn.prop('disabled', true);
+                    addMoreBtn.attr('title', 'Cannot add duplicate type');
+                    duplicateWarning.show();
+                } else {
+                    addMoreBtn.prop('disabled', false);
+                    addMoreBtn.attr('title', 'Add to list');
+                    duplicateWarning.hide();
+                }
+            } else {
+                addMoreBtn.hide();
+                duplicateWarning.hide();
+            }
+        }
+
+        updateTypeFormWithValidation() {
+            const input = $('#typeNameInput');
+            const addMoreBtn = $('#addMoreBtn');
+            const duplicateWarning = $('#duplicateWarning');
+            const inputValue = input.val().trim();
+
+            // Clear previous validation states
+            input.removeClass('is-invalid');
+            this.hideValidationError();
+
+            if (inputValue) {
+                // Client-side validation
+                const validationErrors = this.validateTypeName(inputValue);
+
+                if (validationErrors.length > 0) {
+                    // Show validation errors
+                    input.addClass('is-invalid');
+                    this.showValidationError(validationErrors[0]); // Show first error
+
+                    addMoreBtn.show(); // Keep button visible but disabled
+                    addMoreBtn.prop('disabled', true);
+                    addMoreBtn.attr('title', 'Fix validation errors first');
+                    duplicateWarning.hide();
+                } else {
+                    // Check for duplicates
+                    const isDuplicate = typesList.some(type => type.toLowerCase() === inputValue.toLowerCase());
+
+                    addMoreBtn.show();
+
+                    if (isDuplicate) {
+                        addMoreBtn.prop('disabled', true);
+                        addMoreBtn.attr('title', 'Cannot add duplicate type');
+                        duplicateWarning.show();
+                    } else {
+                        addMoreBtn.prop('disabled', false);
+                        addMoreBtn.attr('title', 'Add to list');
+                        duplicateWarning.hide();
+                    }
+                }
+            } else {
+                addMoreBtn.hide();
+                duplicateWarning.hide();
+            }
+
+            this.updateSubmitButton();
+        }
+
+        toTitleCase(str) {
+            if (!str) return str;
+            return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+        }
+        
+        showValidationError(errorMessage) {
+            const validationError = $('#validationError');
+            const validationErrorText = $('#validationErrorText');
+
+            validationErrorText.text(errorMessage);
+            validationError.show();
+        }
+
+        hideValidationError() {
+            const validationError = $('#validationError');
+            validationError.hide();
+        }
+
+        // Update the original method to use immediate validation when needed
+        updateAddMoreButton() {
+            // This method is now used for immediate validation (like when adding/removing from list)
+            this.updateTypeFormWithValidation();
+        }
+
+        updateSubmitButton() {
+            const submitBtn = $('#submitBtn');
+            const submitText = $('#submitButtonText');
+            const input = $('#typeNameInput');
+            const inputValue = input.val().trim();
+
+            // For submit button, we check if input has content and is valid
+            const hasValidInputValue = inputValue && this.validateTypeName(inputValue).length === 0;
+            const hasListItems = typesList.length > 0;
+
+            submitBtn.prop('disabled', !hasValidInputValue && !hasListItems);
+
+            const totalCount = typesList.length + (hasValidInputValue ? 1 : 0);
+            submitText.text(totalCount > 1 ? 'Create Types' : 'Create Type');
+        }
+
+        // Update the legacy updateTypeForm method to use the new debounced version
+        updateTypeForm() {
+            this.debouncedUpdateTypeForm();
         }
 
         renderCategoryTypes(types) {
@@ -1221,14 +1436,16 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             let html = '<div class="types-list" id="categoryTypesList">';
 
             sortedTypes.forEach((type, index) => {
-                // Store the original type as string, not lowercase
-                const typeAsString = String(type); // Ensure it's always a string
+                const rawTypeName = String(type).trim().toLowerCase(); // Keep lowercase for data
+                const displayName = this.toTitleCase(rawTypeName); // Title case for display
+
                 html += `
             <div class="type-item ${index >= 10 ? 'hidden' : ''}" 
                  data-index="${index}" 
-                 data-type="${this.escapeHtml(typeAsString)}">
+                 data-type-name="${this.escapeHtml(rawTypeName)}"
+                 data-type="${this.escapeHtml(rawTypeName)}">
                 <i class="fas fa-tag me-1"></i>
-                ${this.escapeHtml(typeAsString)}
+                ${this.escapeHtml(displayName)}
             </div>
         `;
             });
@@ -1285,6 +1502,10 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             `;
 
             sortedCategories.forEach((category, index) => {
+                // ✅ UPDATED: Use raw type name without title case transformation
+                const rawTypeName = category.typeName.toLowerCase(); // Ensure lowercase
+                const displayTypeName = this.toTitleCase(rawTypeName);
+
                 html += `
                     <tr class="category-row ${index >= 10 ? 'hidden' : ''}" data-index="${index}">
                         <td>
@@ -1297,7 +1518,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                             <div class="category-value">${this.escapeHtml(category.value)}</div>
                         </td>
                         <td>
-                            <span class="category-type-badge">${this.escapeHtml(category.typeName)}</span>
+                            <span class="category-type-badge">${this.escapeHtml(displayTypeName)}</span>
                         </td>
                         <td>
                             <div class="category-id-container">
@@ -1354,7 +1575,9 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             const select = $('#type');
             select.html('<option value="">Select a type</option>');
             types.forEach(type => {
-                select.append(`<option value="${this.escapeHtml(type)}">${this.escapeHtml(type)}</option>`);
+                const rawType = String(type).trim().toLowerCase(); // Keep lowercase for value
+                const displayName = this.toTitleCase(rawType); // Title case for display
+                select.append(`<option value="${this.escapeHtml(rawType)}">${this.escapeHtml(displayName)}</option>`);
             });
         }
 
@@ -1366,16 +1589,24 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         }
 
         toggleTypeSelection(typeElement) {
-            // Always get the type name as a string from data-type attribute first
-            let typeName = $(typeElement).data('type');
+            // Get the raw type name from data-type-name attribute (not HTML escaped)
+            let typeName = $(typeElement).attr('data-type-name');
 
-            // If data-type is not available, fall back to text content
+            // Fallback to data-type if data-type-name is not available
             if (!typeName) {
-                typeName = $(typeElement).text().trim();
+                typeName = $(typeElement).data('type');
             }
 
-            // Ensure typeName is always a string
-            typeName = String(typeName);
+            // Last fallback to text content (but remove icon and convert back to raw format)
+            if (!typeName) {
+                const displayText = $(typeElement).text().trim().replace(/^\s*\S+\s+/, ''); // Remove the icon
+                typeName = displayText; // Keep as raw format (no case conversion needed)
+            }
+
+            // Ensure typeName is always a clean string
+            typeName = String(typeName).trim();
+
+            console.log('Toggling selection for type:', typeName); // Debug log
 
             if (selectedTypes.has(typeName)) {
                 selectedTypes.delete(typeName);
@@ -1481,19 +1712,26 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             }
         }
 
-        // Form handling methods
         addCategoryType() {
             this.closeAllForms();
-            this.resetTypeForm();
+            // Don't reset the form here - only reset when explicitly canceling
             $('#typeForm').addClass('show');
             setTimeout(() => $('#typeNameInput').focus(), 300);
         }
 
         resetTypeForm() {
-            $('#typeNameInput').val('');
+            // Clear the timeout when resetting
+            if (this.validationTimeout) {
+                clearTimeout(this.validationTimeout);
+                this.validationTimeout = null;
+            }
+
+            $('#typeNameInput').val('').removeClass('is-invalid');
+            this.hideValidationError();
+            $('#duplicateWarning').hide();
             typesList = [];
             this.updateTypesDisplay();
-            this.updateAddMoreButton();
+            this.updateAddMoreButtonImmediate();
             this.updateSubmitButton();
         }
 
@@ -1501,11 +1739,34 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             const input = $('#typeNameInput');
             const typeName = input.val().trim();
 
+            // Clear any pending validation timeout since we're taking action
+            if (this.validationTimeout) {
+                clearTimeout(this.validationTimeout);
+                this.validationTimeout = null;
+            }
+
+            // Validate before adding (immediate validation for user action)
+            const validationErrors = this.validateTypeName(typeName);
+            if (validationErrors.length > 0) {
+                // Show validation errors immediately when user tries to add
+                input.addClass('is-invalid');
+                this.showValidationError(validationErrors[0]);
+                this.showError('Please fix validation errors before adding the type.');
+
+                // Update button state
+                const addMoreBtn = $('#addMoreBtn');
+                addMoreBtn.prop('disabled', true);
+                addMoreBtn.attr('title', 'Fix validation errors first');
+                return;
+            }
+
             if (typeName && !typesList.some(type => type.toLowerCase() === typeName.toLowerCase())) {
                 typesList.push(typeName); // Store original case
-                input.val('');
+                input.val('').removeClass('is-invalid');
+                this.hideValidationError();
+                $('#duplicateWarning').hide();
                 this.updateTypesDisplay();
-                this.updateAddMoreButton();
+                this.updateAddMoreButtonImmediate();
                 this.updateSubmitButton();
                 input.focus();
             } else if (typesList.some(type => type.toLowerCase() === typeName.toLowerCase())) {
@@ -1518,7 +1779,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             typesList = typesList.filter(type => type !== typeName);
             this.updateTypesDisplay();
             this.updateSubmitButton();
-            this.updateAddMoreButton(); // Add this line to refresh button state
+            this.updateAddMoreButtonImmediate(); // Use immediate version
             $('#typeNameInput').focus();
         }
 
@@ -1545,55 +1806,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             }
         }
 
-        updateAddMoreButton() {
-            const input = $('#typeNameInput');
-            const addMoreBtn = $('#addMoreBtn');
-            const duplicateWarning = $('#duplicateWarning');
-            const inputValue = input.val().trim();
-
-            if (inputValue) {
-                addMoreBtn.show();
-
-                // Check if it's a duplicate
-                const isDuplicate = typesList.some(type => type.toLowerCase() === inputValue.toLowerCase());
-
-                if (isDuplicate) {
-                    // Show button but disable it and show warning
-                    addMoreBtn.prop('disabled', true);
-                    addMoreBtn.attr('title', 'Cannot add duplicate type');
-                    duplicateWarning.show();
-                } else {
-                    // Enable button and hide warning
-                    addMoreBtn.prop('disabled', false);
-                    addMoreBtn.attr('title', 'Add to list');
-                    duplicateWarning.hide();
-                }
-            } else {
-                // No text, hide button and warning
-                addMoreBtn.hide();
-                duplicateWarning.hide();
-            }
-        }
-
-        updateSubmitButton() {
-            const submitBtn = $('#submitBtn');
-            const submitText = $('#submitButtonText');
-            const input = $('#typeNameInput');
-            const hasInputValue = input.val().trim();
-            const hasListItems = typesList.length > 0;
-
-            submitBtn.prop('disabled', !hasInputValue && !hasListItems);
-
-            const totalCount = typesList.length + (hasInputValue ? 1 : 0);
-            submitText.text(totalCount > 1 ? 'Create Types' : 'Create Type');
-        }
-
-        updateTypeForm() {
-            this.updateAddMoreButton();
-            this.updateSubmitButton();
-        }
-
         toggleTypeForm() {
+            // Clear timeout when closing form
+            if (this.validationTimeout) {
+                clearTimeout(this.validationTimeout);
+                this.validationTimeout = null;
+            }
             $('#typeForm').removeClass('show');
         }
 
@@ -1657,6 +1875,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
             if (selectedArray.length === 0) return;
 
+            // ✅ UPDATED: Show raw type names without title case transformation
             container.html(selectedArray.map(type => `
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                     <i class="fas fa-tag" style="color: #3b82f6;"></i>
@@ -1698,12 +1917,21 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             const input = $('#typeNameInput');
             const currentInput = input.val().trim();
 
-            // Create a copy of the existing types list (which now stores original case)
+            // Create a copy of the existing types list
             let allTypeNames = [...typesList];
 
-            // Add current input if it exists and isn't a duplicate (case-insensitive check)
-            if (currentInput && !allTypeNames.some(type => type.toLowerCase() === currentInput.toLowerCase())) {
-                allTypeNames.push(currentInput); // Store original case
+            // Validate current input if it exists
+            if (currentInput) {
+                const validationErrors = this.validateTypeName(currentInput);
+                if (validationErrors.length > 0) {
+                    this.showError('Please fix validation errors: ' + validationErrors.join(' '));
+                    return;
+                }
+
+                // Check for duplicates
+                if (!allTypeNames.some(type => type.toLowerCase() === currentInput.toLowerCase())) {
+                    allTypeNames.push(currentInput);
+                }
             }
 
             if (allTypeNames.length === 0) {
@@ -1751,23 +1979,38 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                     this.renderCategories(categories);
                     this.populateTypeSelect(categoryTypes);
                 } else {
-                    if (response.existingTypes && response.existingTypes.length > 0) {
+                    // Handle validation errors specifically
+                    if (response.validationErrors && response.validationErrors.length > 0) {
+                        const errorMessages = response.validationErrors.map(ve => ve.error).join('\n');
+                        this.showError(`Validation failed:\n${errorMessages}`);
+                    } else if (response.existingTypes && response.existingTypes.length > 0) {
                         const existingTypesText = response.existingTypes.join(', ');
                         this.showError(`${response.error}\n\nExisting types: ${existingTypesText}`);
                     } else {
-                        this.showError(response.error);
+                        this.showError(response.error || 'Failed to create category types');
                     }
                 }
 
-                // Always close the modal after processing (success or error)
-                this.toggleTypeForm();
+                // Reset and close the form after processing (success or failure)
+                this.resetTypeForm();
+                this.closeTypeForm();
 
             } catch (error) {
                 console.error('Error:', error);
-                this.showError('An error occurred while creating category types.');
 
-                // Close modal on network/unexpected errors too
-                this.toggleTypeForm();
+                // Handle validation errors from server
+                if (error.responseJSON && error.responseJSON.validationErrors) {
+                    const errorMessages = error.responseJSON.validationErrors.map(ve => ve.error).join('\n');
+                    this.showError(`Validation failed:\n${errorMessages}`);
+                } else if (error.responseJSON && error.responseJSON.error) {
+                    this.showError(error.responseJSON.error);
+                } else {
+                    this.showError('An error occurred while creating category types.');
+                }
+
+                // Reset and close the form on error too
+                this.resetTypeForm();
+                this.closeTypeForm();
             } finally {
                 submitBtn.prop('disabled', false);
                 submitBtn.html(originalText);
@@ -1820,7 +2063,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                 }
             } catch (error) {
                 console.error('Error:', error);
-                this.showError('An error occurred while creating the category.');
+                if (error.responseJSON && error.responseJSON.validationErrors) {
+                    const errorMessages = error.responseJSON.validationErrors.map(ve => ve.error).join('\n');
+                    this.showError(`Validation failed:\n${errorMessages}`);
+                } else {
+                    this.showError('An error occurred while creating the category.');
+                }
             } finally {
                 submitBtn.prop('disabled', false);
                 submitBtn.html(originalText);
@@ -1866,7 +2114,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                 }
             } catch (error) {
                 console.error('Error:', error);
-                this.showError('An error occurred while updating the category.');
+                if (error.responseJSON && error.responseJSON.validationErrors) {
+                    const errorMessages = error.responseJSON.validationErrors.map(ve => ve.error).join('\n');
+                    this.showError(`Validation failed:\n${errorMessages}`);
+                } else {
+                    this.showError('An error occurred while updating the category.');
+                }
             } finally {
                 submitBtn.prop('disabled', false);
                 submitBtn.html(originalText);
@@ -1904,8 +2157,12 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         async handleDeleteTypes(e) {
             e.preventDefault();
 
-            // Convert Set to Array and ensure all items are strings
-            const selectedTypeNames = Array.from(selectedTypes).map(type => String(type));
+            // Convert Set to Array and ensure all items are clean strings (keep raw values)
+            const selectedTypeNames = Array.from(selectedTypes)
+                .map(type => String(type).trim())
+                .filter(type => type.length > 0);
+
+            console.log('Selected types for deletion:', selectedTypeNames); // Debug log
 
             if (selectedTypeNames.length === 0) {
                 this.showError('No types selected for deletion.');
@@ -1922,9 +2179,11 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                     url: '/Categories/DeleteCategoryTypes',
                     method: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify(selectedTypeNames), // Array of strings
+                    data: JSON.stringify(selectedTypeNames), // Send raw values
                     headers: {'X-Requested-With': 'XMLHttpRequest'}
                 });
+
+                console.log('Delete response:', response); // Debug log
 
                 // Always close modal and clear selections first
                 this.closeDeleteTypeModal();
@@ -1947,10 +2206,15 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                 }
             } catch (error) {
                 console.error('Error deleting types:', error);
+                console.error('Error response:', error.responseJSON); // Additional debug log
+
                 this.closeDeleteTypeModal();
                 this.clearAllSelections();
 
-                if (error.responseJSON && error.responseJSON.error) {
+                if (error.responseJSON && error.responseJSON.validationErrors) {
+                    const errorMessages = error.responseJSON.validationErrors.map(ve => ve.error).join('\n');
+                    this.showError(`Validation failed:\n${errorMessages}`);
+                } else if (error.responseJSON && error.responseJSON.error) {
                     this.showError(error.responseJSON.error);
                 } else {
                     this.showError('An error occurred while deleting category types: ' + error.message);
@@ -2007,8 +2271,11 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             this.showAlert(message, 'success');
         }
 
+        // Enhanced error display method
         showError(message) {
-            this.showAlert(message, 'danger');
+            // Convert newlines to HTML breaks for better display
+            const htmlMessage = message.replace(/\n/g, '<br>');
+            this.showAlert(htmlMessage, 'danger');
         }
 
         showWarning(message) {
@@ -2020,7 +2287,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             const alertDiv = $(`
                 <div class="alert alert-${type} alert-dismissible fade show">
                     <i class="fas fa-${this.getAlertIcon(type)} me-2"></i>
-                    ${this.escapeHtml(message)}
+                    ${message}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             `);
@@ -2080,7 +2347,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     }
 
     function toggleTypeForm() {
-        categoriesManager.toggleTypeForm();
+        categoriesManager.cancelTypeForm();
     }
 
     function openCreateForm() {
@@ -2122,7 +2389,6 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     // Initialize
     let categoriesManager;
     $(document).ready(() => {
-        console.log('🎉 DOM loaded, initializing CategoriesManager...');
         categoriesManager = new CategoriesManager();
     });
 </script>

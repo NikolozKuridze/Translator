@@ -7,12 +7,12 @@ namespace Translator.Infrastructure.Database.Redis.Rudiment;
 public class RedisService : IRedisService
 {
     private readonly IDatabase _cacheDb;
-    private readonly RedisConfiguration _configuration;
+    private readonly RedisOptions _configuration;
     private readonly TimeSpan _defaultExpiration;
 
     public RedisService(
         IConnectionMultiplexer redis, 
-        IOptions<RedisConfiguration> configuration)
+        IOptions<RedisOptions> configuration)
     {
         _cacheDb = redis.GetDatabase();
         _configuration = configuration.Value;
