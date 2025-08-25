@@ -1,5 +1,4 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Storage;
 using Scalar.AspNetCore;
@@ -13,20 +12,22 @@ namespace Translator.API;
 
 public static class ApiDependencies
 {
-    
     public static void AddApiDependencies(this WebApplicationBuilder builder)
     {
-        
         builder.Services.AddOpenApi();
         builder.Services.AddControllers();
 
         builder.Services.Configure<AdminAuthSettings>(
             builder.Configuration.GetSection(nameof(AdminAuthSettings)));
 
+        builder.Services.Configure<ProductionUrl>(
+            builder.Configuration.GetSection(nameof(ProductionUrl)));
+        
         builder.Services.AddDistributedMemoryCache();
         
         var adminAuthSettings = builder
-            .Configuration.GetSection(nameof(AdminAuthSettings)).Get<AdminAuthSettings>();
+            .Configuration.GetSection(nameof(AdminAuthSettings))
+            .Get<AdminAuthSettings>();
         
         builder.Services.AddSession(options =>
         {
@@ -99,15 +100,22 @@ public static class ApiDependencies
                 logsCreator.Create();
         }
         
+        var productionUrl = app.Configuration
+            .GetSection(nameof(ProductionUrl))
+            .Get<ProductionUrl>();
+        
         app.MapOpenApi();
-
+        
+        var servers = new List<ScalarServer> { new (productionUrl!.Path) };
+        
         app.MapScalarApiReference("/docs", options =>
         {
             options.Title = "Translator API";
             options.Theme = ScalarTheme.Mars;
-            options.WithOpenApiRoutePattern("/openapi/v1.json");
-            options.WithBaseServerUrl("https://translator.salesvault.dev"); 
+            options.WithOpenApiRoutePattern("/openapi/v1.json"); 
+            options.Servers = servers;
         });
+        
         app.MapControllers();
         app.UseHttpsRedirection();
 
