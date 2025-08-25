@@ -30,7 +30,7 @@ public static class InfrastructureDependencies
 
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var redisOptions = sp.GetRequiredService<RedisOptions>();
+            var redisOptions = sp.GetRequiredService<IOptions<RedisOptions>>().Value;
             var configOptions = new ConfigurationOptions
             {
                 EndPoints = { redisOptions.ConnectionString },
