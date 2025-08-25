@@ -1,10 +1,13 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Scalar.AspNetCore;
 using Serilog;
 using Translator.API.Attributes;
 using Translator.API.Middlewares;
 using Translator.API.Models;
+using Translator.Infrastructure.Database.Postgres;
 
 namespace Translator.API;
 
@@ -82,6 +85,20 @@ public static class ApiDependencies
 
     public static void UseApiDependencies(this WebApplication app)
     {
+        using (var scope = app.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            var logsDbContext = scope.ServiceProvider.GetRequiredService<LogsDbContext>();
+            var creator = db.Database.GetService<IRelationalDatabaseCreator>();
+            var logsCreator = logsDbContext.Database.GetService<IRelationalDatabaseCreator>();
+            
+            if (!db.Database.CanConnect())
+                creator.Create();
+            
+            if (!logsDbContext.Database.CanConnect())
+                logsCreator.Create();
+        }
+        
         app.MapOpenApi();
 
         app.MapScalarApiReference("/docs", options =>

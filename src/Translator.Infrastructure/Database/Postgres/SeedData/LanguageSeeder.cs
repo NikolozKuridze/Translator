@@ -18,7 +18,7 @@ public class LanguageSeeder
     {
 
         var path = Path.Combine(AppContext.BaseDirectory, _languageSeedingConfiguration.Path);
-        var json = await File.ReadAllTextAsync(path);
+        var json = File.ReadAllText(path);
 
         var items = JsonSerializer.Deserialize<List<LanguageSeedDto>>(json)!;
 
