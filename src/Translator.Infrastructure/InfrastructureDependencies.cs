@@ -13,27 +13,37 @@ using Translator.Infrastructure.Database.Redis.Rudiment;
 
 namespace Translator.Infrastructure;
 
-public static class InfrastructureDependencies 
+public static class InfrastructureDependencies
 {
     public static void AddInfrastructureDependencies(this IServiceCollection services, IConfiguration configuration)
     {
         AddScopedServices(services, configuration);
-        AddRedisConfiguration(services, configuration);
+        AddRedisOptions(services, configuration);
         AddSingletonDependencies(services);
         AddConfigurations(services, configuration);
     }
 
-    private static void AddRedisConfiguration(this IServiceCollection services, IConfiguration configuration)
+    private static void AddRedisOptions(this IServiceCollection services, IConfiguration configuration)
     {
-        services.Configure<RedisConfiguration>(
-            configuration.GetSection(nameof(RedisConfiguration)));
-        
+        services.Configure<RedisOptions>(
+            configuration.GetSection(nameof(RedisOptions)));
+
         services.AddSingleton<IConnectionMultiplexer>(sp =>
         {
-            var redisConfig = sp.GetRequiredService<IOptions<RedisConfiguration>>().Value;
-            return ConnectionMultiplexer.Connect(redisConfig.ConnectionString);
+            var redisOptions = sp.GetRequiredService<RedisOptions>();
+            var configOptions = new ConfigurationOptions
+            {
+                EndPoints = { redisOptions.ConnectionString },
+                Password = redisOptions.Password,
+                AbortOnConnectFail = false,
+                ConnectTimeout = 5000,
+                SyncTimeout = 5000,
+            };
+
+            return ConnectionMultiplexer.Connect(configOptions);
         });
     }
+
 
     private static void AddSingletonDependencies(this IServiceCollection services)
     {
@@ -41,7 +51,7 @@ public static class InfrastructureDependencies
         services.AddSingleton<TemplateCacheService>();
         services.AddSingleton<ValueCacheService>();
         services.AddSingleton<TranslationClient>(sp
-            => TranslationClient.Create()); 
+            => TranslationClient.Create());
     }
 
     private static void AddScopedServices(this IServiceCollection services, IConfiguration configuration)
@@ -59,7 +69,7 @@ public static class InfrastructureDependencies
             {
                 cfg.UseNpgsql(configuration.GetConnectionString(nameof(LogEntry)));
             });
-        
+
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
     }
 
