@@ -12,7 +12,7 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250820190300_Initial")]
+    [Migration("20250825092308_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -44,7 +44,7 @@ namespace Translator.Infrastructure.Migrations
                     b.ToTable("TemplateValues", (string)null);
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Category", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Category", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -81,7 +81,7 @@ namespace Translator.Infrastructure.Migrations
                     b.ToTable("categories", (string)null);
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.CategoryType", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.CategoryType", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -104,7 +104,7 @@ namespace Translator.Infrastructure.Migrations
                     b.ToTable("category_types", (string)null);
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Language", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Language", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -867,7 +867,7 @@ namespace Translator.Infrastructure.Migrations
                         });
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Template", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Template", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -896,7 +896,7 @@ namespace Translator.Infrastructure.Migrations
                     b.ToTable("templates", (string)null);
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Translation", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Translation", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -933,7 +933,7 @@ namespace Translator.Infrastructure.Migrations
                     b.ToTable("translations", (string)null);
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Value", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Value", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -972,14 +972,14 @@ namespace Translator.Infrastructure.Migrations
 
             modelBuilder.Entity("TemplateValue", b =>
                 {
-                    b.HasOne("Translator.Domain.DataModels.Template", null)
+                    b.HasOne("Translator.Domain.Entities.Template", null)
                         .WithMany()
                         .HasForeignKey("TemplatesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_template_values_templates_templates_id");
 
-                    b.HasOne("Translator.Domain.DataModels.Value", null)
+                    b.HasOne("Translator.Domain.Entities.Value", null)
                         .WithMany()
                         .HasForeignKey("ValuesId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -987,15 +987,15 @@ namespace Translator.Infrastructure.Migrations
                         .HasConstraintName("fk_template_values_values_values_id");
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Category", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Category", b =>
                 {
-                    b.HasOne("Translator.Domain.DataModels.Category", "Parent")
+                    b.HasOne("Translator.Domain.Entities.Category", "Parent")
                         .WithMany("Children")
                         .HasForeignKey("ParentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("fk_categories_categories_parent_id");
 
-                    b.HasOne("Translator.Domain.DataModels.CategoryType", "Type")
+                    b.HasOne("Translator.Domain.Entities.CategoryType", "Type")
                         .WithMany("Categories")
                         .HasForeignKey("TypeId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1007,16 +1007,16 @@ namespace Translator.Infrastructure.Migrations
                     b.Navigation("Type");
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Translation", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Translation", b =>
                 {
-                    b.HasOne("Translator.Domain.DataModels.Language", "Language")
+                    b.HasOne("Translator.Domain.Entities.Language", "Language")
                         .WithMany("Translations")
                         .HasForeignKey("LanguageId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired()
                         .HasConstraintName("fk_translations_languages_language_id");
 
-                    b.HasOne("Translator.Domain.DataModels.Value", "Value")
+                    b.HasOne("Translator.Domain.Entities.Value", "Value")
                         .WithMany("Translations")
                         .HasForeignKey("TemplateValueId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1028,22 +1028,22 @@ namespace Translator.Infrastructure.Migrations
                     b.Navigation("Value");
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Category", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Category", b =>
                 {
                     b.Navigation("Children");
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.CategoryType", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.CategoryType", b =>
                 {
                     b.Navigation("Categories");
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Language", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Language", b =>
                 {
                     b.Navigation("Translations");
                 });
 
-            modelBuilder.Entity("Translator.Domain.DataModels.Value", b =>
+            modelBuilder.Entity("Translator.Domain.Entities.Value", b =>
                 {
                     b.Navigation("Translations");
                 });

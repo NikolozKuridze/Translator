@@ -12,8 +12,8 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations.LogsDb
 {
     [DbContext(typeof(LogsDbContext))]
-    [Migration("20250821085219_InitialLogs")]
-    partial class InitialLogs
+    [Migration("20250825092623_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
