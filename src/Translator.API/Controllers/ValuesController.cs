@@ -77,7 +77,7 @@ public class ValuesController : Controller
     }
 
     [HttpGet("Details/{valueId:guid}")]
-    public async Task<IActionResult> Details(Guid valueId, string? lang = "")
+    public async Task<IActionResult> Details(Guid valueId, string? lang)
     {
         if (valueId == Guid.Empty)
             return RedirectToAction(nameof(Index));

@@ -22,6 +22,13 @@ public class ValueCacheService
         return await _redisService.GetAsync<ValueCacheDto>(key);
     }
 
+    public async Task<bool> IsValueCached(Guid valueId)
+    {
+        var key = GetRedisKey(valueId);
+        var value = await _redisService.GetAsync<ValueCacheDto>(key);
+        return value != null;
+    }
+
     public async Task SetTranslationsAsync(Guid valueId, string valueKey, List<TranslationDto> translations)
     {
         var key = GetRedisKey(valueId);

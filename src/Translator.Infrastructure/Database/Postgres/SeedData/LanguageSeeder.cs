@@ -14,7 +14,7 @@ public class LanguageSeeder
     {
         _languageSeedingConfiguration = languageSeedingConfiguration;
     }
-    public async Task Seed(ModelBuilder modelBuilder)
+    public Task Seed(ModelBuilder modelBuilder)
     {
 
         var path = Path.Combine(AppContext.BaseDirectory, _languageSeedingConfiguration.Path);
@@ -29,6 +29,7 @@ public class LanguageSeeder
         });
         
         modelBuilder.Entity<Language>().HasData(languages);
+        return Task.CompletedTask;
     }
 
     private record LanguageSeedDto(string code, string name, List<string> hexrange);
