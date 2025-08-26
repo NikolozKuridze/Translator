@@ -13,6 +13,8 @@ public abstract class GetRootCategories
         Guid Id,
         string Value,
         string TypeName,
+        string? Metadata,
+        string? Shortcode,
         int? Order);
 
     public class Handler(IRepository<CategoryEntity> categoryRepository) : IRequestHandler<Query, IEnumerable<Response>>
@@ -36,6 +38,8 @@ public abstract class GetRootCategories
                     c.Id,
                     c.Value,
                     c.Type.Name,
+                    c.Metadata,
+                    c.Shortcode,
                     c.Order)).ToList());
         }
     }

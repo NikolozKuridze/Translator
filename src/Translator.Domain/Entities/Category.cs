@@ -5,8 +5,8 @@ public class Category(
     Guid typeId,
     string? metadata,
     string? shortcode,
-    int? order = null,
-    Guid? parentId = null) : BaseEntity
+    int? order,
+    Guid? parentId) : BaseEntity
 {
     public string Value { get; set; } = value;
     public Guid TypeId { get; init; } = typeId;

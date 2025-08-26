@@ -54,8 +54,14 @@ public class CategoriesController(IMediator mediator) : Controller
     }
 
     [HttpPost("Create")]
-    public async Task<IActionResult> Create(string value, string type, int? order = null, Guid? parentId = null,
-        Guid? returnToTreeId = null)
+    public async Task<IActionResult> Create(
+        string value,
+        string type,
+        string? metadata,
+        string? shortcode,
+        int? order,
+        Guid? parentId,
+        Guid? returnToTreeId)
     {
         try
         {
@@ -71,7 +77,7 @@ public class CategoriesController(IMediator mediator) : Controller
                     : RedirectToAction("Index");
             }
 
-            var command = new AddCategory.Command(value, type, order, parentId);
+            var command = new AddCategory.Command(value, type, metadata, shortcode, order, parentId);
             var result = await mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -121,12 +127,12 @@ public class CategoriesController(IMediator mediator) : Controller
     }
 
     [HttpPost("Update")]
-    public async Task<IActionResult> Update(Guid id, string? value = null, int? order = null,
+    public async Task<IActionResult> Update(Guid id, string? value, string? metadata, string? shortcode, int? order,
         Guid? returnToTreeId = null)
     {
         try
         {
-            var command = new UpdateCategory.Command(id, value, order);
+            var command = new UpdateCategory.Command(id, value, metadata, shortcode, order);
             await mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")

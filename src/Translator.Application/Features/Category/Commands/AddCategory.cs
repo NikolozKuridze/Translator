@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,8 @@ public abstract class AddCategory
     public sealed record Command(
         string Value,
         string TypeName,
+        string? Metadata,
+        string? Shortcode,
         int? Order,
         Guid? ParentId
     ) : IRequest<Response>;
@@ -28,6 +31,30 @@ public abstract class AddCategory
                 .NotEmpty()
                 .WithMessage("Value cannot be empty.")
                 .Length(DatabaseConstants.Category.VALUE_MIN_LENGTH, DatabaseConstants.Category.VALUE_MAX_LENGTH);
+
+            RuleFor(x => x.Metadata)
+                .Must(BeValidJson)
+                .WithMessage("Metadata must be valid JSON.");
+
+            RuleFor(x => x.Shortcode)
+                .Length(DatabaseConstants.Category.VALUE_MIN_LENGTH, DatabaseConstants.Category.VALUE_MAX_LENGTH)
+                .Matches("^[a-zA-Z]+$")
+                .WithMessage("Shortcode must only contain letters.");
+        }
+
+        private bool BeValidJson(string? metadata)
+        {
+            if (string.IsNullOrWhiteSpace(metadata))
+                return true;
+            try
+            {
+                JsonDocument.Parse(metadata);
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
         }
     }
 
@@ -65,6 +92,8 @@ public abstract class AddCategory
             var category = new CategoryEntity(
                 request.Value.ToLower().Trim(),
                 typeExists.Id,
+                request.Metadata,
+                request.Shortcode?.ToLower().Trim(),
                 request.Order,
                 request.ParentId);
 
