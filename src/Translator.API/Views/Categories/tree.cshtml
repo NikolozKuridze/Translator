@@ -1,8 +1,8 @@
 @model Translator.Application.Features.Category.Queries.GetCategoryTree.Response
 @{
-    ViewData["Title"] = "Category Tree - " + Model.Value;
-    Layout = "_Layout";
-    var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
+ViewData["Title"] = "Category Tree - " + Model.Value;
+Layout = "_Layout";
+var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 }
 
 <style>
@@ -78,6 +78,19 @@
         font-weight: 500;
         font-size: 0.65rem;
         text-transform: uppercase;
+    }
+
+    .category-shortcode-badge {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        display: inline-block;
+        letter-spacing: 0.5px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     /* Compact Tree Styles */
@@ -364,7 +377,7 @@
         border-radius: 0.5rem;
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
         width: 100%;
-        max-width: 450px;
+        max-width: 500px;
         max-height: 90vh;
         overflow-y: auto;
         transform: translateY(-20px);
@@ -432,6 +445,33 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 1rem;
+    }
+
+    #editMetadata, #metadata {
+        font-family: 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        white-space: pre;
+        tab-size: 2;
+    }
+
+    .validation-feedback {
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-weight: 500;
+    }
+
+    .validation-feedback i {
+        font-size: 0.7rem;
+    }
+
+    .is-invalid {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
     }
 
     .btn-base {
@@ -646,18 +686,18 @@
     <div id="alertContainer">
         @if (ViewBag.ErrorMessage != null)
         {
-            <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                @ViewBag.ErrorMessage
-            </div>
+        <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @ViewBag.ErrorMessage
+        </div>
         }
 
         @if (ViewBag.SuccessMessage != null)
         {
-            <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                @ViewBag.SuccessMessage
-            </div>
+        <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @ViewBag.SuccessMessage
+        </div>
         }
     </div>
 
@@ -712,11 +752,42 @@
                             <option value="">Select a type</option>
                             @foreach (var type in categoryTypes)
                             {
-                                <option value="@type">@type</option>
+                            <option value="@type">@type</option>
                             }
                         </select>
                     </div>
                 </div>
+
+                <!-- New Metadata Field -->
+                <div class="form-group">
+                    <label for="metadata" class="form-label">Metadata (JSON)</label>
+                    <textarea class="form-control"
+                              id="metadata"
+                              name="metadata"
+                              rows="3"
+                              placeholder='Optional JSON metadata, e.g., {"key": "value"}'></textarea>
+                    <div id="metadataValidation" class="validation-feedback" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Invalid JSON format</span>
+                    </div>
+                </div>
+
+                <!-- New Shortcode Field -->
+                <div class="form-group">
+                    <label for="shortcode" class="form-label">Shortcode</label>
+                    <input type="text"
+                           class="form-control"
+                           id="shortcode"
+                           name="shortcode"
+                           maxlength="5"
+                           pattern="[a-zA-Z]{2,5}"
+                           placeholder="2-5 letters only">
+                    <div id="shortcodeValidation" class="validation-feedback" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Shortcode must be 2-5 letters only</span>
+                    </div>
+                </div>
+
                 <div class="form-row">
                     <div class="form-group">
                         <label for="order" class="form-label">Order</label>
@@ -724,7 +795,7 @@
                                class="form-control"
                                id="order"
                                name="order"
-                               onkeypress="return categoriesManager.allowOnlyNumbers(event)"
+                               onkeypress="return treeManager.allowOnlyNumbers(event)"
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                min="0"
                                placeholder="Display order">
@@ -775,10 +846,40 @@
                                class="form-control"
                                id="editOrder"
                                name="order"
-                               onkeypress="return categoriesManager.allowOnlyNumbers(event)"
+                               onkeypress="return treeManager.allowOnlyNumbers(event)"
                                oninput="this.value = this.value.replace(/[^0-9]/g, '')"
                                min="0"
                                placeholder="Display order">
+                    </div>
+                </div>
+
+                <!-- New Metadata Field -->
+                <div class="form-group">
+                    <label for="editMetadata" class="form-label">Metadata (JSON)</label>
+                    <textarea class="form-control"
+                              id="editMetadata"
+                              name="metadata"
+                              rows="3"
+                              placeholder='Optional JSON metadata, e.g., {"key": "value"}'></textarea>
+                    <div id="editMetadataValidation" class="validation-feedback" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Invalid JSON format</span>
+                    </div>
+                </div>
+
+                <!-- New Shortcode Field -->
+                <div class="form-group">
+                    <label for="editShortcode" class="form-label">Shortcode</label>
+                    <input type="text"
+                           class="form-control"
+                           id="editShortcode"
+                           name="shortcode"
+                           maxlength="5"
+                           pattern="[a-zA-Z]{2,5}"
+                           placeholder="2-5 letters only">
+                    <div id="editShortcodeValidation" class="validation-feedback" style="display: none;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <span>Shortcode must be 2-5 letters only</span>
                     </div>
                 </div>
             </div>
@@ -832,6 +933,116 @@
             this.loadExpandedState();
             this.renderTree();
             this.bindEvents();
+            this.setupFieldValidation();
+        }
+
+        validateJSON(jsonString) {
+            if (!jsonString || jsonString.trim() === '') {
+                return true; // Empty is valid (optional field)
+            }
+            try {
+                JSON.parse(jsonString);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        validateShortcode(shortcode) {
+            if (!shortcode || shortcode.trim() === '') {
+                return true; // Empty is valid (optional field)
+            }
+            const trimmed = shortcode.trim();
+            return /^[a-zA-Z]{2,5}$/.test(trimmed);
+        }
+
+        allowOnlyNumbers(event) {
+            return /[0-9]/.test(event.key) ||
+                ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(event.key);
+        }
+
+        setupFieldValidation() {
+            // Metadata validation for create form
+            $('#metadata').on('input blur', () => {
+                const input = $('#metadata');
+                const validation = $('#metadataValidation');
+                const isValid = this.validateJSON(input.val());
+
+                if (isValid) {
+                    input.removeClass('is-invalid');
+                    validation.hide();
+                } else {
+                    input.addClass('is-invalid');
+                    validation.show();
+                }
+            });
+
+            // Shortcode validation for create form
+            $('#shortcode').on('input blur', () => {
+                const input = $('#shortcode');
+                const validation = $('#shortcodeValidation');
+                const isValid = this.validateShortcode(input.val());
+
+                if (isValid) {
+                    input.removeClass('is-invalid');
+                    validation.hide();
+                } else {
+                    input.addClass('is-invalid');
+                    validation.show();
+                }
+            });
+
+            // Metadata validation for edit form
+            $('#editMetadata').on('input blur', () => {
+                const input = $('#editMetadata');
+                const validation = $('#editMetadataValidation');
+                const isValid = this.validateJSON(input.val());
+
+                if (isValid) {
+                    input.removeClass('is-invalid');
+                    validation.hide();
+                } else {
+                    input.addClass('is-invalid');
+                    validation.show();
+                }
+            });
+
+            // Shortcode validation for edit form
+            $('#editShortcode').on('input blur', () => {
+                const input = $('#editShortcode');
+                const validation = $('#editShortcodeValidation');
+                const isValid = this.validateShortcode(input.val());
+
+                if (isValid) {
+                    input.removeClass('is-invalid');
+                    validation.hide();
+                } else {
+                    input.addClass('is-invalid');
+                    validation.show();
+                }
+            });
+        }
+
+        bindEditButtons() {
+            // Use event delegation to handle clicks on dynamically added buttons
+            $('#treeContent').off('click', '.tree-edit-btn').on('click', '.tree-edit-btn', (e) => {
+                const button = $(e.currentTarget);
+                const categoryId = button.data('category-id');
+                const categoryValue = button.data('category-value');
+                const categoryOrder = button.data('category-order') || null;
+                const categoryMetadata = button.data('category-metadata') || null;
+                const categoryShortcode = button.data('category-shortcode') || null;
+
+                console.log('Edit button clicked:', {
+                    id: categoryId,
+                    value: categoryValue,
+                    order: categoryOrder,
+                    metadata: categoryMetadata,
+                    shortcode: categoryShortcode
+                });
+
+                this.showEditForm(categoryId, categoryValue, categoryOrder, categoryMetadata, categoryShortcode);
+            });
         }
 
         bindEvents() {
@@ -881,96 +1092,94 @@
             const container = $('#treeContent');
             container.html(this.renderNode(treeData, true));
             this.restoreExpandedState();
+            this.bindEditButtons(); // Ensure this is called after rendering
         }
 
         renderNode(node, isRoot = false) {
             const childrenCount = node.children?.length || 0;
             const hasChildren = childrenCount > 0;
 
+            let shortcodeBadge = '';
+            if (node.shortcode && node.shortcode.trim() !== '') {
+                shortcodeBadge = `<span class="category-shortcode-badge ms-2">${this.escapeHtml(node.shortcode)}</span>`;
+            }
+
             let html = `
-                <div class="tree-node">
-                    <div class="tree-node-content ${isRoot ? 'is-root' : ''}">
-                        <div class="tree-node-header">
-                            <div class="tree-node-info">
-                                ${hasChildren ? `
-                                    <button type="button"
-                                            class="expand-btn"
-                                            id="expand-${node.id}"
-                                            onclick="treeManager.toggleChildren('${node.id}')"
-                                            title="Expand/Collapse">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                ` : '<span style="width: 24px;"></span>'}
+        <div class="tree-node">
+            <div class="tree-node-content ${isRoot ? 'is-root' : ''}">
+                <div class="tree-node-header">
+                    <div class="tree-node-info">
+                        ${hasChildren ? `
+                            <button type="button"
+                                    class="expand-btn"
+                                    id="expand-${node.id}"
+                                    onclick="treeManager.toggleChildren('${node.id}')"
+                                    title="Expand/Collapse">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        ` : '<span style="width: 24px;"></span>'}
 
-                                <div class="tree-node-value">
-                                    <i class="fas fa-${isRoot ? 'crown' : 'sitemap'} me-1"></i>
-                                    ${this.escapeHtml(node.value)}
-
-                                    ${isRoot ? '<span class="root-badge">Root</span>' : ''}
-                                    
-                                    <span class="category-type-badge">${this.escapeHtml(node.typeName)}</span>
-
-                                    ${node.order ? `<span class="category-order-badge">Order: ${node.order}</span>` : ''}
-
-                                    ${hasChildren ? `
-                                        <span class="children-count">
-                                            <i class="fas fa-sitemap"></i>
-                                            ${childrenCount}
-                                        </span>
-                                    ` : ''}
-                                </div>
-                            </div>
-
-                            <div class="node-actions">
-                                <button type="button"
-                                        class="node-action-btn btn-copy"
-                                        onclick="treeManager.copyToClipboard('${node.id}', this)"
-                                        title="Copy Category ID">
-                                    <i class="fas fa-copy"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="node-action-btn btn-add"
-                                        onclick="treeManager.openCreateForm('${node.id}', '${this.escapeHtml(node.value)}')"
-                                        title="Add Child Category">
-                                    <i class="fas fa-plus"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="node-action-btn btn-edit"
-                                        onclick="treeManager.showEditForm('${node.id}', '${this.escapeHtml(node.value)}', ${node.order || 'null'})"
-                                        title="Edit Category">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-
-                                <button type="button"
-                                        class="node-action-btn btn-delete"
-                                        onclick="treeManager.showDeleteConfirmation('${node.id}', '${this.escapeHtml(node.value)}')"
-                                        title="Delete Category">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
+                        <div class="tree-node-value">
+                            <i class="fas fa-${isRoot ? 'crown' : 'sitemap'} me-1"></i>
+                            ${this.escapeHtml(node.value)}${shortcodeBadge}
+                            ${isRoot ? '<span class="root-badge">Root</span>' : ''}
+                            <span class="category-type-badge">${this.escapeHtml(node.typeName)}</span>
+                            ${node.order ? `<span class="category-order-badge">Order: ${node.order}</span>` : ''}
+                            ${hasChildren ? `
+                                <span class="children-count">
+                                    <i class="fas fa-sitemap"></i>
+                                    ${childrenCount}
+                                </span>
+                            ` : ''}
                         </div>
                     </div>
-            `;
+
+                    <div class="node-actions">
+                        <button type="button"
+                                class="node-action-btn btn-copy"
+                                onclick="treeManager.copyToClipboard('${node.id}', this)"
+                                title="Copy Category ID">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button type="button"
+                                class="node-action-btn btn-add"
+                                onclick="treeManager.openCreateForm('${node.id}', '${this.escapeHtml(node.value)}')"
+                                title="Add Child Category">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                        <button type="button"
+                                class="node-action-btn btn-edit tree-edit-btn"
+                                data-category-id="${node.id}"
+                                data-category-value="${this.escapeHtml(node.value)}"
+                                data-category-order="${node.order || ''}"
+                                data-category-metadata="${node.metadata ? this.escapeHtml(JSON.stringify(node.metadata)) : ''}"
+                                data-category-shortcode="${node.shortcode ? this.escapeHtml(node.shortcode) : ''}"
+                                title="Edit Category">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button type="button"
+                                class="node-action-btn btn-delete"
+                                onclick="treeManager.showDeleteConfirmation('${node.id}', '${this.escapeHtml(node.value)}')"
+                                title="Delete Category">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+    `;
 
             if (hasChildren) {
                 html += `<div class="tree-children" id="children-${node.id}">`;
-
-                // Sort children by order
                 const sortedChildren = node.children.sort((a, b) => (a.order || Number.MAX_VALUE) - (b.order || Number.MAX_VALUE));
-
                 sortedChildren.forEach(child => {
                     html += this.renderNode(child);
                 });
-
                 html += '</div>';
             }
 
             html += '</div>';
             return html;
         }
-
         loadExpandedState() {
             const stored = localStorage.getItem('categoryTreeExpanded_' + rootCategoryId);
             if (stored) {
@@ -1042,17 +1251,47 @@
             $('#createForm').removeClass('show');
         }
 
-        showEditForm(id, value, order) {
-            this.closeAllForms();
+        showEditForm(id, value, order, metadata = null, shortcode = null) {
+            try {
+                console.log('showEditForm called with:', { id, value, order, metadata, shortcode });
 
-            $('#editId').val(id);
-            $('#editValue').val(value);
-            $('#editOrder').val(order === null ? '' : order);
+                this.closeAllForms();
 
-            $('#editForm').addClass('show');
-            setTimeout(() => $('#editValue').focus(), 300);
+                $('#editId').val(id);
+                $('#editValue').val(value);
+                $('#editOrder').val(order === null || order === 'null' || order === '' ? '' : order);
+
+                // Handle metadata
+                let metadataValue = '';
+                if (metadata && metadata !== 'null' && metadata !== 'undefined' && metadata !== '') {
+                    try {
+                        if (typeof metadata === 'string') {
+                            const parsedMetadata = JSON.parse(metadata);
+                            metadataValue = JSON.stringify(parsedMetadata, null, 2);
+                        } else {
+                            metadataValue = JSON.stringify(metadata, null, 2);
+                        }
+                    } catch (error) {
+                        console.warn('Failed to parse metadata JSON:', error);
+                        metadataValue = metadata; // Fallback to raw string
+                    }
+                }
+                $('#editMetadata').val(metadataValue);
+
+                // Handle shortcode
+                $('#editShortcode').val(shortcode && shortcode !== 'null' && shortcode !== 'undefined' ? shortcode : '');
+
+                // Clear validation states
+                $('#editMetadata, #editShortcode').removeClass('is-invalid');
+                $('#editMetadataValidation, #editShortcodeValidation').hide();
+
+                $('#editForm').addClass('show');
+                setTimeout(() => $('#editValue').focus(), 300);
+            } catch (error) {
+                console.error('Error in showEditForm:', error);
+                this.showError('Failed to open edit form: ' + error.message);
+            }
         }
-
         toggleEditForm() {
             $('#editForm').removeClass('show');
         }
@@ -1083,9 +1322,20 @@
         async handleCreateCategory(e) {
             e.preventDefault();
 
+            // Validate fields before submitting
+            const metadataValid = this.validateJSON($('#metadata').val());
+            const shortcodeValid = this.validateShortcode($('#shortcode').val());
+
+            if (!metadataValid || !shortcodeValid) {
+                this.showError('Please fix validation errors before submitting.');
+                return;
+            }
+
             const formData = {
                 value: $('#value').val(),
                 type: $('#type').val(),
+                metadata: $('#metadata').val().trim() || null,
+                shortcode: $('#shortcode').val().trim() || null,
                 order: $('#order').val() || null,
                 parentId: $('#parentId').val() || null,
                 returnToTreeId: rootCategoryId
@@ -1121,13 +1371,20 @@
 
                     // Reset and close form
                     $('#createCategoryForm')[0].reset();
+                    $('#metadata, #shortcode').removeClass('is-invalid');
+                    $('#metadataValidation, #shortcodeValidation').hide();
                     this.toggleCreateForm();
                 } else {
                     this.showError(response.message);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                this.showError('An error occurred while creating the category.');
+                if (error.responseJSON && error.responseJSON.validationErrors) {
+                    const errorMessages = error.responseJSON.validationErrors.map(ve => ve.error).join('\n');
+                    this.showError(`Validation failed:\n${errorMessages}`);
+                } else {
+                    this.showError('An error occurred while creating the category.');
+                }
             } finally {
                 submitBtn.prop('disabled', false);
                 submitBtn.html(originalText);
@@ -1137,9 +1394,20 @@
         async handleUpdateCategory(e) {
             e.preventDefault();
 
+            // Validate fields before submitting
+            const metadataValid = this.validateJSON($('#editMetadata').val());
+            const shortcodeValid = this.validateShortcode($('#editShortcode').val());
+
+            if (!metadataValid || !shortcodeValid) {
+                this.showError('Please fix validation errors before submitting.');
+                return;
+            }
+
             const formData = {
                 id: $('#editId').val(),
                 value: $('#editValue').val() || null,
+                metadata: $('#editMetadata').val().trim() || null,
+                shortcode: $('#editShortcode').val().trim() || null,
                 order: $('#editOrder').val() || null,
                 returnToTreeId: rootCategoryId
             };
@@ -1173,7 +1441,12 @@
                 }
             } catch (error) {
                 console.error('Error:', error);
-                this.showError('An error occurred while updating the category.');
+                if (error.responseJSON && error.responseJSON.validationErrors) {
+                    const errorMessages = error.responseJSON.validationErrors.map(ve => ve.error).join('\n');
+                    this.showError(`Validation failed:\n${errorMessages}`);
+                } else {
+                    this.showError('An error occurred while updating the category.');
+                }
             } finally {
                 submitBtn.prop('disabled', false);
                 submitBtn.html(originalText);
@@ -1217,7 +1490,6 @@
                 this.showError('An error occurred while deleting the category.');
             }
         }
-
 
         // Utility methods
         async copyToClipboard(text, button) {
@@ -1306,10 +1578,6 @@
     // Global functions for backward compatibility
     function openCreateForm(parentId = null, parentName = 'Root Category') {
         treeManager.openCreateForm(parentId, parentName);
-    }
-
-    function showEditForm(id, value, order) {
-        treeManager.showEditForm(id, value, order);
     }
 
     function showDeleteConfirmation(id, value) {

@@ -1,8 +1,8 @@
 @model IEnumerable<Translator.Application.Features.Category.Queries.GetRootCategories.Response>
 @{
-ViewData["Title"] = "Categories Management";
-Layout = "_Layout";
-var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
+    ViewData["Title"] = "Categories Management";
+    Layout = "_Layout";
+    var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 }
 
 <style>
@@ -130,6 +130,27 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         gap: 1rem;
     }
 
+    #editMetadata, #metadata {
+        font-family: 'Fira Code', 'Monaco', 'Consolas', monospace !important;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        white-space: pre;
+        tab-size: 2;
+    }
+
+    .category-shortcode-badge {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 0.25rem;
+        font-weight: 500;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        display: inline-block;
+        letter-spacing: 0.5px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    
     /* Compact Type list styles */
     .type-list-item {
         display: inline-flex;
@@ -227,6 +248,30 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         align-items: center;
         gap: 0.25rem;
         font-weight: 500;
+    }
+
+    .form-control textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .validation-feedback {
+        color: #ef4444;
+        font-size: 0.75rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-weight: 500;
+    }
+
+    .validation-feedback i {
+        font-size: 0.7rem;
+    }
+
+    .is-invalid {
+        border-color: #ef4444 !important;
+        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
     }
 
     /* Buttons */
@@ -844,18 +889,18 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     <div id="alertContainer">
         @if (ViewBag.ErrorMessage != null)
         {
-        <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
-            <i class="fas fa-exclamation-circle me-2"></i>
-            @ViewBag.ErrorMessage
-        </div>
+            <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
+                <i class="fas fa-exclamation-circle me-2"></i>
+                @ViewBag.ErrorMessage
+            </div>
         }
 
         @if (ViewBag.SuccessMessage != null)
         {
-        <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
-            <i class="fas fa-check-circle me-2"></i>
-            @ViewBag.SuccessMessage
-        </div>
+            <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                @ViewBag.SuccessMessage
+            </div>
         }
     </div>
 
@@ -951,6 +996,36 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                         </select>
                     </div>
 
+                    <!-- New Metadata Field -->
+                    <div class="form-group">
+                        <label for="metadata" class="form-label">Metadata (JSON)</label>
+                        <textarea class="form-control"
+                                  id="metadata"
+                                  name="metadata"
+                                  rows="3"
+                                  placeholder='Optional JSON metadata, e.g., {"key": "value"}'></textarea>
+                        <div id="metadataValidation" class="validation-feedback" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Invalid JSON format</span>
+                        </div>
+                    </div>
+
+                    <!-- New Shortcode Field -->
+                    <div class="form-group">
+                        <label for="shortcode" class="form-label">Shortcode</label>
+                        <input type="text"
+                               class="form-control"
+                               id="shortcode"
+                               name="shortcode"
+                               maxlength="5"
+                               pattern="[a-zA-Z]{2,5}"
+                               placeholder="2-5 letters only">
+                        <div id="shortcodeValidation" class="validation-feedback" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Shortcode must be 2-5 letters only</span>
+                        </div>
+                    </div>
+
                     <div class="form-group">
                         <label for="order" class="form-label">Order</label>
                         <input type="number"
@@ -1005,6 +1080,36 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                                    placeholder="Display order">
                         </div>
                     </div>
+
+                    <!-- New Metadata Field -->
+                    <div class="form-group">
+                        <label for="editMetadata" class="form-label">Metadata (JSON)</label>
+                        <textarea class="form-control"
+                                  id="editMetadata"
+                                  name="metadata"
+                                  rows="3"
+                                  placeholder='Optional JSON metadata, e.g., {"key": "value"}'></textarea>
+                        <div id="editMetadataValidation" class="validation-feedback" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Invalid JSON format</span>
+                        </div>
+                    </div>
+
+                    <!-- New Shortcode Field -->
+                    <div class="form-group">
+                        <label for="editShortcode" class="form-label">Shortcode</label>
+                        <input type="text"
+                               class="form-control"
+                               id="editShortcode"
+                               name="shortcode"
+                               maxlength="5"
+                               pattern="[a-zA-Z]{2,5}"
+                               placeholder="2-5 letters only">
+                        <div id="editShortcodeValidation" class="validation-feedback" style="display: none;">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Shortcode must be 2-5 letters only</span>
+                        </div>
+                    </div>
                 </div>
                 <div class="form-actions">
                     <button type="button" class="btn-base btn-cancel" onclick="toggleEditForm()">
@@ -1017,6 +1122,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             </form>
         </div>
     </div>
+
 
     <div class="row">
         <div class="col-12">
@@ -1138,6 +1244,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     class CategoriesManager {
         constructor() {
             this.validationTimeout = null;
+            this.categoriesData = {};
             // Ensure we have valid arrays
             if (!Array.isArray(categoryTypes)) {
                 categoryTypes = [];
@@ -1151,6 +1258,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         init() {
             this.loadInitialData();
             this.bindEvents();
+            this.setupFieldValidation();
         }
 
         loadInitialData() {
@@ -1168,9 +1276,119 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             $('#typeForm').removeClass('show');
         }
 
+        bindEditButtons() {
+            $('.edit-category-btn').off('click').on('click', (e) => {
+                const button = $(e.currentTarget);
+                const categoryId = button.data('category-id');
+                const category = this.categoriesData[categoryId];
+
+                console.log('Category data:', category); // Debug log to verify data
+
+                if (category) {
+                    this.showEditForm(
+                        category.id,
+                        category.value,
+                        category.order || null,
+                        category.metadata || null,
+                        category.shortcode || null
+                    );
+                } else {
+                    console.error('Category not found:', categoryId);
+                    this.showError('Category data not found. Please refresh the page.');
+                }
+            });
+        }
+
         cancelTypeForm() {
             this.resetTypeForm();
             this.closeTypeForm();
+        }
+
+        validateJSON(jsonString) {
+            if (!jsonString || jsonString.trim() === '') {
+                return true; // Empty is valid (optional field)
+            }
+            try {
+                JSON.parse(jsonString);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        }
+
+        validateShortcode(shortcode) {
+            if (!shortcode || shortcode.trim() === '') {
+                return true; // Empty is valid (optional field)
+            }
+            const trimmed = shortcode.trim();
+            return /^[a-zA-Z]{2,5}$/.test(trimmed);
+        }
+
+        setupFieldValidation() {
+            // Metadata validation for create form
+            $('#metadata').on('input blur', () => {
+                const input = $('#metadata');
+                const validation = $('#metadataValidation');
+                const isValid = this.validateJSON(input.val());
+
+                if (isValid) {
+                    input.removeClass('is-invalid');
+                    validation.hide();
+                } else {
+                    input.addClass('is-invalid');
+                    validation.show();
+                }
+            });
+
+            // Shortcode validation for create form
+            $('#shortcode').on('input blur', () => {
+                const input = $('#shortcode');
+                const validation = $('#shortcodeValidation');
+                const isValid = this.validateShortcode(input.val());
+
+                if (isValid) {
+                    input.removeClass('is-invalid');
+                    validation.hide();
+                } else {
+                    input.addClass('is-invalid');
+                    validation.show();
+                }
+            });
+
+            // Metadata validation for edit form
+            $('#editMetadata').on('input blur', () => {
+                const input = $('#editMetadata');
+                const validation = $('#editMetadataValidation');
+                const isValid = this.validateJSON(input.val());
+
+                if (isValid) {
+                    input.removeClass('is-invalid');
+                    validation.hide();
+                } else {
+                    input.addClass('is-invalid');
+                    validation.show();
+                }
+            });
+
+            // Shortcode validation for edit form
+            $('#editShortcode').on('input blur', () => {
+                const input = $('#editShortcode');
+                const validation = $('#editShortcodeValidation');
+                const isValid = this.validateShortcode(input.val());
+
+                if (isValid) {
+                    input.removeClass('is-invalid');
+                    validation.hide();
+                } else {
+                    input.addClass('is-invalid');
+                    validation.show();
+                }
+            });
+        }
+
+        allowOnlyNumbers(event) {
+            return /[0-9]/.test(event.key) ||
+                ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowLeft', 'ArrowRight'].includes(event.key);
         }
 
         bindEvents() {
@@ -1376,7 +1594,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             if (!str) return str;
             return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
         }
-        
+
         showValidationError(errorMessage) {
             const validationError = $('#validationError');
             const validationErrorText = $('#validationErrorText');
@@ -1474,107 +1692,121 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
             if (!categories || categories.length === 0) {
                 container.html(`
-                    <div class="empty-state">
-                        <div class="empty-state-icon">
-                            <i class="fas fa-folder-open"></i>
-                        </div>
-                        <h4>No Categories Found</h4>
-                        <p>Start by creating your first category.</p>
-                        <button type="button" class="add-btn" onclick="categoriesManager.openCreateForm()">
-                            <i class="fas fa-plus me-1"></i>Create First Category
-                        </button>
-                    </div>
-                `);
+            <div class="empty-state">
+                <div class="empty-state-icon">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+                <h4>No Categories Found</h4>
+                <p>Start by creating your first category.</p>
+                <button type="button" class="add-btn" onclick="categoriesManager.openCreateForm()">
+                    <i class="fas fa-plus me-1"></i>Create First Category
+                </button>
+            </div>
+        `);
                 return;
             }
 
             const sortedCategories = categories.sort((a, b) => (a.order || Number.MAX_VALUE) - (b.order || Number.MAX_VALUE));
 
+            // Store categories data for easy access
+            this.categoriesData = {};
+
             let html = `
-                <div class="category-table">
-                    <table class="table table-hover mb-0 table-sm" id="categoriesTable">
-                        <thead>
-                            <tr>
-                                <th style="width: 8%;">Order</th>
-                                <th style="width: 22%;">Name</th>
-                                <th style="width: 12%;">Type</th>
-                                <th style="width: 33%;">ID</th>
-                                <th style="width: 25%;" class="text-center">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-            `;
+        <div class="category-table">
+            <table class="table table-hover mb-0 table-sm" id="categoriesTable">
+                <thead>
+                    <tr>
+                        <th style="width: 8%;">Order</th>
+                        <th style="width: 22%;">Name</th>
+                        <th style="width: 12%;">Type</th>
+                        <th style="width: 33%;">ID</th>
+                        <th style="width: 25%;" class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+    `;
 
             sortedCategories.forEach((category, index) => {
-                // ✅ UPDATED: Use raw type name without title case transformation
-                const rawTypeName = category.typeName.toLowerCase(); // Ensure lowercase
+                // Store full category data
+                this.categoriesData[category.id] = category;
+
+                const rawTypeName = category.typeName.toLowerCase();
                 const displayTypeName = this.toTitleCase(rawTypeName);
+                const escapedValue = this.escapeHtml(category.value);
+
+                // Create shortcode badge if shortcode exists
+                let shortcodeBadge = '';
+                if (category.shortcode && category.shortcode.trim() !== '') {
+                    shortcodeBadge = `<span class="category-shortcode-badge ms-2">${this.escapeHtml(category.shortcode)}</span>`;
+                }
 
                 html += `
-                    <tr class="category-row ${index >= 10 ? 'hidden' : ''}" data-index="${index}">
-                        <td>
-                            ${category.order != null
+            <tr class="category-row ${index >= 10 ? 'hidden' : ''}" data-index="${index}">
+                <td>
+                    ${category.order != null
                     ? `<span class="category-order-badge">${category.order}</span>`
                     : '<span class="text-muted">—</span>'
                 }
-                        </td>
-                        <td>
-                            <div class="category-value">${this.escapeHtml(category.value)}</div>
-                        </td>
-                        <td>
-                            <span class="category-type-badge">${this.escapeHtml(displayTypeName)}</span>
-                        </td>
-                        <td>
-                            <div class="category-id-container">
-                                <code class="category-id">${category.id}</code>
-                                <button type="button"
-                                        class="copy-btn"
-                                        onclick="categoriesManager.copyToClipboard('${category.id}', this)"
-                                        title="Copy ID">
-                                    <i class="fas fa-copy"></i>
-                                    <span class="copy-text d-none d-md-inline">Copy</span>
-                                </button>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="action-buttons">
-                                <button type="button"
-                                        class="action-btn btn-edit"
-                                        onclick="categoriesManager.showEditForm('${category.id}', '${this.escapeHtml(category.value)}', ${category.order || 'null'})"
-                                        title="Update Category">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <a href="/Categories/Tree/${category.id}"
-                                   class="action-btn btn-tree"
-                                   title="Show Tree">
-                                    <i class="fas fa-sitemap"></i>
-                                </a>
-                                <button type="button"
-                                        class="action-btn btn-delete"
-                                        onclick="categoriesManager.showDeleteConfirmation('${category.id}', '${this.escapeHtml(category.value)}')"
-                                        title="Delete ${this.escapeHtml(category.value)}">
-                                    <i class="fas fa-trash"></i>
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
+                </td>
+                <td>
+                    <div class="category-value">
+                        ${escapedValue}${shortcodeBadge}
+                    </div>
+                </td>
+                <td>
+                    <span class="category-type-badge">${this.escapeHtml(displayTypeName)}</span>
+                </td>
+                <td>
+                    <div class="category-id-container">
+                        <code class="category-id">${category.id}</code>
+                        <button type="button"
+                                class="copy-btn"
+                                onclick="categoriesManager.copyToClipboard('${category.id}', this)"
+                                title="Copy ID">
+                            <i class="fas fa-copy"></i>
+                            <span class="copy-text d-none d-md-inline">Copy</span>
+                        </button>
+                    </div>
+                </td>
+                <td>
+                    <div class="action-buttons">
+                        <button type="button"
+                                class="action-btn btn-edit edit-category-btn"
+                                data-category-id="${category.id}"
+                                title="Update Category">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <a href="/Categories/Tree/${category.id}"
+                           class="action-btn btn-tree"
+                           title="Show Tree">
+                            <i class="fas fa-sitemap"></i>
+                        </a>
+                        <button type="button"
+                                class="action-btn btn-delete"
+                                onclick="categoriesManager.showDeleteConfirmation('${category.id}', '${escapedValue}')"
+                                title="Delete ${escapedValue}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
             });
 
             html += '</tbody></table></div>';
 
             if (categories.length > 10) {
                 html += `
-                    <button type="button" class="show-all-btn" id="showAllCategoriesBtn" onclick="categoriesManager.toggleShowAllCategories()">
-                        <i class="fas fa-eye me-1"></i>
-                        Show All (${categories.length})
-                    </button>
-                `;
+            <button type="button" class="show-all-btn" id="showAllCategoriesBtn" onclick="categoriesManager.toggleShowAllCategories()">
+                <i class="fas fa-eye me-1"></i>
+                Show All (${categories.length})
+            </button>
+        `;
             }
 
             container.html(html);
+            this.bindEditButtons();
         }
-
         populateTypeSelect(types) {
             const select = $('#type');
             select.html('<option value="">Select a type</option>');
@@ -1829,12 +2061,45 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             $('#createForm').removeClass('show');
         }
 
-        showEditForm(id, value, order) {
+        showEditForm(id, value, order, metadata = null, shortcode = null) {
+            console.log('showEditForm called with:', { id, value, order, metadata, shortcode }); // Debug log
+
             this.closeAllForms();
 
             $('#editId').val(id);
             $('#editValue').val(value);
-            $('#editOrder').val(order === null ? '' : order);
+            $('#editOrder').val(order === null || order === 'null' ? '' : order);
+
+            // Handle metadata with prettier JSON formatting
+            let metadataValue = '';
+            if (metadata && metadata !== 'null' && metadata !== 'undefined') {
+                try {
+                    // If metadata is a string, try to parse and re-stringify it with formatting
+                    if (typeof metadata === 'string') {
+                        const parsedMetadata = JSON.parse(metadata);
+                        metadataValue = JSON.stringify(parsedMetadata, null, 2);
+                    } else {
+                        // If it's already an object, stringify it with formatting
+                        metadataValue = JSON.stringify(metadata, null, 2);
+                    }
+                } catch (error) {
+                    // If JSON parsing fails, use the original value
+                    console.warn('Failed to parse metadata JSON:', error);
+                    metadataValue = typeof metadata === 'string' ? metadata : JSON.stringify(metadata, null, 2);
+                }
+            }
+            $('#editMetadata').val(metadataValue);
+
+            // Handle shortcode properly  
+            let shortcodeValue = '';
+            if (shortcode && shortcode !== 'null' && shortcode !== 'undefined') {
+                shortcodeValue = shortcode;
+            }
+            $('#editShortcode').val(shortcodeValue);
+
+            // Clear any previous validation states
+            $('#editMetadata, #editShortcode').removeClass('is-invalid');
+            $('#editMetadataValidation, #editShortcodeValidation').hide();
 
             $('#editForm').addClass('show');
             setTimeout(() => $('#editValue').focus(), 300);
@@ -2024,9 +2289,20 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         async handleCreateCategory(e) {
             e.preventDefault();
 
+            // Validate fields before submitting
+            const metadataValid = this.validateJSON($('#metadata').val());
+            const shortcodeValid = this.validateShortcode($('#shortcode').val());
+
+            if (!metadataValid || !shortcodeValid) {
+                this.showError('Please fix validation errors before submitting.');
+                return;
+            }
+
             const formData = {
                 value: $('#value').val(),
                 type: $('#type').val(),
+                metadata: $('#metadata').val().trim() || null,
+                shortcode: $('#shortcode').val().trim() || null,
                 order: $('#order').val() || null
             };
 
@@ -2061,6 +2337,8 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
                     // Reset and close form
                     $('#createCategoryForm')[0].reset();
+                    $('#metadata, #shortcode').removeClass('is-invalid');
+                    $('#metadataValidation, #shortcodeValidation').hide();
                     this.toggleCreateForm();
                 } else {
                     this.showError(response.message);
@@ -2082,9 +2360,20 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         async handleUpdateCategory(e) {
             e.preventDefault();
 
+            // Validate fields before submitting
+            const metadataValid = this.validateJSON($('#editMetadata').val());
+            const shortcodeValid = this.validateShortcode($('#editShortcode').val());
+
+            if (!metadataValid || !shortcodeValid) {
+                this.showError('Please fix validation errors before submitting.');
+                return;
+            }
+
             const formData = {
                 id: $('#editId').val(),
                 value: $('#editValue').val() || null,
+                metadata: $('#editMetadata').val().trim() || null,
+                shortcode: $('#editShortcode').val().trim() || null,
                 order: $('#editOrder').val() || null
             };
 
@@ -2318,6 +2607,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         }
 
         escapeHtml(text) {
+            if (text === null || text === undefined) return '';
             if (typeof text !== 'string') return text;
             const div = document.createElement('div');
             div.textContent = text;
@@ -2362,9 +2652,10 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
         categoriesManager.toggleCreateForm();
     }
 
-    function showEditForm(id, value, order) {
-        categoriesManager.showEditForm(id, value, order);
+    function showEditForm(id, value, order, metadata = null, shortcode = null) {
+        categoriesManager.showEditForm(id, value, order, metadata, shortcode);
     }
+
 
     function toggleEditForm() {
         categoriesManager.toggleEditForm();
