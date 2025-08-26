@@ -58,7 +58,7 @@ public class CreateTranslationHandler : IRequestHandler<CreateTranslationCommand
             throw new ValueNotFoundException(request.ValueName);
         
         if (request.LanguageCode != textLanguage.Code)
-            throw new LanguageMissMatchException(request.ValueName, request.LanguageCode);
+            throw new LanguageMissMatchException(request.Translation, request.LanguageCode);
         
         if (value.Translations.Any(
                 x => x.TranslationValue == request.Translation ||
