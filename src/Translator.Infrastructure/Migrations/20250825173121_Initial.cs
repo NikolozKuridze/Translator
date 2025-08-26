@@ -18,7 +18,7 @@ namespace Translator.Infrastructure.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false)
+                    name = table.Column<string>(type: "character varying(48)", maxLength: 48, nullable: false)
                 },
                 constraints: table =>
                 {
@@ -76,6 +76,8 @@ namespace Translator.Infrastructure.Migrations
                     value = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     type_id = table.Column<Guid>(type: "uuid", nullable: false),
                     order = table.Column<int>(type: "integer", nullable: true),
+                    metadata = table.Column<string>(type: "jsonb", nullable: true),
+                    shortcode = table.Column<string>(type: "character varying(5)", maxLength: 5, nullable: true),
                     parent_id = table.Column<Guid>(type: "uuid", nullable: true)
                 },
                 constraints: table =>
@@ -247,6 +249,11 @@ namespace Translator.Infrastructure.Migrations
                 name: "ix_categories_parent_id",
                 table: "categories",
                 column: "parent_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_categories_shortcode",
+                table: "categories",
+                column: "shortcode");
 
             migrationBuilder.CreateIndex(
                 name: "ix_categories_type_id",

@@ -12,7 +12,7 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250825092308_Initial")]
+    [Migration("20250825173121_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -51,6 +51,10 @@ namespace Translator.Infrastructure.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Metadata")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("metadata");
+
                     b.Property<int?>("Order")
                         .HasColumnType("integer")
                         .HasColumnName("order");
@@ -58,6 +62,11 @@ namespace Translator.Infrastructure.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid")
                         .HasColumnName("parent_id");
+
+                    b.Property<string>("Shortcode")
+                        .HasMaxLength(5)
+                        .HasColumnType("character varying(5)")
+                        .HasColumnName("shortcode");
 
                     b.Property<Guid>("TypeId")
                         .HasColumnType("uuid")
@@ -75,6 +84,9 @@ namespace Translator.Infrastructure.Migrations
                     b.HasIndex("ParentId")
                         .HasDatabaseName("ix_categories_parent_id");
 
+                    b.HasIndex("Shortcode")
+                        .HasDatabaseName("ix_categories_shortcode");
+
                     b.HasIndex("TypeId")
                         .HasDatabaseName("ix_categories_type_id");
 
@@ -90,8 +102,8 @@ namespace Translator.Infrastructure.Migrations
 
                     b.Property<string>("Name")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasMaxLength(48)
+                        .HasColumnType("character varying(48)")
                         .HasColumnName("name");
 
                     b.HasKey("Id")

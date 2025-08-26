@@ -14,6 +14,8 @@ public abstract class GetCategoryTree
         Guid Id,
         string Value,
         string TypeName,
+        string? Metadata,
+        string? Shortcode,
         int? Order,
         Guid? ParentId,
         List<Response> Children);
@@ -54,6 +56,8 @@ public abstract class GetCategoryTree
                 category.Id,
                 category.Value,
                 category.Type.Name,
+                category.Metadata,
+                category.Shortcode,
                 category.Order,
                 category.ParentId,
                 childDtos
