@@ -11,8 +11,8 @@ public class Category(
     public string Value { get; set; } = value;
     public Guid TypeId { get; init; } = typeId;
     public int? Order { get; set; } = order;
-    public string? Metadata { get; set; }
-    public string? Shortcode { get; set; }
+    public string? Metadata { get; set; } = metadata;
+    public string? Shortcode { get; set; } = shortcode;
     public CategoryType Type { get; set; } = null!;
     public Guid? ParentId { get; set; } = parentId;
     public Category? Parent { get; set; }
