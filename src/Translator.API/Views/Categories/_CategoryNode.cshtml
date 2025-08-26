@@ -3,13 +3,14 @@
     // Determine if this is a root category by checking ParentId
     var isRoot = !Model.ParentId.HasValue;
     var childrenCount = Model.Children?.Count ?? 0;
+    var hasChildren = childrenCount > 0;
 }
 
 <div class="tree-node">
     <div class="tree-node-content @(isRoot ? "is-root" : "")">
         <div class="tree-node-header">
             <div class="tree-node-info">
-                @if (childrenCount > 0)
+                @if (hasChildren)
                 {
                     <button type="button"
                             class="expand-btn"
@@ -27,24 +28,25 @@
                 <div class="tree-node-value">
                     <i class="fas fa-@(isRoot ? "crown" : "sitemap") me-1"></i>
                     @Model.Value
+                    
+                    @if (!string.IsNullOrWhiteSpace(Model.Shortcode))
+                    {
+                        <span class="category-shortcode-badge ms-2">@Model.Shortcode</span>
+                    }
 
                     @if (isRoot)
                     {
                         <span class="root-badge">Root</span>
                     }
-
+    
                     <span class="category-type-badge">@Model.TypeName</span>
 
-                    @* Add order display *@
                     @if (Model.Order.HasValue)
                     {
-                        <span class="category-order-badge"
-                              style="background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: white; padding: 0.125rem 0.375rem; border-radius: 0.25rem; font-weight: 500; font-size: 0.65rem;">
-                            Order: @Model.Order
-                        </span>
+                        <span class="category-order-badge">Order: @Model.Order</span>
                     }
 
-                    @if (childrenCount > 0)
+                    @if (hasChildren)
                     {
                         <span class="children-count">
                             <i class="fas fa-sitemap"></i>
@@ -52,11 +54,9 @@
                         </span>
                     }
                 </div>
-
             </div>
 
             <div class="node-actions">
-
                 <button type="button"
                         class="node-action-btn btn-copy"
                         onclick="copyToClipboard('@Model.Id', this)"
@@ -72,24 +72,22 @@
                 </button>
 
                 <button type="button"
-                        class="node-action-btn btn-edit"
-                        onclick="showEditForm('@Model.Id', '@Html.Raw(Html.Encode(Model.Value))', @(Model.Order?.ToString() ?? "null"))"
+                        class="node-action-btn btn-edit tree-edit-btn"
+                        data-category-id="@Model.Id"
+                        data-category-value="@Model.Value"
+                        data-category-order="@(Model.Order?.ToString() ?? "")"
+                        data-category-metadata="@(Model.Metadata != null ? Html.Raw(Json.Serialize(Model.Metadata)) : "")"
+                        data-category-shortcode="@(Model.Shortcode ?? "")"
                         title="Edit Category">
                     <i class="fas fa-edit"></i>
                 </button>
 
-
-                <form action="@Url.Action("Delete", "Categories")" method="post" style="display: inline;">
-                    <input type="hidden" name="id" value="@Model.Id"/>
-                    <input type="hidden" name="returnToTreeId" value="@ViewData["RootCategoryId"]"/>
-                    <button type="button"
-                            class="node-action-btn btn-delete"
-                            onclick="showDeleteConfirmation('@Model.Id', '@Html.Raw(Html.Encode(Model.Value))', this.closest('form'))"
-                            title="Delete Category">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </form>
-
+                <button type="button"
+                        class="node-action-btn btn-delete"
+                        onclick="showDeleteConfirmation('@Model.Id', '@Html.Raw(Html.Encode(Model.Value))')"
+                        title="Delete Category">
+                    <i class="fas fa-trash"></i>
+                </button>
             </div>
         </div>
     </div>
@@ -104,5 +102,4 @@
             }
         </div>
     }
-
 </div>
