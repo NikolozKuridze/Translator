@@ -1,21 +1,67 @@
 @model IEnumerable<Translator.Application.Features.Template.Queries.GetAllTemplates.GetAllTemplatesResponse>
 
 @{
-Layout = "_Layout";
-ViewBag.Title = "Templates";
-var searchKey = ViewBag.searchKey;
+    Layout = "_Layout";
+    ViewBag.Title = "Templates";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var pageSize = ViewBag.PageSize ?? 10;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalCount = ViewBag.TotalCount ?? 0;
+    var sortBy = ViewBag.SortBy as string ?? "name";
+    var sortDirection = ViewBag.SortDirection as string ?? "asc";
+    var searchKey = ViewBag.TemplateName as string ?? "";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Templates</h2>
+    <h2>Templates <small class="text-muted" id="totalCountInfo">(@totalCount total)</small></h2>
     <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createTemplateSection">
         <i class="fas fa-plus"></i> Create Template
     </button>
 </div>
 
 <!-- Alert container -->
-<div id="alertContainer"></div>
+<div id="alertContainer">
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+</div>
+
+<!-- Search Form -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form id="searchForm" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Search by Name</label>
+                <input type="text" id="searchInput" name="templateName" 
+                       value="@searchKey" 
+                       class="form-control"
+                       placeholder="Enter template name to search..." />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="fas fa-search"></i> Search
+                </button>
+                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary" style="display: @(string.IsNullOrEmpty(searchKey) ? "none" : "inline-block")">
+                    <i class="fas fa-times"></i> Clear
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Create Template Form -->
 <div class="collapse mb-4" id="createTemplateSection">
     <div class="card">
         <div class="card-header">
@@ -31,10 +77,16 @@ var searchKey = ViewBag.searchKey;
                 <div class="mb-3">
                     <label class="form-label">Template Values</label>
                     <div id="valuesContainer">
-                        <div class="input-group mb-2 value-input-group">
-                            <input type="text" name="values" class="form-control" placeholder="Enter value" required>
-                            <button class="btn btn-outline-danger" type="button" onclick="removeValueInput(this)" disabled>
-                                <i class="fas fa-trash"></i>
+                        <div class="mb-2 value-input-group">
+                            <div class="position-relative">
+                                <input type="text" name="values" class="form-control value-input" 
+                                       placeholder="Type to search for values..." 
+                                       autocomplete="off" 
+                                       required>
+                                <div class="autocomplete-dropdown" style="display: none;"></div>
+                            </div>
+                            <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)" disabled>
+                                <i class="fas fa-trash"></i> Remove
                             </button>
                         </div>
                     </div>
@@ -55,26 +107,7 @@ var searchKey = ViewBag.searchKey;
     </div>
 </div>
 
-<!-- Search Form -->
-<div class="card mb-3">
-    <div class="card-body">
-        <form id="searchForm" class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Search by Key</label>
-                <input type="text" id="searchInput" name="TemplateName" 
-                       value="@searchKey" 
-                       class="form-control"
-                       placeholder="Enter key to search..." />
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary" style="display: @(string.IsNullOrEmpty(searchKey) ? "none" : "inline-block")">
-                    <i class="fas fa-times"></i> Clear
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
-
+<!-- Templates Table -->
 <div class="card">
     <div class="card-body" style="padding:0;">
         <div class="table-responsive">
@@ -87,23 +120,53 @@ var searchKey = ViewBag.searchKey;
                             <i class="fas fa-sort sort-icon-name"></i>
                         </button>
                     </th>
-                    <th>
-                        Value Count
-                        <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="value" title="Sort by value count">
-                            <i class="fas fa-sort sort-icon-value"></i>
-                        </button>
-                    </th>
+                    <th>Value Count</th>
                     <th>Actions</th>
                 </tr>
                 </thead>
                 <tbody id="templatesTableBody">
-                <tr id="tableLoader">
-                    <td colspan="3" class="text-center py-4">
-                        <div class="spinner-border" role="status">
-                            <span class="visually-hidden">Loading...</span>
-                        </div>
-                    </td>
-                </tr>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var template in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary">@template.TemplateName</span>
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                onclick="copyTemplateId('@template.TemplateId')" 
+                                                title="Copy Template ID">
+                                            <i class="fas fa-copy"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">@template.ValueCount</span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="@Url.Action("Details", "Templates", new { templateId = template.TemplateId })" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i> View
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger" 
+                                                onclick="showDeleteModal('@Html.Raw(Html.Encode(template.TemplateName))')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr id="emptyState">
+                            <td colspan="3" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <div>No templates found</div>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
@@ -111,11 +174,97 @@ var searchKey = ViewBag.searchKey;
 </div>
 
 <!-- Pagination container -->
-<div id="paginationContainer"></div>
+<div id="paginationContainer">
+    @if (Model != null && Model.Any())
+    {
+        <nav class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted" id="paginationInfo">
+                    Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
+                </small>
+                <small class="text-muted" id="pageInfo">Page @currentPage of @totalPages</small>
+            </div>
+            
+            <ul class="pagination justify-content-center">
+                @if (currentPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
+                            <i class="fas fa-angle-double-left"></i> First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                }
+
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    if (i == currentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link page-link-custom" href="#" data-page="@i">@i</a>
+                        </li>
+                    }
+                }
+
+                @if (currentPage < totalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@totalPages" title="Last page">
+                            Last <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>
 
 <!-- Page size selector container -->
-<div id="pageSizeContainer"></div>
+<div id="pageSizeContainer">
+    @if (Model != null && Model.Any())
+    {
+        <div class="d-flex justify-content-end align-items-center mt-3">
+            <label class="form-label me-2 mb-0">Show:</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="5" @(pageSize == 5 ? "selected" : "")>5</option>
+                <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
+                <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
+                <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
+            </select>
+        </div>
+    }
+</div>
 
+<!-- Delete Modal -->
 <div class="modal fade" id="deleteTemplateModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -133,7 +282,6 @@ var searchKey = ViewBag.searchKey;
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-                    <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
                     <i class="fas fa-trash"></i> Delete
                 </button>
             </div>
@@ -142,455 +290,580 @@ var searchKey = ViewBag.searchKey;
 </div>
 
 <script>
-    if (typeof jQuery === 'undefined') {
-        console.error('jQuery is not loaded!');
-    } else {
-        console.log('jQuery is ready');
+class TemplateManager {
+    constructor() {
+        this.currentPage = @currentPage;
+        this.pageSize = @pageSize;
+        this.sortBy = '@sortBy';
+        this.sortDirection = '@sortDirection';
+        this.searchKey = '@Html.Raw(searchKey)';
+        this.totalCount = @totalCount;
+        this.totalPages = @totalPages;
+        this.searchTimeout = null;
+        
+        this.init();
     }
 
-    class TemplateManager {
-        constructor() {
-            this.currentPage = 1;
-            this.pageSize = 10;
-            this.sortBy = 'name';
-            this.sortDirection = 'asc';
+    init() {
+        console.log('🚀 Initializing TemplateManager...');
+        this.bindEvents();
+        this.updateUI();
+        this.initializeAutocomplete();
+    }
+    
+    initializeAutocomplete() {
+        // Инициализируем автокомплит для всех существующих полей
+        document.querySelectorAll('.value-input').forEach(input => {
+            this.setupAutocomplete(input);
+        });
+    }
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', () => this.init());
+    setupAutocomplete(inputElement) {
+        const dropdown = inputElement.parentElement.querySelector('.autocomplete-dropdown');
+        let currentFocus = -1;
+        
+        inputElement.addEventListener('input', (e) => {
+            const value = e.target.value.trim();
+            
+            clearTimeout(this.searchTimeout);
+            
+            if (value.length < 1) {
+                this.hideDropdown(dropdown);
+                return;
+            }
+            
+            this.searchTimeout = setTimeout(() => {
+                this.searchValues(value, dropdown, inputElement);
+            }, 300);
+        });
+        
+        inputElement.addEventListener('keydown', (e) => {
+            const items = dropdown.querySelectorAll('.autocomplete-item');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                currentFocus++;
+                if (currentFocus >= items.length) currentFocus = 0;
+                this.setActive(items, currentFocus);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                currentFocus--;
+                if (currentFocus < 0) currentFocus = items.length - 1;
+                this.setActive(items, currentFocus);
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                if (currentFocus > -1 && items[currentFocus]) {
+                    items[currentFocus].click();
+                }
+            } else if (e.key === 'Escape') {
+                this.hideDropdown(dropdown);
+            }
+        });
+        
+        inputElement.addEventListener('blur', (e) => {
+            // Задержка чтобы клик по элементу успел сработать
+            setTimeout(() => {
+                this.hideDropdown(dropdown);
+            }, 200);
+        });
+    }
+    
+    async searchValues(searchTerm, dropdown, inputElement) {
+        try {
+            const params = new URLSearchParams({
+                valueKey: searchTerm,
+                pageNumber: 1,
+                pageSize: 20,
+                sortBy: 'date',
+                sortDirection: 'desc'
+            });
+
+            const response = await fetch(`/Values/Search?${params}`, {
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            });
+
+            const data = await response.json();
+            
+            if (data.success && data.data && data.data.length > 0) {
+                this.showDropdown(dropdown, data.data, inputElement);
             } else {
-                this.init();
+                this.hideDropdown(dropdown);
             }
+        } catch (error) {
+            console.error('Search error:', error);
+            this.hideDropdown(dropdown);
+        }
+    }
+    
+    showDropdown(dropdown, items, inputElement) {
+        dropdown.innerHTML = '';
+        
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            div.innerHTML = `<i class="fas fa-tag text-primary me-2"></i>${this.escapeHtml(item.key)}`;
+            div.addEventListener('click', () => {
+                inputElement.value = item.key;
+                this.hideDropdown(dropdown);
+                inputElement.focus();
+            });
+            dropdown.appendChild(div);
+        });
+        
+        dropdown.style.display = 'block';
+    }
+    
+    hideDropdown(dropdown) {
+        dropdown.style.display = 'none';
+        dropdown.innerHTML = '';
+    }
+    
+    setActive(items, index) {
+        items.forEach((item, i) => {
+            item.classList.toggle('active', i === index);
+        });
+    }
+    
+    bindEvents() {
+        // Search form
+        document.getElementById('searchForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.performSearch();
+        });
+
+        const searchInput = document.getElementById('searchInput');
+        let debounceTimeout;
+
+        searchInput.addEventListener('input', () => {
+            clearTimeout(debounceTimeout);
+            debounceTimeout = setTimeout(() => {
+                this.performSearch();
+            }, 300); 
+        });
+
+        // Clear search
+        document.getElementById('clearSearchBtn').addEventListener('click', () => {
+            this.clearSearch();
+        });
+
+        // Create form
+        document.getElementById('createTemplateForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.createTemplate();
+        });
+
+        // Sort buttons
+        document.querySelectorAll('.sort-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const sortBy = btn.getAttribute('data-sort');
+                this.sortTemplates(sortBy);
+            });
+        });
+
+        // Page size selector
+        const pageSizeSelect = document.getElementById('pageSizeSelect');
+        if (pageSizeSelect) {
+            pageSizeSelect.addEventListener('change', (e) => {
+                this.pageSize = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadData();
+            });
         }
 
-        init() {
-            console.log('🚀 Initializing TemplateManager...');
-            this.bindEvents();
-            this.loadTemplates();
-        }
+        // Delete confirmation
+        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+            const templateName = document.getElementById('templateNameToDelete').textContent;
+            this.deleteTemplate(templateName);
+        });
 
-        bindEvents() {
-            console.log('📎 Binding events...');
-
-            const self = this;
-            
-            const createForm = document.getElementById('createTemplateForm');
-            if (createForm) {
-                createForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    self.createTemplate();
+        // Bind pagination and table events
+        this.bindPaginationEvents();
+        
+        // Закрытие дропдаунов при клике вне
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.value-input-group')) {
+                document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
+                    this.hideDropdown(dropdown);
                 });
             }
+        });
+    }
 
-            const searchInput = document.getElementById('searchInput');
-            let debounceTimeout;
-            
-            searchInput.addEventListener('input', () => {
-                clearTimeout(debounceTimeout);
-                debounceTimeout = setTimeout(() => {
-                    this.performSearch();
-                }, 300);
-            });
-
-            // Clear search
-            document.getElementById('clearSearchBtn').addEventListener('click', () => {
-                this.clearSearch();
-            });
-            
-            // Sort buttons
-            document.querySelectorAll('.sort-btn').forEach(btn => {
-                btn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const sortBy = this.getAttribute('data-sort');
-                    self.sortTemplates(sortBy);
-                });
-            });
-
-            // Delete confirm button
-            const deleteBtn = document.getElementById('confirmDeleteBtn');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', function() {
-                    const templateName = document.getElementById('templateNameToDelete').textContent;
-                    self.deleteTemplate(templateName);
-                });
-            }
+    async performSearch() {
+        const searchInput = document.getElementById('searchInput');
+        const submitBtn = document.querySelector('#searchForm button[type="submit"]');
+        
+        this.searchKey = searchInput.value.trim();
+        this.currentPage = 1;
+        
+        submitBtn.disabled = true;
+        
+        try {
+            await this.loadData();
+            this.updateSearchUI();
+        } finally {
+            submitBtn.disabled = false;
         }
+    }
 
-        async loadTemplates() {
-            console.log('Loading templates...');
-            this.showTableLoader();
-            this.updateSortIcons();
+    clearSearch() {
+        document.getElementById('searchInput').value = '';
+        this.searchKey = '';
+        this.currentPage = 1;
+        this.loadData();
+        this.updateSearchUI();
+    }
 
-            try {
-                const params = new URLSearchParams({
-                    pageNumber: this.currentPage,
-                    pageSize: this.pageSize,
-                    sortBy: this.sortBy,
-                    sortDirection: this.sortDirection
-                });
+    updateSearchUI() {
+        const clearBtn = document.getElementById('clearSearchBtn');
+        clearBtn.style.display = this.searchKey ? 'inline-block' : 'none';
+    }
 
-                const response = await fetch(`/Templates/?${params}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
-                    }
-                });
+    async createTemplate() {
+        const form = document.getElementById('createTemplateForm');
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const spinner = submitBtn.querySelector('.spinner-border');
+        
+        const templateName = document.getElementById('templateName').value.trim();
+        const valueInputs = document.querySelectorAll('input[name="values"]');
+        const values = [];
 
-                console.log('Response status:', response.status);
+        valueInputs.forEach(input => {
+            const val = input.value.trim();
+            if (val) {
+                values.push(val);
+            }
+        });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        console.log('All values:', values);
+
+        if (!templateName || values.length === 0) {
+            this.showError('Template name and at least one value are required');
+            return;
+        }
+        
+        submitBtn.disabled = true;
+        if (spinner) spinner.classList.remove('d-none');
+        
+        try {
+            const formData = new FormData();
+            formData.append('templateName', templateName);
+            values.forEach(value => formData.append('values', value));
+
+            const response = await fetch('/Templates/Create', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showSuccess(result.message);
+                this.clearForm();
+                this.hideCreateForm();
+                this.loadData();
+            } else {
+                this.showError(result.message);
+            }
+        } catch (error) {
+            console.error('Error creating template:', error);
+            this.showError('Failed to create template');
+        } finally {
+            submitBtn.disabled = false;
+            if (spinner) spinner.classList.add('d-none');
+        }
+    }
+
+    async deleteTemplate(templateName) {
+        const deleteBtn = document.getElementById('confirmDeleteBtn');
+        
+        deleteBtn.disabled = true;
+
+        try {
+            const formData = new FormData();
+            formData.append('templateName', templateName);
+
+            const response = await fetch('/Templates/Delete', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: formData
+            });
+
+            const result = await response.json();
+            
+            if (result.success) {
+                this.showSuccess(result.message);
+                const modal = document.getElementById('deleteTemplateModal');
+                if (window.bootstrap) {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) bsModal.hide();
                 }
-
-                const result = await response.json();
-                console.log('Response data:', result);
-
-                if (result.success) {
-                    this.renderTemplates(result.data || []);
-                    this.renderPagination(result);
-                    this.renderPageSizeSelector();
-                } else {
-                    this.showError('Failed to load templates: ' + (result.message || 'Unknown error'));
-                    this.renderEmptyState();
-                }
-            } catch (error) {
-                console.error('Error loading templates:', error);
-                this.showError('Network error: ' + error.message);
-                this.renderEmptyState();
-            } finally {
-                this.hideTableLoader();
+                this.loadData();
+            } else {
+                this.showError(result.message);
             }
+        } catch (error) {
+            console.error('Error deleting template:', error);
+            this.showError('Failed to delete template');
+        } finally {
+            deleteBtn.disabled = false;
         }
+    }
 
-        async performSearch() {
-            const searchInput = document.getElementById('searchInput');
-            const clearSearchBtn = document.getElementById('clearSearchBtn');
+    sortTemplates(sortBy) {
+        if (this.sortBy === sortBy) {
+            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+        } else {
+            this.sortBy = sortBy;
+            this.sortDirection = 'asc';
+        }
+        this.currentPage = 1;
+        this.loadData();
+    }
 
-            this.searchKey = searchInput.value.trim();
-            this.currentPage = 1;
+    async loadData() {
+        console.log('🔄 Loading data...');
+        this.updateSortIcons();
+        
+        try {
+            const params = new URLSearchParams({
+                pageNumber: this.currentPage,
+                pageSize: this.pageSize,
+                sortBy: this.sortBy,
+                sortDirection: this.sortDirection
+            });
 
             if (this.searchKey) {
-                clearSearchBtn.style.display = 'inline-block';
-            } else {
-                clearSearchBtn.style.display = 'none';
-                await this.loadTemplates();
-                return;
+                params.append('templateName', this.searchKey);
             }
 
-            this.showTableLoader();
-
-            try {
-                const params = new URLSearchParams({
-                    templateName: this.searchKey,
-                    pageNumber: this.currentPage,
-                    pageSize: this.pageSize,
-                    sortBy: this.sortBy,
-                    sortDirection: this.sortDirection
-                });
-
-                const response = await fetch(`/Templates/Search?${params}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            const endpoint = this.searchKey ? '/Templates/Search' : '/Templates/';
+            const response = await fetch(`${endpoint}?${params}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
                 }
-
-                const result = await response.json();
-
-                if (result.success) {
-                    this.renderTemplates(result.data || []);
-                    this.renderPagination({
-                        currentPage: result.pagination.Page,
-                        totalPages: result.pagination.TotalPages,
-                        totalCount: result.pagination.TotalItems
-                    });
-                    this.renderPageSizeSelector();
-                } else {
-                    this.showError('Search failed: ' + (result.message || 'Unknown error'));
-                    this.renderEmptyState();
-                }
-            } catch (error) {
-                console.error('Error searching templates:', error);
-                this.showError('Search error: ' + error.message);
-                this.renderEmptyState();
-            } finally {
-                this.hideTableLoader();
-            }
-        }
-
-        clearSearch() {
-            const searchInput = document.getElementById('searchInput');
-            const clearSearchBtn = document.getElementById('clearSearchBtn');
-
-            searchInput.value = '';
-            this.searchKey = '';
-            this.currentPage = 1;
-            clearSearchBtn.style.display = 'none';
-
-            this.loadTemplates();
-        }
-
-
-        async createTemplate() {
-            console.log('Creating template...');
-
-            const submitBtn = document.querySelector('#createTemplateForm button[type="submit"]');
-            const spinner = submitBtn.querySelector('.spinner-border');
-
-            const templateName = document.getElementById('templateName').value.trim();
-            const valueInputs = document.querySelectorAll('input[name="values"]');
-            const values = [];
-
-            valueInputs.forEach(input => {
-                const val = input.value.trim();
-                if (val) values.push(val);
             });
 
-            if (!templateName || values.length === 0) {
-                this.showError('Template name and at least one value are required');
-                return;
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
 
-            submitBtn.disabled = true;
-            if (spinner) spinner.classList.remove('d-none');
+            const result = await response.json();
+            console.log('✅ Response data:', result);
 
-            try {
-                const formData = new FormData();
-                formData.append('templateName', templateName);
-                values.forEach(value => formData.append('values', value));
-
-                const response = await fetch('/Templates/Create', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    this.showSuccess(result.message);
-                    this.clearForm();
-                    this.hideCreateForm();
-                    this.loadTemplates();
-                } else {
-                    this.showError(result.message);
-                }
-            } catch (error) {
-                console.error('Error creating template:', error);
-                this.showError('Failed to create template');
-            } finally {
-                submitBtn.disabled = false;
-                if (spinner) spinner.classList.add('d-none');
-            }
-        }
-
-        async deleteTemplate(templateName) {
-            console.log('🗑️ Deleting template:', templateName);
-
-            const deleteBtn = document.getElementById('confirmDeleteBtn');
-            const spinner = deleteBtn.querySelector('.spinner-border');
-
-            deleteBtn.disabled = true;
-            if (spinner) spinner.classList.remove('d-none');
-
-            try {
-                const formData = new FormData();
-                formData.append('templateName', templateName);
-
-                const response = await fetch('/Templates/Delete', {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: formData
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    this.showSuccess(result.message);
-                    // Закрываем модал
-                    const modal = document.getElementById('deleteTemplateModal');
-                    if (window.bootstrap) {
-                        const bsModal = bootstrap.Modal.getInstance(modal);
-                        if (bsModal) bsModal.hide();
-                    }
-                    this.loadTemplates();
-                } else {
-                    this.showError(result.message);
-                }
-            } catch (error) {
-                console.error('Error deleting template:', error);
-                this.showError('Failed to delete template');
-            } finally {
-                deleteBtn.disabled = false;
-                if (spinner) spinner.classList.add('d-none');
-            }
-        }
-
-        sortTemplates(sortBy) {
-            if (this.sortBy === sortBy) {
-                this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+            if (result.success) {
+                this.updatePageData(result);
+                this.renderTemplates(result.data || []);
+                this.renderPagination(result);
+                this.renderPageSizeSelector(result);
+                this.updateUI();
             } else {
-                this.sortBy = sortBy;
-                this.sortDirection = 'asc';
-            }
-            this.currentPage = 1;
-            this.loadTemplates();
-        }
-
-        renderTemplates(templates) {
-            const tbody = document.getElementById('templatesTableBody');
-            tbody.innerHTML = '';
-
-            if (templates && templates.length > 0) {
-                templates.forEach(template => {
-                    const row = this.createTemplateRow(template);
-                    tbody.insertAdjacentHTML('beforeend', row);
-                });
-                this.bindTableEvents();
-            } else {
+                this.showError('Failed to load templates: ' + (result.message || 'Unknown error'));
                 this.renderEmptyState();
             }
+        } catch (error) {
+            console.error('💥 Error loading data:', error);
+            this.showError('Network error: ' + error.message);
+            this.renderEmptyState();
         }
+    }
 
-        createTemplateRow(template) {
-            return `
-                <tr>
-                    <td>
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-primary">${this.escapeHtml(template.templateName)}</span>
-                            <button class="btn btn-sm btn-outline-secondary copy-id-btn" 
-                                    data-id="${template.templateId}" 
-                                    title="Copy Template ID">
-                                <i class="fas fa-copy"></i>
-                            </button>
-                        </div>
-                    </td>
-                    <td>
-                        <span class="badge bg-secondary">${template.valueCount}</span>
-                    </td>
-                    <td>
-                        <div class="d-flex gap-1">
-                            <form method="get" action="/Templates/Details" class="d-inline">
-                                <input type="hidden" name="templateId" value="${template.templateId}">
-                                <input type="hidden" name="lang" value="">
-                                <input type="hidden" name="templateName" value="${template.templateName}" />
-                                <button type="submit" class="btn btn-sm btn-outline-primary">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                            </form>
-                            <button class="btn btn-sm btn-outline-danger delete-template-btn" 
-                                    data-template="${this.escapeHtml(template.templateName)}">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </td>
-                </tr>
-`;
+    updatePageData(data) {
+        this.currentPage = data.currentPage || 1;
+        this.totalPages = data.totalPages || 1;
+        this.totalCount = data.totalCount || 0;
+        this.pageSize = data.pageSize || 10;
+        this.sortBy = data.sortBy || this.sortBy;
+        this.sortDirection = data.sortDirection || this.sortDirection;
+        if (data.searchKey !== undefined) {
+            this.searchKey = data.searchKey;
         }
+    }
 
+    updateUI() {
+        // Update total count
+        document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
+        
+        // Update search input
+        document.getElementById('searchInput').value = this.searchKey;
+        this.updateSearchUI();
+    }
 
-        bindTableEvents() {
-            // Copy buttons
-            document.querySelectorAll('.copy-id-btn').forEach(btn => {
-                btn.addEventListener('click', async (e) => {
-                    const templateId = btn.getAttribute('data-id');
-                    await this.copyToClipboard(templateId, 'Template ID copied!');
-                });
+    renderTemplates(templates) {
+        const tbody = document.getElementById('templatesTableBody');
+        
+        // Remove existing rows except empty state
+        const existingRows = tbody.querySelectorAll('tr:not(#emptyState)');
+        existingRows.forEach(row => row.remove());
+
+        // Remove empty state if it exists
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.remove();
+
+        if (templates && templates.length > 0) {
+            templates.forEach(template => {
+                const row = this.createTemplateRow(template);
+                tbody.insertAdjacentHTML('beforeend', row);
             });
-
-            // Delete buttons
-            document.querySelectorAll('.delete-template-btn').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    const templateName = btn.getAttribute('data-template');
-                    this.showDeleteModal(templateName);
-                });
-            });
-
-            // Bind pagination events after rendering
-            this.bindPaginationEvents();
+            this.bindTableEvents();
+        } else {
+            this.renderEmptyState();
         }
+    }
 
-        renderEmptyState() {
-            document.getElementById('templatesTableBody').innerHTML = `
+    createTemplateRow(template) {
+        return `
             <tr>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-primary">${this.escapeHtml(template.templateName)}</span>
+                        <button class="btn btn-sm btn-outline-secondary copy-template-btn" 
+                                data-id="${template.templateId}" 
+                                title="Copy Template ID">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-secondary">${template.valueCount}</span>
+                </td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <a href="/Templates/Details/${template.templateId}" 
+                           class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-eye"></i> View
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger delete-template-btn" 
+                                data-template="${this.escapeHtml(template.templateName)}">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    bindTableEvents() {
+        // Copy buttons
+        document.querySelectorAll('.copy-template-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const templateId = btn.getAttribute('data-id');
+                await copyTemplateId(templateId);
+            });
+        });
+
+        // Delete buttons
+        document.querySelectorAll('.delete-template-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const templateName = btn.getAttribute('data-template');
+                showDeleteModal(templateName);
+            });
+        });
+    }
+
+    renderEmptyState() {
+        const tbody = document.getElementById('templatesTableBody');
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr id="emptyState">
                 <td colspan="3" class="text-center text-muted py-4">
                     <i class="fas fa-inbox fa-3x mb-3"></i>
                     <div>No templates found</div>
                 </td>
             </tr>
+        `);
+    }
+
+    renderPagination(responseData) {
+        const { currentPage, totalPages, totalCount } = responseData;
+        const container = document.getElementById('paginationContainer');
+        
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const showingStart = (currentPage - 1) * this.pageSize + 1;
+        const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
+        
+        let html = `
+            <nav class="mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
+                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
+                </div>
+                <ul class="pagination justify-content-center">
         `;
+        
+        // First & Previous
+        if (currentPage > 1) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="1">
+                        <i class="fas fa-angle-double-left"></i> First
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            `;
         }
 
-        renderPagination(responseData) {
-            const { currentPage, totalPages } = responseData;
-
-            const container = document.getElementById('paginationContainer');
-
-            if (totalPages <= 1) {
-                container.innerHTML = '';
-                return;
-            }
-
-            let html = '<nav class="mt-4"><ul class="pagination justify-content-center">';
-
-            // First page
-            if (currentPage > 1) {
-                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="1"><i class="fas fa-angle-double-left"></i> First</a></li>`;
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
             } else {
-                html += `<li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>`;
+                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
             }
-
-            // Previous
-            if (currentPage > 1) {
-                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a></li>`;
-            } else {
-                html += `<li class="page-item disabled"><span class="page-link">Previous</span></li>`;
-            }
-
-            // Page numbers
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, currentPage + 2);
-
-            for (let i = startPage; i <= endPage; i++) {
-                if (i === currentPage) {
-                    html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-                } else {
-                    html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
-                }
-            }
-
-            // Next
-            if (currentPage < totalPages) {
-                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a></li>`;
-            } else {
-                html += `<li class="page-item disabled"><span class="page-link">Next</span></li>`;
-            }
-
-            // Last
-            if (currentPage < totalPages) {
-                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${totalPages}">Last <i class="fas fa-angle-double-right"></i></a></li>`;
-            } else {
-                html += `<li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>`;
-            }
-
-            html += '</ul></nav>';
-            container.innerHTML = html;
-
-            // Bind pagination events
-            this.bindPaginationEvents();
         }
 
-        renderPageSizeSelector() {
-            const html = `
+        // Next & Last
+        if (currentPage < totalPages) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
+                        Last <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
+            `;
+        }
+
+        html += '</ul></nav>';
+        container.innerHTML = html;
+        
+        // Rebind pagination events
+        this.bindPaginationEvents();
+    }
+
+    renderPageSizeSelector(responseData) {
+        const container = document.getElementById('pageSizeContainer');
+        
+        if (!responseData.data || responseData.data.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        const html = `
             <div class="d-flex justify-content-end align-items-center mt-3">
                 <label class="form-label me-2 mb-0">Show:</label>
                 <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
@@ -601,184 +874,251 @@ var searchKey = ViewBag.searchKey;
                 </select>
             </div>
         `;
-            document.getElementById('pageSizeContainer').innerHTML = html;
-
-            // Bind page size change event
-            const select = document.getElementById('pageSizeSelect');
-            if (select) {
-                select.addEventListener('change', (e) => {
-                    this.pageSize = parseInt(e.target.value);
-                    this.currentPage = 1;
-                    this.loadTemplates();
-                });
-            }
-        }
-
-        bindPaginationEvents() {
-            // Pagination links
-            document.querySelectorAll('.page-link-custom').forEach(link => {
-                link.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const page = parseInt(link.getAttribute('data-page'));
-                    if (page && page !== this.currentPage) {
-                        this.currentPage = page;
-                        this.loadTemplates();
-                    }
-                });
+        container.innerHTML = html;
+        
+        // Rebind page size change event
+        const select = document.getElementById('pageSizeSelect');
+        if (select) {
+            select.addEventListener('change', (e) => {
+                this.pageSize = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadData();
             });
         }
+    }
 
-        updateSortIcons() {
-            // Reset all icons
-            document.querySelectorAll('.sort-icon-name, .sort-icon-value').forEach(icon => {
-                icon.className = 'fas fa-sort';
+    bindPaginationEvents() {
+        document.querySelectorAll('.page-link-custom').forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const page = parseInt(link.getAttribute('data-page'));
+                if (page && page !== this.currentPage) {
+                    this.currentPage = page;
+                    this.loadData();
+                }
             });
+        });
+    }
 
-            // Set correct icon for current sort
-            const iconClass = this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
-            const currentIcon = document.querySelector(`.sort-icon-${this.sortBy}`);
-            if (currentIcon) {
-                currentIcon.className = `fas ${iconClass}`;
-            }
+    updateSortIcons() {
+        // Reset all icons
+        document.querySelectorAll('.sort-icon-name').forEach(icon => {
+            icon.className = 'fas fa-sort';
+        });
+        
+        // Set correct icon for current sort
+        const iconClass = this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+        const currentIcon = document.querySelector(`.sort-icon-${this.sortBy}`);
+        if (currentIcon) {
+            currentIcon.className = `fas ${iconClass}`;
         }
+    }
 
-        showTableLoader() {
-            const loader = document.getElementById('tableLoader');
-            if (loader) loader.style.display = 'table-row';
-        }
-
-        hideTableLoader() {
-            const loader = document.getElementById('tableLoader');
-            if (loader) loader.style.display = 'none';
-        }
-
-        showDeleteModal(templateName) {
-            document.getElementById('templateNameToDelete').textContent = templateName;
-            const modal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
-            modal.show();
-        }
-
-        clearForm() {
-            document.getElementById('createTemplateForm').reset();
-            document.getElementById('valuesContainer').innerHTML = `
-            <div class="input-group mb-2 value-input-group">
-                <input type="text" name="values" class="form-control" placeholder="Enter value" required>
-                <button class="btn btn-outline-danger" type="button" onclick="removeValueInput(this)" disabled>
-                    <i class="fas fa-trash"></i>
+    clearForm() {
+        document.getElementById('createTemplateForm').reset();
+        
+        // Сбрасываем контейнер к исходному состоянию
+        document.getElementById('valuesContainer').innerHTML = `
+            <div class="mb-2 value-input-group">
+                <div class="position-relative">
+                    <input type="text" name="values" class="form-control value-input" 
+                           placeholder="Type to search for values..." required>
+                    <div class="autocomplete-dropdown" style="display: none;"></div>
+                </div>
+                <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)" disabled>
+                    <i class="fas fa-trash"></i> Remove
                 </button>
             </div>
         `;
-            updateRemoveButtons();
+        
+        // Переинициализируем автокомплит
+        this.initializeAutocomplete();
+        updateRemoveButtons();
+    }
+
+    hideCreateForm() {
+        const section = document.getElementById('createTemplateSection');
+        if (window.bootstrap) {
+            const collapse = bootstrap.Collapse.getInstance(section);
+            if (collapse) collapse.hide();
         }
+    }
 
-        hideCreateForm() {
-            const section = document.getElementById('createTemplateSection');
-            if (window.bootstrap) {
-                const collapse = bootstrap.Collapse.getInstance(section);
-                if (collapse) collapse.hide();
-            }
-        }
+    showSuccess(message) { this.showAlert(message, 'success'); }
+    showError(message) { this.showAlert(message, 'danger'); }
 
-        async copyToClipboard(text, message) {
-            try {
-                await navigator.clipboard.writeText(text);
-                this.showToast(message, 'success');
-            } catch (error) {
-                this.showToast('Failed to copy', 'error');
-            }
-        }
-
-        showSuccess(message) { this.showAlert(message, 'success'); }
-        showError(message) { this.showAlert(message, 'danger'); }
-
-        showAlert(message, type) {
-            const container = document.getElementById('alertContainer');
-            container.innerHTML = `
+    showAlert(message, type) {
+        const container = document.getElementById('alertContainer');
+        container.innerHTML = `
             <div class="alert alert-${type} alert-dismissible fade show">
                 ${this.escapeHtml(message)}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
-            setTimeout(() => {
-                const alert = container.querySelector('.alert');
-                if (alert) alert.remove();
-            }, 5000);
-        }
-
-        showToast(message, type = 'success') {
-            const toast = document.createElement('div');
-            toast.className = 'position-fixed top-0 end-0 p-3';
-            toast.style.zIndex = '9999';
-
-            const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-            toast.innerHTML = `
-            <div class="toast show ${bgClass} text-white" role="alert">
-                <div class="toast-header ${bgClass} text-white border-0">
-                    <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
-                    <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
-                    <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
-                </div>
-                <div class="toast-body">${message}</div>
-            </div>
-        `;
-            document.body.appendChild(toast);
-            setTimeout(() => { if (toast.parentNode) toast.remove(); }, 3000);
-        }
-
-        escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) alert.remove();
+        }, 5000);
     }
 
-    // Existing functions
-    function addValueInput() {
-        const container = document.getElementById('valuesContainer');
+    escapeHtml(text) {
         const div = document.createElement('div');
-        div.className = 'input-group mb-2 value-input-group';
-        div.innerHTML = `
-        <input type="text" name="values" class="form-control" placeholder="Enter value" required />
-        <button class="btn btn-outline-danger" type="button" onclick="removeValueInput(this)">
-            <i class="fas fa-trash"></i>
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
+
+// Global functions
+function showDeleteModal(templateName) {
+    document.getElementById('templateNameToDelete').textContent = templateName;
+    const modal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
+    modal.show();
+}
+
+async function copyTemplateId(templateId) {
+    try {
+        await navigator.clipboard.writeText(templateId);
+        showToast('📋 Template ID copied to clipboard!', 'success');
+    } catch (error) {
+        console.error('Failed to copy:', error);
+        showToast('Failed to copy to clipboard', 'error');
+    }
+}
+
+function showToast(message, type = 'success') {
+    const toast = document.createElement('div');
+    toast.className = 'position-fixed top-0 end-0 p-3';
+    toast.style.zIndex = '9999';
+    
+    const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+    
+    toast.innerHTML = `
+        <div class="toast show ${bgClass} text-white" role="alert">
+            <div class="toast-header ${bgClass} text-white border-0">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
+            </div>
+            <div class="toast-body">${message}</div>
+        </div>
+    `;
+    
+    document.body.appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 3000);
+}
+
+function addValueInput() {
+    const container = document.getElementById('valuesContainer');
+    const div = document.createElement('div');
+    div.className = 'mb-2 value-input-group';
+    div.innerHTML = `
+        <div class="position-relative">
+            <input type="text" name="values" class="form-control value-input" 
+                   placeholder="Type to search for values..." 
+                   autocomplete="off" 
+                   required>
+            <div class="autocomplete-dropdown" style="display: none;"></div>
+        </div>
+        <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)">
+            <i class="fas fa-trash"></i> Remove
         </button>
     `;
-        container.appendChild(div);
-        updateRemoveButtons();
+    container.appendChild(div);
+
+    const newInput = div.querySelector('.value-input');
+
+    if (templateManager && newInput) {
+        console.log('Setting up autocomplete for new input');
+        templateManager.setupAutocomplete(newInput);
+    } else {
+        console.error('templateManager not available or newInput not found');
     }
 
-    function removeValueInput(button) {
-        button.closest('.value-input-group').remove();
-        updateRemoveButtons();
+    updateRemoveButtons();
+}
+
+function removeValueInput(button) {
+    button.closest('.value-input-group').remove();
+    updateRemoveButtons();
+}
+
+function updateRemoveButtons() {
+    const groups = document.querySelectorAll('.value-input-group');
+    groups.forEach(group => {
+        const removeBtn = group.querySelector('.btn-outline-danger');
+        removeBtn.disabled = groups.length === 1;
+    });
+}
+
+function clearForm() {
+    if (window.templateManager) {
+        templateManager.clearForm();
+    }
+}
+
+// Initialize
+let templateManager;
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('🎉 DOM loaded, initializing TemplateManager...');
+    templateManager = new TemplateManager();
+
+    // Auto-hide TempData alerts
+    const successAlert = document.querySelector('.alert-success');
+    if (successAlert) {
+        setTimeout(() => new bootstrap.Alert(successAlert).close(), 5000);
     }
 
-    function updateRemoveButtons() {
-        const groups = document.querySelectorAll('.value-input-group');
-        groups.forEach(group => {
-            const removeBtn = group.querySelector('.btn-outline-danger');
-            removeBtn.disabled = groups.length === 1;
-        });
+    const errorAlert = document.querySelector('.alert-danger');
+    if (errorAlert) {
+        setTimeout(() => new bootstrap.Alert(errorAlert).close(), 5000);
     }
-
-    function clearForm() {
-        if (window.templateManager) {
-            templateManager.clearForm();
-        }
-    }
-
-    // Initialize
-    window.templateManager = new TemplateManager();
+});
 </script>
 
 <style>
-    .value-input-group .form-control {
-        border-top-right-radius: 0;
-        border-bottom-right-radius: 0;
+    /* Autocomplete styles */
+    .value-input-group {
+        border: 1px solid #e9ecef;
+        border-radius: 0.375rem;
+        padding: 15px;
+        background-color: #f8f9fa;
+        position: relative;
     }
 
-    .value-input-group .btn {
-        border-top-left-radius: 0;
-        border-bottom-left-radius: 0;
+    .autocomplete-dropdown {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ced4da;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        max-height: 200px;
+        overflow-y: auto;
+        z-index: 1000;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .autocomplete-item {
+        padding: 12px 15px;
+        cursor: pointer;
+        border-bottom: 1px solid #f8f9fa;
+        transition: background-color 0.2s;
+    }
+
+    .autocomplete-item:hover,
+    .autocomplete-item.active {
+        background-color: #e9ecef;
+    }
+
+    .autocomplete-item:last-child {
+        border-bottom: none;
     }
 
     .badge {
