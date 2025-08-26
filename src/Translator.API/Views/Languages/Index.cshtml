@@ -291,13 +291,14 @@ class LanguagesManager {
         this.currentPage = @currentPage;
         this.pageSize = @pageSize;
         this.filterName = '@Html.Raw(filterName)';
-        this.filterActive = @(filterActive.HasValue ? (filterActive.Value ? "true" : "false") : "null");
+        // Исправляем инициализацию filterActive
+        this.filterActive = @(filterActive.HasValue ? (filterActive.Value ? "'true'" : "'false'") : "null");
         this.totalCount = @totalCount;
         this.totalPages = @totalPages;
-        
+
         // Create debounced search function
         this.debouncedSearch = debounce(this.performSearch.bind(this), 200);
-        
+
         this.init();
     }
 
@@ -315,9 +316,10 @@ class LanguagesManager {
             this.debouncedSearch();
         });
 
-        // Active filter
+        // Active filter - исправляем обработку
         document.getElementById('filterActive').addEventListener('change', (e) => {
-            this.filterActive = e.target.value || null;
+            const value = e.target.value;
+            this.filterActive = value === '' ? null : value;
             this.currentPage = 1;
             this.loadData();
         });
@@ -354,7 +356,7 @@ class LanguagesManager {
 
     async loadData() {
         console.log('🔄 Loading languages...');
-        
+
         try {
             const params = new URLSearchParams({
                 pageNumber: this.currentPage,
@@ -365,6 +367,7 @@ class LanguagesManager {
                 params.append('filterName', this.filterName);
             }
 
+            // Исправляем передачу параметра filterActive
             if (this.filterActive !== null) {
                 params.append('filterActive', this.filterActive);
             }
@@ -409,6 +412,7 @@ class LanguagesManager {
         if (data.filterName !== undefined) {
             this.filterName = data.filterName;
         }
+        // Исправляем обработку filterActive из ответа сервера
         if (data.filterActive !== undefined) {
             this.filterActive = data.filterActive;
         }
@@ -417,15 +421,16 @@ class LanguagesManager {
     updateUI() {
         // Update total count
         document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
-        
+
         // Update filter inputs
         document.getElementById('filterName').value = this.filterName;
-        document.getElementById('filterActive').value = this.filterActive || '';
+        // Исправляем установку значения селекта
+        document.getElementById('filterActive').value = this.filterActive === null ? '' : this.filterActive;
     }
 
     renderLanguages(languages) {
         const tbody = document.getElementById('languagesTableBody');
-        
+
         // Remove existing rows except empty state
         const existingRows = tbody.querySelectorAll('tr:not(#emptyState)');
         existingRows.forEach(row => row.remove());
@@ -467,20 +472,20 @@ class LanguagesManager {
                     <code class="text-muted">${unicodeRange}</code>
                 </td>
                 <td>
-                    ${isActive 
-                        ? '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>'
-                        : '<span class="badge bg-secondary"><i class="fas fa-times-circle"></i> Inactive</span>'
-                    }
+                    ${isActive
+            ? '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Active</span>'
+            : '<span class="badge bg-secondary"><i class="fas fa-times-circle"></i> Inactive</span>'
+        }
                 </td>
                 <td>
-                    ${isActive 
-                        ? `<button class="btn btn-sm btn-outline-warning deactivate-btn" data-code="${languageCode}" data-name="${languageName}">
+                    ${isActive
+            ? `<button class="btn btn-sm btn-outline-warning deactivate-btn" data-code="${languageCode}" data-name="${languageName}">
                              <i class="fas fa-pause"></i> Deactivate
                            </button>`
-                        : `<button class="btn btn-sm btn-outline-success activate-btn" data-code="${languageCode}" data-name="${languageName}">
+            : `<button class="btn btn-sm btn-outline-success activate-btn" data-code="${languageCode}" data-name="${languageName}">
                              <i class="fas fa-play"></i> Activate
                            </button>`
-                    }
+        }
                 </td>
             </tr>
         `;
@@ -521,7 +526,7 @@ class LanguagesManager {
     renderPagination(responseData) {
         const { currentPage, totalPages, totalCount } = responseData;
         const container = document.getElementById('paginationContainer');
-        
+
         if (totalPages <= 1) {
             container.innerHTML = '';
             return;
@@ -529,7 +534,7 @@ class LanguagesManager {
 
         const showingStart = (currentPage - 1) * this.pageSize + 1;
         const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
-        
+
         let html = `
             <nav class="mt-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
@@ -538,7 +543,7 @@ class LanguagesManager {
                 </div>
                 <ul class="pagination justify-content-center">
         `;
-        
+
         // First & Previous
         if (currentPage > 1) {
             html += `
@@ -561,7 +566,7 @@ class LanguagesManager {
         // Page numbers
         const startPage = Math.max(1, currentPage - 2);
         const endPage = Math.min(totalPages, currentPage + 2);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             if (i === currentPage) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
@@ -591,19 +596,19 @@ class LanguagesManager {
 
         html += '</ul></nav>';
         container.innerHTML = html;
-        
+
         // Rebind pagination events
         this.bindPaginationEvents();
     }
 
     renderPageSizeSelector(responseData) {
         const container = document.getElementById('pageSizeContainer');
-        
+
         if (!responseData.data || responseData.data.length === 0) {
             container.innerHTML = '';
             return;
         }
-        
+
         const html = `
             <div class="d-flex justify-content-end align-items-center mt-3">
                 <label class="form-label me-2 mb-0">Show:</label>
@@ -616,7 +621,7 @@ class LanguagesManager {
             </div>
         `;
         container.innerHTML = html;
-        
+
         // Rebind page size change event
         const select = document.getElementById('pageSizeSelect');
         if (select) {
@@ -656,7 +661,7 @@ class LanguagesManager {
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
                 this.showSuccess(result.message);
                 const modal = document.getElementById('deactivateLanguageModal');
@@ -691,7 +696,7 @@ class LanguagesManager {
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
                 this.showSuccess(result.message);
                 const modal = document.getElementById('activateLanguageModal');
