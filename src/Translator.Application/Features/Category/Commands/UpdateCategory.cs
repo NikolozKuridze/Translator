@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
@@ -13,6 +14,8 @@ public abstract class UpdateCategory
     public sealed record Command(
         Guid Id,
         string? Value,
+        string? Metadata,
+        string? Shortcode,
         int? Order) : IRequest;
 
     public class Validator : AbstractValidator<Command>
@@ -23,24 +26,40 @@ public abstract class UpdateCategory
                 .NotEmpty()
                 .WithMessage("Id cannot be empty.");
 
-            When(x => x.Value != null, () =>
-            {
-                RuleFor(x => x.Value)
-                    .NotEmpty()
-                    .WithMessage("Value cannot be empty when provided.")
-                    .Length(DatabaseConstants.Category.VALUE_MIN_LENGTH, DatabaseConstants.Category.VALUE_MAX_LENGTH);
-            });
+            RuleFor(x => x.Value)
+                .Length(DatabaseConstants.Category.VALUE_MIN_LENGTH, DatabaseConstants.Category.VALUE_MAX_LENGTH);
 
-            When(x => x.Order != null, () =>
-            {
-                RuleFor(x => x.Order)
-                    .GreaterThanOrEqualTo(0)
-                    .WithMessage("Order must be greater than or equal to 0.");
-            });
+            RuleFor(x => x.Order)
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("Order must be greater than or equal to 0.");
+
+            RuleFor(x => x.Metadata)
+                .Must(BeValidJson)
+                .WithMessage("Metadata must be valid JSON.");
+
+            RuleFor(x => x.Shortcode)
+                .Length(DatabaseConstants.Category.VALUE_MIN_LENGTH, DatabaseConstants.Category.VALUE_MAX_LENGTH)
+                .Matches("^[a-zA-Z]+$")
+                .WithMessage("Shortcode must only contain letters.");
 
             RuleFor(x => x)
-                .Must(x => x.Value != null || x.Order != null)
-                .WithMessage("At least one field (Value or Order) must be provided for update.");
+                .Must(x => x.Value != null || x.Order != null || x.Metadata != null || x.Shortcode != null)
+                .WithMessage("Update at least one field.");
+        }
+
+        private bool BeValidJson(string? metadata)
+        {
+            if (string.IsNullOrWhiteSpace(metadata))
+                return true;
+            try
+            {
+                JsonDocument.Parse(metadata);
+                return true;
+            }
+            catch (JsonException)
+            {
+                return false;
+            }
         }
     }
 
@@ -61,9 +80,13 @@ public abstract class UpdateCategory
 
             var proposedValue = request.Value ?? categoryToUpdate.Value;
             var proposedOrder = request.Order ?? categoryToUpdate.Order;
+            var proposedMetadata = request.Metadata ?? categoryToUpdate.Metadata;
+            var proposedShortcode = request.Shortcode ?? categoryToUpdate.Shortcode;
 
             categoryToUpdate.Value = proposedValue.ToLower().Trim();
             categoryToUpdate.Order = proposedOrder;
+            categoryToUpdate.Metadata = proposedMetadata;
+            categoryToUpdate.Shortcode = proposedShortcode?.ToLower().Trim();
 
             await categoryRepository.UpdateAsync(categoryToUpdate);
             await categoryRepository.SaveChangesAsync(cancellationToken);

@@ -13,7 +13,12 @@ public class CategoryController(IMediator mediator) : ControllerBase
     [HttpPost]
     public async Task<IResult> CreateCategory(CreateCategoryModel model)
     {
-        var command = new AddCategory.Command(model.Value, model.Type, model.Order,
+        var command = new AddCategory.Command(
+            model.Value,
+            model.Type,
+            model.Metadata,
+            model.Shortcode,
+            model.Order,
             model.ParentId);
 
         var result = await mediator.Send(command);
@@ -50,7 +55,12 @@ public class CategoryController(IMediator mediator) : ControllerBase
     [HttpPut]
     public async Task<IResult> UpdateCategory(UpdateCategoryModel model)
     {
-        var command = new UpdateCategory.Command(model.Id, model.Value?.ToLower().Trim(), model.Order);
+        var command = new UpdateCategory.Command(
+            model.Id,
+            model.Value?.ToLower().Trim(),
+            model.Metadata,
+            model.Shortcode?.ToLower().Trim(),
+            model.Order);
 
         await mediator.Send(command);
 

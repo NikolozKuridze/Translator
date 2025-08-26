@@ -3,13 +3,17 @@ namespace Translator.Domain.Entities;
 public class Category(
     string value,
     Guid typeId,
-    int? order = null,
-    Guid? parentId = null) : BaseEntity
+    string? metadata,
+    string? shortcode,
+    int? order,
+    Guid? parentId) : BaseEntity
 {
     public string Value { get; set; } = value;
     public Guid TypeId { get; init; } = typeId;
-    public CategoryType Type { get; set; } = null!;
     public int? Order { get; set; } = order;
+    public string? Metadata { get; set; } = metadata;
+    public string? Shortcode { get; set; } = shortcode;
+    public CategoryType Type { get; set; } = null!;
     public Guid? ParentId { get; set; } = parentId;
     public Category? Parent { get; set; }
     public List<Category>? Children { get; set; }
