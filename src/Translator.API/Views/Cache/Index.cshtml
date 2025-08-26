@@ -311,8 +311,8 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
                 if (result.success) {
                     this.updatePageData(result);
                     this.renderCacheItems(result.data || []);
-                    this.renderPagination(result);
-                    this.renderPageSizeSelector(result);
+                    this.renderPagination();
+                    this.renderPageSizeSelector();
                     this.updateUI();
                 } else {
                     this.showError('Failed to load cache data: ' + (result.message || 'Unknown error'));
@@ -452,6 +452,9 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
                     }
                     this.totalCount = Math.max(0, this.totalCount - 1);
 
+                    // Recalculate total pages
+                    this.totalPages = this.totalCount > 0 ? Math.ceil(this.totalCount / this.pageSize) : 1;
+
                     // Update UI
                     this.updateUI();
 
@@ -462,6 +465,12 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
                         this.loadData();
                     } else if (remainingRows === 0) {
                         this.renderEmptyState();
+                        this.renderPagination(); // Ensure pagination is updated
+                        this.renderPageSizeSelector();
+                    } else {
+                        // Re-render pagination with updated counts
+                        this.renderPagination();
+                        this.renderPageSizeSelector();
                     }
                 } else {
                     this.showError(result.message);
@@ -489,29 +498,24 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
         `);
         }
 
-        renderPagination(responseData) {
-            const { currentPage, totalPages, totalCount } = responseData;
+        // Исправленный метод renderPagination - использует внутренние данные класса
+        renderPagination() {
             const container = document.getElementById('paginationContainer');
-
-            if (totalPages <= 1) {
-                container.innerHTML = '';
-                return;
-            }
-
-            const showingStart = (currentPage - 1) * this.pageSize + 1;
-            const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
+            
+            const showingStart = (this.currentPage - 1) * this.pageSize + 1;
+            const showingEnd = Math.min(this.currentPage * this.pageSize, this.totalCount);
 
             let html = `
             <nav class="mt-4">
                 <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
-                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
+                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${this.totalCount} results</small>
+                    <small class="text-muted">Page ${this.currentPage} of ${this.totalPages}</small>
                 </div>
                 <ul class="pagination justify-content-center">
         `;
 
             // First & Previous
-            if (currentPage > 1) {
+            if (this.currentPage > 1) {
                 html += `
                 <li class="page-item">
                     <a class="page-link page-link-custom" href="#" data-page="1">
@@ -519,7 +523,7 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
                     </a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
+                    <a class="page-link page-link-custom" href="#" data-page="${this.currentPage - 1}">Previous</a>
                 </li>
             `;
             } else {
@@ -530,11 +534,11 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
             }
 
             // Page numbers
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, currentPage + 2);
+            const startPage = Math.max(1, this.currentPage - 2);
+            const endPage = Math.min(this.totalPages, this.currentPage + 2);
 
             for (let i = startPage; i <= endPage; i++) {
-                if (i === currentPage) {
+                if (i === this.currentPage) {
                     html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
                 } else {
                     html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
@@ -542,13 +546,13 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
             }
 
             // Next & Last
-            if (currentPage < totalPages) {
+            if (this.currentPage < this.totalPages) {
                 html += `
                 <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
+                    <a class="page-link page-link-custom" href="#" data-page="${this.currentPage + 1}">Next</a>
                 </li>
                 <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
+                    <a class="page-link page-link-custom" href="#" data-page="${this.totalPages}">
                         Last <i class="fas fa-angle-double-right"></i>
                     </a>
                 </li>
@@ -567,10 +571,12 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
             this.bindPaginationEvents();
         }
 
-        renderPageSizeSelector(responseData) {
+        // Исправленный метод renderPageSizeSelector
+        renderPageSizeSelector() {
             const container = document.getElementById('pageSizeContainer');
 
-            if (!responseData.data || responseData.data.length === 0) {
+            // Если нет данных, скрываем селектор размера страницы
+            if (this.totalCount === 0) {
                 container.innerHTML = '';
                 return;
             }
@@ -635,7 +641,7 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
             return div.innerHTML;
         }
     }
-
+    
     // Initialize
     let cacheManager;
     document.addEventListener('DOMContentLoaded', function() {
