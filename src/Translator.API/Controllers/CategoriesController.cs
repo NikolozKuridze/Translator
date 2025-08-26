@@ -179,57 +179,66 @@ public class CategoriesController(IMediator mediator) : Controller
         }
     }
 
-    [HttpPost("Delete")]
-    public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
+  [HttpPost("Delete")]
+public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
+{
+    try
     {
-        try
+        var command = new DeleteCategory.Command(id);
+        await mediator.Send(command);
+
+        // If we're deleting the root category itself (the one we're viewing the tree of),
+        // redirect to index instead of trying to return to the deleted category's tree
+        bool isRootCategoryDeleted = returnToTreeId.HasValue && returnToTreeId.Value == id;
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
         {
-            var command = new DeleteCategory.Command(id);
-            await mediator.Send(command);
-
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            if (returnToTreeId.HasValue && !isRootCategoryDeleted)
             {
-                if (returnToTreeId.HasValue)
-                {
-                    var treeCategory = await mediator.Send(new GetCategoryTree.Query(returnToTreeId.Value));
-                    var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
-                    return Json(new
-                    {
-                        success = true,
-                        message = "Category deleted successfully.",
-                        treeData = treeCategory,
-                        categoryTypes = categoryTypes.TypeNames.ToList()
-                    });
-                }
-
-                var categories = await mediator.Send(new GetRootCategories.Query());
-                var updatedCategoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
+                var treeCategory = await mediator.Send(new GetCategoryTree.Query(returnToTreeId.Value));
+                var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
                 return Json(new
                 {
                     success = true,
                     message = "Category deleted successfully.",
-                    categories,
-                    categoryTypes = updatedCategoryTypes.TypeNames.ToList()
+                    treeData = treeCategory,
+                    categoryTypes = categoryTypes.TypeNames.ToList()
                 });
             }
 
-            TempData["SuccessMessage"] = "Category deleted successfully.";
-            return returnToTreeId.HasValue
-                ? RedirectToAction("Tree", new { id = returnToTreeId.Value })
-                : RedirectToAction("Index");
+            var categories = await mediator.Send(new GetRootCategories.Query());
+            var updatedCategoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
+            return Json(new
+            {
+                success = true,
+                message = "Category deleted successfully.",
+                categories,
+                categoryTypes = updatedCategoryTypes.TypeNames.ToList(),
+                redirectToIndex = isRootCategoryDeleted // Flag to indicate redirect needed
+            });
         }
-        catch (Exception ex)
-        {
-            var errorMessage = "An error occurred while deleting the category: " + ex.Message;
-            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                return Json(new { success = false, message = errorMessage });
 
-            TempData["ErrorMessage"] = errorMessage;
-            return returnToTreeId.HasValue
-                ? RedirectToAction("Tree", new { id = returnToTreeId.Value })
-                : RedirectToAction("Index");
-        }
+        TempData["SuccessMessage"] = "Category deleted successfully.";
+        return (returnToTreeId.HasValue && !isRootCategoryDeleted)
+            ? RedirectToAction("Tree", new { id = returnToTreeId.Value })
+            : RedirectToAction("Index");
     }
+    catch (Exception ex)
+    {
+        var errorMessage = "An error occurred while deleting the category: " + ex.Message;
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            return Json(new { success = false, message = errorMessage });
+
+        TempData["ErrorMessage"] = errorMessage;
+        
+        // On error, also avoid returning to deleted category tree
+        bool isRootCategoryDeleted = returnToTreeId.HasValue && returnToTreeId.Value == id;
+        return (returnToTreeId.HasValue && !isRootCategoryDeleted)
+            ? RedirectToAction("Tree", new { id = returnToTreeId.Value })
+            : RedirectToAction("Index");
+    }
+}
+
 
     [HttpPost("CreateCategoryType")]
     public async Task<IActionResult> CreateCategoryType(string typeName)
