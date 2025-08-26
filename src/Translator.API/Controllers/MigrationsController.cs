@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
 using Translator.Application.Features.Migrations.Commands.ApplyMigrations;
+using Translator.Application.Features.Migrations.Commands.DropDatabase;
 using Translator.Application.Features.Migrations.Commands.SeedFakeData;
 
 namespace Translator.API.Controllers;
@@ -47,6 +48,22 @@ public class MigrationsController : Controller
             await _mediator.Send(command);
             
             return Results.Ok(new { success = true, message = "Fake data seeded successfully!" });
+        }
+        catch (Exception ex)
+        {
+            return Results.BadRequest(new { success = false, message = ex.Message });
+        }
+    }
+
+    [HttpPost]
+    public async Task<IResult> DatabaseDrop()
+    {
+        try
+        {
+            var command = new DropDatabaseCommand();
+            await _mediator.Send(command);
+
+            return Results.Ok(new { success = true, message = "Database dropped successfully!" });
         }
         catch (Exception ex)
         {
