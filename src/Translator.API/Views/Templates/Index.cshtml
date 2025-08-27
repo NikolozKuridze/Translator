@@ -434,11 +434,20 @@ class TemplateManager {
         const searchInput = document.getElementById('searchInput');
         let debounceTimeout;
 
-        searchInput.addEventListener('input', () => {
+        // Fix: Separate live search from input field updates
+        searchInput.addEventListener('input', (e) => {
             clearTimeout(debounceTimeout);
+
+            // Update the internal search key without triggering full UI update
+            const inputValue = e.target.value.trim();
+
             debounceTimeout = setTimeout(() => {
-                this.performSearch();
-            }, 300); 
+                // Only update search key and perform search without updating the input field
+                this.searchKey = inputValue;
+                this.currentPage = 1;
+                this.loadDataWithoutInputUpdate();
+                this.updateSearchUI();
+            }, 300);
         });
 
         // Clear search
@@ -684,12 +693,66 @@ class TemplateManager {
         }
     }
 
+    async loadDataWithoutInputUpdate() {
+        console.log('🔄 Loading data...');
+        this.updateSortIcons();
+
+        try {
+            const params = new URLSearchParams({
+                pageNumber: this.currentPage,
+                pageSize: this.pageSize,
+                sortBy: this.sortBy,
+                sortDirection: this.sortDirection
+            });
+
+            if (this.searchKey) {
+                params.append('templateName', this.searchKey);
+            }
+
+            const endpoint = this.searchKey ? '/Templates/Search' : '/Templates/';
+            const response = await fetch(`${endpoint}?${params}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('✅ Response data:', result);
+
+            if (result.success) {
+                this.updatePageData(result);
+                this.renderTemplates(result.data || []);
+                this.renderPagination(result);
+                this.renderPageSizeSelector(result);
+                // Don't call this.updateUI() here as it updates the search input
+                document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
+            } else {
+                this.showError('Failed to load templates: ' + (result.message || 'Unknown error'));
+                this.renderEmptyState();
+            }
+        } catch (error) {
+            console.error('💥 Error loading data:', error);
+            this.showError('Network error: ' + error.message);
+            this.renderEmptyState();
+        }
+    }
+
     updateUI() {
         // Update total count
         document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
-        
-        // Update search input
-        document.getElementById('searchInput').value = this.searchKey;
+
+        // Only update search input if it's not currently focused (user is not typing)
+        const searchInput = document.getElementById('searchInput');
+        if (document.activeElement !== searchInput) {
+            searchInput.value = this.searchKey;
+        }
+
         this.updateSearchUI();
     }
 
