@@ -19,19 +19,13 @@ public class GetLogsHandler : IRequestHandler<GetLogsCommand, PaginatedResponse<
         var query = _dbContext.Logs.AsQueryable();
     
         if (request.Pagination.DateFrom.HasValue)
-        {
             query = query.Where(t => t.Timestamp >= request.Pagination.DateFrom.Value);
-        }
     
         if (request.Pagination.DateTo.HasValue)
-        {
             query = query.Where(t => t.Timestamp <= request.Pagination.DateTo.Value);
-        }
     
         if (request.Level.HasValue)
-        {
             query = query.Where(t => t.Level == request.Level.Value);
-        }
     
         query = query.OrderByDescending(t => t.Timestamp);
     
