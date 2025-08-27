@@ -76,7 +76,7 @@
                         data-category-id="@Model.Id"
                         data-category-value="@Model.Value"
                         data-category-order="@(Model.Order?.ToString() ?? "")"
-                        data-category-metadata="@(Model.Metadata != null ? Html.Raw(Json.Serialize(Model.Metadata)) : "")"
+                        data-category-metadata="@(Model.Metadata != null ? System.Text.Json.JsonSerializer.Serialize(Model.Metadata) : "")"
                         data-category-shortcode="@(Model.Shortcode ?? "")"
                         title="Edit Category">
                     <i class="fas fa-edit"></i>
