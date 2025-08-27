@@ -53,11 +53,10 @@
                 </button>
                 <ul class="dropdown-menu" aria-labelledby="languageDropdown">
                     <li>
-                        <a class="dropdown-item language-link @(string.IsNullOrEmpty(currentLanguage) ? "active" : "")"
-                           href="/Templates/Details?templateId=@templateId&lang=&templateName=@ViewBag.TemplateName&pageNumber=@currentPage&pageSize=@pageSize"
+                        <div class="dropdown-item language-link @(string.IsNullOrEmpty(currentLanguage) ? "active" : "")"
                            data-lang="">
-                            <i class="fas fa-globe"></i> All Languages
-                        </a>
+                            <i class="fas fa-globe"></i>Languages
+                        </div>
                     </li>
                     <li>
                         <hr class="dropdown-divider">
@@ -934,10 +933,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
     .text-break {
         word-break: break-word;
-    }
-    
-    .btn-sm-btn-outline-info{
-        color: darkgreen;
     }
 
     .gap-1 {
