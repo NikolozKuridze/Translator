@@ -32,15 +32,29 @@ public class LogsController : Controller
                 dateTo = DateTime.UtcNow;
                 dateFrom = DateTime.UtcNow.AddHours(-lastHours.Value);
             }
+            
+            DateTime? dateFromUtc = dateFrom?.Kind == DateTimeKind.Unspecified 
+                ? DateTime.SpecifyKind(dateFrom.Value, DateTimeKind.Utc) 
+                : dateFrom?.ToUniversalTime();
+            
+            DateTime? dateToUtc = dateTo?.Kind == DateTimeKind.Unspecified 
+                ? DateTime.SpecifyKind(dateTo.Value, DateTimeKind.Utc) 
+                : dateTo?.ToUniversalTime();
+        
+            if (dateToUtc.HasValue && dateToUtc.Value.TimeOfDay == TimeSpan.Zero)
+            {
+                dateToUtc = dateToUtc.Value.Date.AddDays(1).AddTicks(-1);
+            }
 
             var command = new GetLogsCommand(
                 new PaginationRequest(
                     page: pageNumber,
                     pageSize: pageSize,
-                    dateFrom: dateFrom,
-                    dateTo: dateTo,
+                    dateFrom: dateFromUtc,
+                    dateTo: dateToUtc,
                     null,
-                    null), level);
+                    null), 
+                level);
             var logs = await _mediator.Send(command);
 
             var totalCount = logs.TotalItems;
