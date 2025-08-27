@@ -1028,23 +1028,43 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             $('#treeContent').off('click', '.tree-edit-btn').on('click', '.tree-edit-btn', (e) => {
                 const button = $(e.currentTarget);
                 const categoryId = button.data('category-id');
-                const categoryValue = button.data('category-value');
-                const categoryOrder = button.data('category-order') || null;
-                const categoryMetadata = button.data('category-metadata') || null;
-                const categoryShortcode = button.data('category-shortcode') || null;
 
-                console.log('Edit button clicked:', {
-                    id: categoryId,
-                    value: categoryValue,
-                    order: categoryOrder,
-                    metadata: categoryMetadata,
-                    shortcode: categoryShortcode
-                });
+                // Find the category data in the tree structure
+                const categoryData = this.findCategoryInTree(treeData, categoryId);
 
-                this.showEditForm(categoryId, categoryValue, categoryOrder, categoryMetadata, categoryShortcode);
+                if (categoryData) {
+                    console.log('Edit button clicked with full data:', categoryData);
+                    this.showEditForm(
+                        categoryData.id,
+                        categoryData.value,
+                        categoryData.order || null,
+                        categoryData.metadata || null,
+                        categoryData.shortcode || null
+                    );
+                } else {
+                    console.error('Category not found:', categoryId);
+                    this.showError('Category data not found. Please refresh the page.');
+                }
             });
         }
 
+// Add this helper method to find category data in the tree
+        findCategoryInTree(node, targetId) {
+            if (node.id === targetId) {
+                return node;
+            }
+
+            if (node.children && node.children.length > 0) {
+                for (const child of node.children) {
+                    const found = this.findCategoryInTree(child, targetId);
+                    if (found) {
+                        return found;
+                    }
+                }
+            }
+
+            return null;
+        }
         bindEvents() {
             // Create Category Form
             $('#createCategoryForm').on('submit', (e) => this.handleCreateCategory(e));
@@ -1104,6 +1124,17 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                 shortcodeBadge = `<span class="category-shortcode-badge ms-2">${this.escapeHtml(node.shortcode)}</span>`;
             }
 
+            // Properly handle metadata serialization
+            let metadataForButton = '';
+            if (node.metadata) {
+                try {
+                    metadataForButton = JSON.stringify(node.metadata);
+                } catch (e) {
+                    console.warn('Failed to serialize metadata for node:', node.id, e);
+                    metadataForButton = '';
+                }
+            }
+
             let html = `
         <div class="tree-node">
             <div class="tree-node-content ${isRoot ? 'is-root' : ''}">
@@ -1152,7 +1183,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                                 data-category-id="${node.id}"
                                 data-category-value="${this.escapeHtml(node.value)}"
                                 data-category-order="${node.order || ''}"
-                                data-category-metadata="${node.metadata ? this.escapeHtml(JSON.stringify(node.metadata)) : ''}"
+                                data-category-metadata="${this.escapeHtml(metadataForButton)}"
                                 data-category-shortcode="${node.shortcode ? this.escapeHtml(node.shortcode) : ''}"
                                 title="Edit Category">
                             <i class="fas fa-edit"></i>
