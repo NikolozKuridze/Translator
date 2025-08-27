@@ -7,15 +7,6 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
-    <div class="d-flex align-items-center gap-3">
-        <small class="text-muted">Last updated: @DateTime.Now.ToString("HH:mm")</small>
-        <button type="button" class="btn btn-outline-info btn-sm" onclick="openDocumentation()">
-            <i class="fas fa-book me-1"></i>To documentation
-        </button>
-        <button type="button" class="btn btn-outline-danger btn-sm" onclick="performLogout()">
-            <i class="fas fa-sign-out-alt me-1"></i>Logout
-        </button>
-    </div>
 </div>
 
 @if (ViewBag.Error != null)
@@ -180,34 +171,6 @@
 </style>
 
 <script>
-    function openDocumentation() {
-        const baseUrl = window.location.protocol + '//' + window.location.hostname + ':' + window.location.port;
-        const docsUrl = baseUrl + '/docs';
-        window.open(docsUrl, '_blank');
-    }
-    async function performLogout() {
-        if (confirm('Are you sure you want to logout?')) {
-            try {
-                const response = await fetch('/Auth/Logout', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
-                    }
-                });
-                
-                if (response.ok) {
-                    window.location.href = '/Auth/Login';
-                } else {
-                    alert('Logout failed');
-                }
-            } catch (error) {
-                console.error('Logout error:', error);
-                window.location.href = '/Auth/Logout';
-            }
-        }
-    }
-
     document.addEventListener('DOMContentLoaded', function() {
         const cards = document.querySelectorAll('.stats-card');
         
