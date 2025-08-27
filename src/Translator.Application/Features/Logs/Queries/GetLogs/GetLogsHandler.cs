@@ -17,15 +17,26 @@ public class GetLogsHandler : IRequestHandler<GetLogsCommand, PaginatedResponse<
     public async Task<PaginatedResponse<GetLogsResponse>> Handle(GetLogsCommand request, CancellationToken cancellationToken)
     {
         var query = _dbContext.Logs.AsQueryable();
-        
-        
+    
+        if (request.Pagination.DateFrom.HasValue)
+        {
+            query = query.Where(t => t.Timestamp >= request.Pagination.DateFrom.Value);
+        }
+    
+        if (request.Pagination.DateTo.HasValue)
+        {
+            query = query.Where(t => t.Timestamp <= request.Pagination.DateTo.Value);
+        }
+    
+        if (request.Level.HasValue)
+        {
+            query = query.Where(t => t.Level == request.Level.Value);
+        }
+    
         query = query.OrderByDescending(t => t.Timestamp);
-        
-        if (request.Level != null)
-            query = query.Where(t => t.Level == request.Level);
-
+    
         var totalCount = await query.CountAsync(cancellationToken);
-        
+    
         var items = await query
             .Skip((request.Pagination.Page - 1) * request.Pagination.PageSize)
             .Take(request.Pagination.PageSize)
@@ -39,7 +50,6 @@ public class GetLogsHandler : IRequestHandler<GetLogsCommand, PaginatedResponse<
             ))
             .ToArrayAsync(cancellationToken);
 
-        
         return new PaginatedResponse<GetLogsResponse>
         {
             Page = request.Pagination.Page,
