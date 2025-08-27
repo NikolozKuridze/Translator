@@ -18,9 +18,9 @@ public class SearchValueHandler : IRequestHandler<SearchValueCommand, PaginatedR
     {
         var query = _valueRepository
             .Where(v =>
-                string.IsNullOrEmpty(request.ValueKey)||
-                v.Key.Contains(request.ValueKey) ||
-                v.Key == request.ValueKey);
+                string.IsNullOrEmpty(request.ValueKey) ||
+                v.Key.ToLower().Contains(request.ValueKey.ToLower()) ||
+                v.Key.ToLower() == request.ValueKey.ToLower());
 
         var totalItems = await query.CountAsync(cancellationToken);
 
