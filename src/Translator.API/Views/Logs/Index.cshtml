@@ -485,13 +485,30 @@ class LogsManager {
     updateUI() {
         // Update total count
         document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
-        
-        // Update filter inputs
-        document.getElementById('dateFromFilter').value = this.dateFrom;
-        document.getElementById('dateToFilter').value = this.dateTo;
-        document.getElementById('lastHoursSelect').value = this.lastHours;
-        document.getElementById('levelSelect').value = this.level;
+
+        // Only update filter inputs if they're not currently focused (user is not interacting)
+        const dateFromFilter = document.getElementById('dateFromFilter');
+        const dateToFilter = document.getElementById('dateToFilter');
+        const lastHoursSelect = document.getElementById('lastHoursSelect');
+        const levelSelect = document.getElementById('levelSelect');
+
+        if (document.activeElement !== dateFromFilter) {
+            dateFromFilter.value = this.dateFrom;
+        }
+
+        if (document.activeElement !== dateToFilter) {
+            dateToFilter.value = this.dateTo;
+        }
+
+        if (document.activeElement !== lastHoursSelect) {
+            lastHoursSelect.value = this.lastHours;
+        }
+
+        if (document.activeElement !== levelSelect) {
+            levelSelect.value = this.level;
+        }
     }
+
 
     renderLogs(logs) {
         const tbody = document.getElementById('logsTableBody');
