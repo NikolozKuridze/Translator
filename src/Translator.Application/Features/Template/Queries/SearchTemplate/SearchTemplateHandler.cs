@@ -20,8 +20,8 @@ public class SearchTemplateHandler : IRequestHandler<SearchTemplateCommand, Pagi
         var query = _templateRepository
             .Where(v =>
                 string.IsNullOrEmpty(request.TemplateName)||
-                v.Name.Contains(request.TemplateName) ||
-                v.Name == request.TemplateName);
+                v.Name.ToLower().Contains(request.TemplateName.ToLower()) ||
+                v.Name.ToLower() == request.TemplateName.ToLower());
 
         var totalItems = await query.CountAsync(cancellationToken);
 

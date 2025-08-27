@@ -1048,7 +1048,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             });
         }
 
-// Add this helper method to find category data in the tree
+        // Add this helper method to find category data in the tree
         findCategoryInTree(node, targetId) {
             if (node.id === targetId) {
                 return node;
@@ -1065,6 +1065,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
             return null;
         }
+
         bindEvents() {
             // Create Category Form
             $('#createCategoryForm').on('submit', (e) => this.handleCreateCategory(e));
@@ -1174,7 +1175,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                         </button>
                         <button type="button"
                                 class="node-action-btn btn-add"
-                                onclick="treeManager.openCreateForm('${node.id}', '${this.escapeHtml(node.value)}')"
+                                onclick="treeManager.openCreateForm('${node.id}', '${this.escapeHtml(node.value)}', '${node.typeName}')"
                                 title="Add Child Category">
                             <i class="fas fa-plus"></i>
                         </button>
@@ -1211,6 +1212,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             html += '</div>';
             return html;
         }
+
         loadExpandedState() {
             const stored = localStorage.getItem('categoryTreeExpanded_' + rootCategoryId);
             if (stored) {
@@ -1261,21 +1263,52 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
             }
         }
 
-        // Form handling methods
-        openCreateForm(parentId = null, parentName = 'Root Category') {
+        openCreateForm(parentId = null, parentName = 'Root Category', parentType = null) {
             this.closeAllForms();
 
             // Set parent ID and display parent info
             if (parentId) {
                 $('#parentId').val(parentId);
                 $('#parentInfo').text(`Child of: ${parentName}`);
+
+                // Filter out parent's type from dropdown
+                this.filterTypeOptionsByType(parentType);
             } else {
                 $('#parentId').val('');
                 $('#parentInfo').text('Root Category');
+
+                // Show all types for root categories
+                this.resetTypeOptions();
             }
 
             $('#createForm').addClass('show');
             setTimeout(() => $('#value').focus(), 300);
+        }
+
+        // Reset type options to show all available types
+        resetTypeOptions() {
+            const typeSelect = $('#type');
+
+            // Clear current options except the default one
+            typeSelect.find('option:not([value=""])').remove();
+
+            // Re-add all category types
+            categoryTypes.forEach(type => {
+                typeSelect.append(`<option value="${type}">${type}</option>`);
+            });
+        }
+
+        // Simplified filtering method
+        filterTypeOptionsByType(parentType) {
+            const typeSelect = $('#type');
+
+            // Reset all options first
+            this.resetTypeOptions();
+
+            if (parentType) {
+                // Remove the parent's type option
+                typeSelect.find(`option[value="${parentType}"]`).remove();
+            }
         }
 
         toggleCreateForm() {
@@ -1284,7 +1317,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 
         showEditForm(id, value, order, metadata = null, shortcode = null) {
             try {
-                console.log('showEditForm called with:', { id, value, order, metadata, shortcode });
+                console.log('showEditForm called with:', {id, value, order, metadata, shortcode});
 
                 this.closeAllForms();
 
@@ -1323,6 +1356,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                 this.showError('Failed to open edit form: ' + error.message);
             }
         }
+
         toggleEditForm() {
             $('#editForm').removeClass('show');
         }
@@ -1406,6 +1440,7 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
                     $('#metadataValidation, #shortcodeValidation').hide();
                     this.toggleCreateForm();
                 } else {
+                    this.toggleCreateForm();
                     this.showError(response.message);
                 }
             } catch (error) {
@@ -1607,8 +1642,8 @@ var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
     }
 
     // Global functions for backward compatibility
-    function openCreateForm(parentId = null, parentName = 'Root Category') {
-        treeManager.openCreateForm(parentId, parentName);
+    function openCreateForm(parentId = null, parentName = 'Root Category', parentType = null) {
+        treeManager.openCreateForm(parentId, parentName, parentType);
     }
 
     function showDeleteConfirmation(id, value) {
