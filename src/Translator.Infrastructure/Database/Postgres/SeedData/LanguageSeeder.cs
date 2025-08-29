@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 using Translator.Domain.Entities;
 using Translator.Infrastructure.Configurations;
@@ -14,20 +13,30 @@ public class LanguageSeeder
     {
         _languageSeedingConfiguration = languageSeedingConfiguration;
     }
+
     public Task Seed(ModelBuilder modelBuilder)
     {
-
         var path = Path.Combine(AppContext.BaseDirectory, _languageSeedingConfiguration.Path);
         var json = File.ReadAllText(path);
 
         var items = JsonSerializer.Deserialize<List<LanguageSeedDto>>(json)!;
 
-        var languages = items.Select(l => new Language(l.code, l.name, $"{l.hexrange.First()}-{l.hexrange.Last()}")
+        var languages = items.Select(l => new Language(
+            l.code,
+            l.name,
+            string.Join(";", Enumerable.Range(0, l.hexrange.Count / 2)
+                .Select(i => $"{l.hexrange[i * 2]}-{l.hexrange[i * 2 + 1]}"))
+        )
         {
             Id = StaticGuidGenerator.CreateGuidFromString(l.name),
             IsActive = false
         });
-        
+
+        foreach (var lang in languages)
+        {
+            Console.WriteLine($"{lang.Name}: {lang.UnicodeRange}");
+        }
+
         modelBuilder.Entity<Language>().HasData(languages);
         return Task.CompletedTask;
     }
