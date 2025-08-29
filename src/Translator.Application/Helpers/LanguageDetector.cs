@@ -10,43 +10,33 @@ public static class LanguageDetector
     
     private static readonly Dictionary<string, List<(int Start, int End)>> RangeCache = new();
 
-    public static Language DetectOrThrow(string input, IEnumerable<Language> languages)
+    public static List<Language> DetectLanguages(string input, IEnumerable<Language> languages)
     {
         if (string.IsNullOrEmpty(input))
             throw new UknownLanguageException("Empty input");
 
-        char firstChar = input[0];
+        var activeLanguages = languages.Where(l => l.IsActive).ToList();
+        if (!activeLanguages.Any())
+            return new List<Language>();
+
+        var significantChars = input.Where(c => !IsNeutralCharacter(c)).ToList();
         
-        Language? detectedLanguage = null;
-        List<(int Start, int End)>? detectedRanges = null;
-        
-        foreach (var language in languages)
+        if (!significantChars.Any())
+            return new List<Language>();
+
+        var candidateLanguages = new List<Language>();
+
+        foreach (var language in activeLanguages)
         {
             var ranges = GetCachedRanges(language.UnicodeRange);
-            if (IsInRanges(firstChar, ranges))
-            {
-                detectedLanguage = language;
-                detectedRanges = ranges;
-                break;
-            }
-        }
-
-        if (detectedLanguage == null)
-            throw new UknownLanguageException($"Unknown language for character: {firstChar}");
-
-        for (int i = 1; i < input.Length; i++)
-        {
-            char currentChar = input[i];
             
-            if (IsNeutralCharacter(currentChar))
-                continue;
-                
-            if (!IsInRanges(currentChar, detectedRanges ?? []))
-                throw new UknownLanguageException(
-                    $"Mixed languages detected. Expected {detectedLanguage.Name}, but found character '{currentChar}' at position {i}");
+            bool allCharsMatch = significantChars.All(c => IsInRanges(c, ranges));
+            
+            if (allCharsMatch)
+                candidateLanguages.Add(language);
         }
 
-        return detectedLanguage;
+        return candidateLanguages;
     }
 
     private static List<(int Start, int End)> GetCachedRanges(string rangeString)

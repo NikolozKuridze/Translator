@@ -1,7 +1,9 @@
 namespace Translator.Application.Exceptions;
 
-public class LanguageMissMatchException : ApplicationLayerException
+public class LanguageMissMatchException : Exception
 {
-    public LanguageMissMatchException(string value, string language) 
-        : base(ErrorCodes.BadRequest, $"{value}'s language doesn't match with '{language}'.") { }
+    public LanguageMissMatchException(string text, string message) 
+        : base($"Language mismatch for text '{text}': {message}")
+    {
+    }
 }

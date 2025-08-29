@@ -48,17 +48,27 @@ public class CreateTranslationHandler : IRequestHandler<CreateTranslationCommand
             .AsNoTracking()
             .SingleOrDefaultAsync(cancellationToken);
 
+        if (value is null)
+            throw new ValueNotFoundException(request.ValueName);
+
         var languages = await _languageEntityRepository
             .Where(l => l.IsActive)
             .ToListAsync(cancellationToken);
         
-        var textLanguage = LanguageDetector.DetectOrThrow(request.Translation, languages);
+        var detectedLanguages = LanguageDetector.DetectLanguages(request.Translation, languages);
         
-        if (value is null)
-            throw new ValueNotFoundException(request.ValueName);
+        var requestedLanguage = detectedLanguages.FirstOrDefault(l => l.Code == request.LanguageCode);
         
-        if (request.LanguageCode != textLanguage.Code)
-            throw new LanguageMissMatchException(request.Translation, request.LanguageCode);
+        if (requestedLanguage == null)
+        {
+            var detectedCodes = detectedLanguages.Any() 
+                ? string.Join(", ", detectedLanguages.Select(l => l.Code))
+                : "none";
+            throw new LanguageMissMatchException(
+                request.Translation, 
+                $"Requested language '{request.LanguageCode}' not compatible with text. Detected languages: [{detectedCodes}]"
+            );
+        }
         
         if (value.Translations.Any(
                 x => x.TranslationValue == request.Translation ||
@@ -67,7 +77,7 @@ public class CreateTranslationHandler : IRequestHandler<CreateTranslationCommand
         
         var translation = new TranslationEntity(value.Id, request.Translation)
         {
-            Language = textLanguage
+            Language = requestedLanguage
         };
         
         await _translationRepository.AddAsync(translation, cancellationToken);
