@@ -12,7 +12,7 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250825173121_Initial")]
+    [Migration("20250829123314_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -143,8 +143,8 @@ namespace Translator.Infrastructure.Migrations
 
                     b.Property<string>("UnicodeRange")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("unicode_range");
 
                     b.HasKey("Id")
@@ -163,7 +163,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "zh",
                             IsActive = false,
                             Name = "Mandarin Chinese",
-                            UnicodeRange = "4E00-9FFF"
+                            UnicodeRange = "4E00-9FFF;3400-4DBF;20000-2A6DF;F900-FAFF"
                         },
                         new
                         {
@@ -171,7 +171,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "es",
                             IsActive = false,
                             Name = "Spanish",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -187,7 +187,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "hi",
                             IsActive = false,
                             Name = "Hindi",
-                            UnicodeRange = "0900-097F"
+                            UnicodeRange = "0900-097F;A8E0-A8FF"
                         },
                         new
                         {
@@ -195,7 +195,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ar",
                             IsActive = false,
                             Name = "Arabic",
-                            UnicodeRange = "0600-06FF"
+                            UnicodeRange = "0600-06FF;0750-077F;FB50-FDFF;FE70-FEFF"
                         },
                         new
                         {
@@ -203,7 +203,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "pt",
                             IsActive = false,
                             Name = "Portuguese",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -219,7 +219,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ru",
                             IsActive = false,
                             Name = "Russian",
-                            UnicodeRange = "0400-04FF"
+                            UnicodeRange = "0400-04FF;0500-052F"
                         },
                         new
                         {
@@ -227,7 +227,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ja",
                             IsActive = false,
                             Name = "Japanese",
-                            UnicodeRange = "3040-30FF"
+                            UnicodeRange = "3040-309F;30A0-30FF;4E00-9FFF;FF65-FF9F;3100-312F"
                         },
                         new
                         {
@@ -235,7 +235,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "pa",
                             IsActive = false,
                             Name = "Punjabi",
-                            UnicodeRange = "0600-06FF"
+                            UnicodeRange = "0A00-0A7F"
                         },
                         new
                         {
@@ -243,7 +243,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "de",
                             IsActive = false,
                             Name = "German",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -251,7 +251,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "jv",
                             IsActive = false,
                             Name = "Javanese",
-                            UnicodeRange = "A980-A9DF"
+                            UnicodeRange = "A980-A9DF;0000-007F"
                         },
                         new
                         {
@@ -259,7 +259,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ms",
                             IsActive = false,
                             Name = "Malay",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -275,7 +275,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "vi",
                             IsActive = false,
                             Name = "Vietnamese",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F;1EA0-1EFF"
                         },
                         new
                         {
@@ -283,7 +283,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ko",
                             IsActive = false,
                             Name = "Korean",
-                            UnicodeRange = "AC00-D7AF"
+                            UnicodeRange = "AC00-D7AF;1100-11FF;3130-318F;FFA0-FFDC"
                         },
                         new
                         {
@@ -291,7 +291,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "fr",
                             IsActive = false,
                             Name = "French",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -299,7 +299,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "mr",
                             IsActive = false,
                             Name = "Marathi",
-                            UnicodeRange = "0900-097F"
+                            UnicodeRange = "0900-097F;A8E0-A8FF"
                         },
                         new
                         {
@@ -315,7 +315,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "tr",
                             IsActive = false,
                             Name = "Turkish",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -323,7 +323,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "it",
                             IsActive = false,
                             Name = "Italian",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -347,7 +347,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "fa",
                             IsActive = false,
                             Name = "Persian",
-                            UnicodeRange = "0600-06FF"
+                            UnicodeRange = "0600-06FF;0750-077F;FB50-FDFF;FE70-FEFF"
                         },
                         new
                         {
@@ -355,7 +355,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "pl",
                             IsActive = false,
                             Name = "Polish",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -363,7 +363,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ps",
                             IsActive = false,
                             Name = "Pashto",
-                            UnicodeRange = "0600-06FF"
+                            UnicodeRange = "0600-06FF;0750-077F;FB50-FDFF;FE70-FEFF"
                         },
                         new
                         {
@@ -387,7 +387,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "su",
                             IsActive = false,
                             Name = "Sundanese",
-                            UnicodeRange = "1B80-1BBF"
+                            UnicodeRange = "1B80-1BBF;0000-007F"
                         },
                         new
                         {
@@ -395,7 +395,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ha",
                             IsActive = false,
                             Name = "Hausa",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -411,7 +411,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "my",
                             IsActive = false,
                             Name = "Burmese",
-                            UnicodeRange = "1000-109F"
+                            UnicodeRange = "1000-109F;AA60-AA7F"
                         },
                         new
                         {
@@ -435,7 +435,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "tl",
                             IsActive = false,
                             Name = "Tagalog",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;1700-171F"
                         },
                         new
                         {
@@ -443,7 +443,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "yo",
                             IsActive = false,
                             Name = "Yoruba",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -459,7 +459,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "uz",
                             IsActive = false,
                             Name = "Uzbek",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -467,7 +467,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "sd",
                             IsActive = false,
                             Name = "Sindhi",
-                            UnicodeRange = "0600-06FF"
+                            UnicodeRange = "0600-06FF;0900-097F"
                         },
                         new
                         {
@@ -475,7 +475,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "am",
                             IsActive = false,
                             Name = "Amharic",
-                            UnicodeRange = "1200-137F"
+                            UnicodeRange = "1200-137F;1380-139F;2D80-2DDF"
                         },
                         new
                         {
@@ -483,7 +483,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ff",
                             IsActive = false,
                             Name = "Fulani",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -491,7 +491,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ro",
                             IsActive = false,
                             Name = "Romanian",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -499,7 +499,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "om",
                             IsActive = false,
                             Name = "Oromo",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;1200-137F"
                         },
                         new
                         {
@@ -507,15 +507,15 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ig",
                             IsActive = false,
                             Name = "Igbo",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
-                            Id = new Guid("76b4ca8c-180f-7106-7db2-fbbaf2e99300"),
+                            Id = new Guid("b256339f-0a7d-cb76-5f0c-eea9e80a6e72"),
                             Code = "az",
                             IsActive = false,
-                            Name = "Azeri",
-                            UnicodeRange = "0000-007F"
+                            Name = "Azerbaijani",
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F;0250-02AF"
                         },
                         new
                         {
@@ -539,7 +539,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "nl",
                             IsActive = false,
                             Name = "Dutch",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -547,15 +547,15 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ku",
                             IsActive = false,
                             Name = "Kurdish",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0600-06FF"
                         },
                         new
                         {
-                            Id = new Guid("ccacafe9-53b9-4238-bb5a-087f300e97a1"),
+                            Id = new Guid("c5015305-bc6a-dd82-3a81-ea3810ad0599"),
                             Code = "sr",
                             IsActive = false,
-                            Name = "Serbo-Croatian",
-                            UnicodeRange = "0400-04FF"
+                            Name = "Serbian",
+                            UnicodeRange = "0400-04FF;0000-007F"
                         },
                         new
                         {
@@ -563,7 +563,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "mg",
                             IsActive = false,
                             Name = "Malagasy",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -571,7 +571,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "skr",
                             IsActive = false,
                             Name = "Saraiki",
-                            UnicodeRange = "0600-06FF"
+                            UnicodeRange = "0600-06FF;0750-077F"
                         },
                         new
                         {
@@ -583,10 +583,10 @@ namespace Translator.Infrastructure.Migrations
                         },
                         new
                         {
-                            Id = new Guid("03f71d70-4f90-4f62-f641-904e870adb8a"),
+                            Id = new Guid("e254332a-0ed5-bfc4-80ba-1fbcd253506e"),
                             Code = "si",
                             IsActive = false,
-                            Name = "Singhalese",
+                            Name = "Sinhala",
                             UnicodeRange = "0D80-0DFF"
                         },
                         new
@@ -603,7 +603,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "za",
                             IsActive = false,
                             Name = "Zhuang",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -611,7 +611,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "km",
                             IsActive = false,
                             Name = "Khmer",
-                            UnicodeRange = "1780-17FF"
+                            UnicodeRange = "1780-17FF;19E0-19FF"
                         },
                         new
                         {
@@ -619,7 +619,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "tk",
                             IsActive = false,
                             Name = "Turkmen",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -643,7 +643,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "so",
                             IsActive = false,
                             Name = "Somali",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -664,7 +664,7 @@ namespace Translator.Infrastructure.Migrations
                         new
                         {
                             Id = new Guid("e2e34403-efe6-3b15-d3b1-d4ecded8f8c9"),
-                            Code = "har",
+                            Code = "bgc",
                             IsActive = false,
                             Name = "Haryanvi",
                             UnicodeRange = "0900-097F"
@@ -675,7 +675,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "hu",
                             IsActive = false,
                             Name = "Hungarian",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -691,7 +691,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "el",
                             IsActive = false,
                             Name = "Greek",
-                            UnicodeRange = "0370-03FF"
+                            UnicodeRange = "0370-03FF;1F00-1FFF"
                         },
                         new
                         {
@@ -699,7 +699,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ny",
                             IsActive = false,
                             Name = "Chewa",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -707,7 +707,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ak",
                             IsActive = false,
                             Name = "Akan",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -715,7 +715,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "kk",
                             IsActive = false,
                             Name = "Kazakh",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0400-04FF"
                         },
                         new
                         {
@@ -723,7 +723,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "syl",
                             IsActive = false,
                             Name = "Sylheti",
-                            UnicodeRange = "0980-09FF"
+                            UnicodeRange = "A800-A82F"
                         },
                         new
                         {
@@ -731,7 +731,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "zu",
                             IsActive = false,
                             Name = "Zulu",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -739,7 +739,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "cs",
                             IsActive = false,
                             Name = "Czech",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF;0100-017F"
                         },
                         new
                         {
@@ -747,7 +747,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "rw",
                             IsActive = false,
                             Name = "Kinyarwanda",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -763,7 +763,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ht",
                             IsActive = false,
                             Name = "Haitian Creole",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -779,7 +779,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "qu",
                             IsActive = false,
                             Name = "Quechua",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -787,7 +787,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "rn",
                             IsActive = false,
                             Name = "Kirundi",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -795,7 +795,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "sv",
                             IsActive = false,
                             Name = "Swedish",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -803,7 +803,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "hmn",
                             IsActive = false,
                             Name = "Hmong",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;16B00-16B8F"
                         },
                         new
                         {
@@ -811,15 +811,15 @@ namespace Translator.Infrastructure.Migrations
                             Code = "sn",
                             IsActive = false,
                             Name = "Shona",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
-                            Id = new Guid("431f13f8-14da-6541-3f7e-cb1fd144eb6a"),
+                            Id = new Guid("3339d5bf-37a2-a8c0-fcaf-96f998036ff6"),
                             Code = "ug",
                             IsActive = false,
-                            Name = "Uighur",
-                            UnicodeRange = "0600-06FF"
+                            Name = "Uyghur",
+                            UnicodeRange = "0600-06FF;0750-077F"
                         },
                         new
                         {
@@ -835,7 +835,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "mos",
                             IsActive = false,
                             Name = "Mossi",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
@@ -843,23 +843,23 @@ namespace Translator.Infrastructure.Migrations
                             Code = "xh",
                             IsActive = false,
                             Name = "Xhosa",
-                            UnicodeRange = "0000-007F"
+                            UnicodeRange = "0000-007F;0080-00FF"
                         },
                         new
                         {
-                            Id = new Guid("5dca9214-7ef7-49f7-ff0b-b1ddd79a2016"),
+                            Id = new Guid("46e46d0a-9500-98f3-e8a4-5ed512a7538f"),
                             Code = "be",
                             IsActive = false,
-                            Name = "Belorussian",
+                            Name = "Belarusian",
                             UnicodeRange = "0400-04FF"
                         },
                         new
                         {
-                            Id = new Guid("b5d83579-c9cf-941f-cd6a-de801ebe5792"),
+                            Id = new Guid("3d7df04d-0fc3-7000-3a69-bc8112e0c100"),
                             Code = "bal",
                             IsActive = false,
-                            Name = "Baluchi",
-                            UnicodeRange = "0600-06FF"
+                            Name = "Balochi",
+                            UnicodeRange = "0600-06FF;0750-077F"
                         },
                         new
                         {
@@ -875,7 +875,7 @@ namespace Translator.Infrastructure.Migrations
                             Code = "ka",
                             IsActive = false,
                             Name = "Georgian",
-                            UnicodeRange = "10A0-10FF"
+                            UnicodeRange = "10A0-10FF;2D00-2D2F"
                         });
                 });
 
