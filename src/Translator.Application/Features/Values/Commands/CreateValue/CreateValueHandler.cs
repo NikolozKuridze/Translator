@@ -8,7 +8,6 @@ using TemplateEntity = Translator.Domain.Entities.Template;
 using TranslationEntity = Translator.Domain.Entities.Translation;
 using LanguageEntity = Translator.Domain.Entities.Language;
 
-
 namespace Translator.Application.Features.Values.Commands.CreateValue;
 
 public class CreateValueHandler : IRequestHandler<CreateValueCommand>
@@ -35,21 +34,28 @@ public class CreateValueHandler : IRequestHandler<CreateValueCommand>
             .Where(t => t.Hash == existsTemplateValueHash)
             .SingleOrDefaultAsync(cancellationToken);
 
+        if (existsValue is not null)
+            throw new ValueAlreadyExistsException(request.Key);
+
         var languages = await _languageEntityRepository
             .Where(l => l.IsActive)
             .ToListAsync(cancellationToken);
         
-        var textLanguage = LanguageDetector.DetectOrThrow(request.Value, languages);
+        var detectedLanguages = LanguageDetector.DetectLanguages(request.Value, languages);
         
-        if (existsValue is not null)
-            throw new ValueAlreadyExistsException(request.Key);
+        if (!detectedLanguages.Any())
+        {
+            throw new UknownLanguageException($"No compatible language found for value: {request.Value}");
+        }
+
+        var selectedLanguage = detectedLanguages.First();
         
         var value = new Value(request.Key);
 
-        var translation = new TranslationEntity(
-                value.Id,
-                request.Value);
-        translation.Language = textLanguage;
+        var translation = new TranslationEntity(value.Id, request.Value)
+        {
+            Language = selectedLanguage
+        };
         
         await _templateValueRepository.AddAsync(value, cancellationToken);
         await _translationRepository.AddAsync(translation, cancellationToken);
