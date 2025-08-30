@@ -12,8 +12,8 @@ namespace Translator.Application.Features.Values.Commands.CreateValue;
 
 public class CreateValueHandler : IRequestHandler<CreateValueCommand>
 {
-    private readonly IRepository<Value> _templateValueRepository;
     private readonly IRepository<LanguageEntity> _languageEntityRepository;
+    private readonly IRepository<Value> _templateValueRepository;
     private readonly IRepository<TranslationEntity> _translationRepository;
 
     public CreateValueHandler(
@@ -25,11 +25,11 @@ public class CreateValueHandler : IRequestHandler<CreateValueCommand>
         _languageEntityRepository = languageEntityRepository;
         _translationRepository = translationRepository;
     }
-    
+
     public async Task Handle(CreateValueCommand request, CancellationToken cancellationToken)
-    { 
+    {
         var existsTemplateValueHash = TemplateEntity.HashName(request.Key);
-        
+
         var existsValue = await _templateValueRepository
             .Where(t => t.Hash == existsTemplateValueHash)
             .SingleOrDefaultAsync(cancellationToken);
@@ -40,26 +40,25 @@ public class CreateValueHandler : IRequestHandler<CreateValueCommand>
         var languages = await _languageEntityRepository
             .Where(l => l.IsActive)
             .ToListAsync(cancellationToken);
-        
-        var detectedLanguages = LanguageDetector.DetectLanguages(request.Value, languages);
-        
-        if (!detectedLanguages.Any())
-        {
-            throw new UknownLanguageException($"No compatible language found for value: {request.Value}");
-        }
 
-        var selectedLanguage = detectedLanguages.First();
+        var detectedLanguages = LanguageDetector.DetectLanguages(request.Value, languages);
+
+        if (!detectedLanguages.Any())
+            throw new UknownLanguageException($"No compatible language found for value: {request.Value}");
+
+        var selectedLanguage =
+            detectedLanguages.FirstOrDefault(l => l.Code.Equals("en", StringComparison.OrdinalIgnoreCase));
         
         var value = new Value(request.Key);
 
         var translation = new TranslationEntity(value.Id, request.Value)
         {
-            Language = selectedLanguage
+            Language = selectedLanguage ?? detectedLanguages.First()
         };
-        
+
         await _templateValueRepository.AddAsync(value, cancellationToken);
         await _translationRepository.AddAsync(translation, cancellationToken);
-        
+
         await _templateValueRepository.SaveChangesAsync(cancellationToken);
     }
 }
