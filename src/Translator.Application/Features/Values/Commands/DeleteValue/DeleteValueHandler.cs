@@ -15,8 +15,7 @@ public class DeleteValueHandler : IRequestHandler<DeleteValueCommand>
 
     public DeleteValueHandler(
         IRepository<Value> valueRepository,
-        ValueCacheService valueCacheService,
-        TemplateCacheService templateCacheService)
+        ValueCacheService valueCacheService)
     {
         _valueRepository = valueRepository;
         _valueCacheService = valueCacheService;
