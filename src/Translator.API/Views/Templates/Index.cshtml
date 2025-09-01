@@ -180,7 +180,7 @@
 
 <!-- Pagination container -->
 <div id="paginationContainer">
-    @if (Model != null && Model.Any())
+    @if (Model != null && Model.Any() && (totalCount > pageSize || totalPages > 1))
     {
         <nav class="mt-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -251,11 +251,17 @@
             </ul>
         </nav>
     }
+    else if (Model != null && Model.Any())
+    {
+        <div class="mt-4 text-center">
+            <small class="text-muted">Showing all @totalCount results</small>
+        </div>
+    }
 </div>
 
 <!-- Page size selector container -->
 <div id="pageSizeContainer">
-    @if (Model != null && Model.Any())
+    @if (Model != null && Model.Any() && totalCount > 5)
     {
         <div class="d-flex justify-content-end align-items-center mt-3">
             <label class="form-label me-2 mb-0">Show:</label>
@@ -268,6 +274,7 @@
         </div>
     }
 </div>
+
 
 <!-- Delete Modal -->
 <div class="modal fade" id="deleteTemplateModal" tabindex="-1">
@@ -898,47 +905,58 @@ class TemplateManager {
     renderPagination(responseData) {
         const { currentPage, totalPages, totalCount } = responseData;
         const container = document.getElementById('paginationContainer');
-        
-        if (totalPages <= 1) {
-            container.innerHTML = '';
+
+        // Hide pagination if total count is less than or equal to page size
+        // OR if there's only one page
+        if (totalCount <= this.pageSize || totalPages <= 1) {
+            // Show simple results count without pagination controls when there are results
+            if (totalCount > 0) {
+                container.innerHTML = `
+                <div class="mt-4 text-center">
+                    <small class="text-muted">Showing all ${totalCount} results</small>
+                </div>
+            `;
+            } else {
+                container.innerHTML = '';
+            }
             return;
         }
 
         const showingStart = (currentPage - 1) * this.pageSize + 1;
         const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
-        
+
         let html = `
-            <nav class="mt-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
-                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
-                </div>
-                <ul class="pagination justify-content-center">
-        `;
-        
+        <nav class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
+                <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
+            </div>
+            <ul class="pagination justify-content-center">
+    `;
+
         // First & Previous
         if (currentPage > 1) {
             html += `
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="1">
-                        <i class="fas fa-angle-double-left"></i> First
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
-                </li>
-            `;
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="1">
+                    <i class="fas fa-angle-double-left"></i> First
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
+            </li>
+        `;
         } else {
             html += `
-                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
-                <li class="page-item disabled"><span class="page-link">Previous</span></li>
-            `;
+            <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        `;
         }
 
         // Page numbers
         const startPage = Math.max(1, currentPage - 2);
         const endPage = Math.min(totalPages, currentPage + 2);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             if (i === currentPage) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
@@ -950,50 +968,51 @@ class TemplateManager {
         // Next & Last
         if (currentPage < totalPages) {
             html += `
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
-                        Last <i class="fas fa-angle-double-right"></i>
-                    </a>
-                </li>
-            `;
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
+                    Last <i class="fas fa-angle-double-right"></i>
+                </a>
+            </li>
+        `;
         } else {
             html += `
-                <li class="page-item disabled"><span class="page-link">Next</span></li>
-                <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
-            `;
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
+        `;
         }
 
         html += '</ul></nav>';
         container.innerHTML = html;
-        
+
         // Rebind pagination events
         this.bindPaginationEvents();
     }
 
     renderPageSizeSelector(responseData) {
         const container = document.getElementById('pageSizeContainer');
-        
-        if (!responseData.data || responseData.data.length === 0) {
+
+        // Hide page size selector if no data OR total count is less than minimum page size
+        if (!responseData.data || responseData.data.length === 0 || responseData.totalCount <= 5) {
             container.innerHTML = '';
             return;
         }
-        
+
         const html = `
-            <div class="d-flex justify-content-end align-items-center mt-3">
-                <label class="form-label me-2 mb-0">Show:</label>
-                <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-                    <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
-                    <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
-                    <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
-                    <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
-                </select>
-            </div>
-        `;
+        <div class="d-flex justify-content-end align-items-center mt-3">
+            <label class="form-label me-2 mb-0">Show:</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
+                <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
+                <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
+                <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
+            </select>
+        </div>
+    `;
         container.innerHTML = html;
-        
+
         // Rebind page size change event
         const select = document.getElementById('pageSizeSelect');
         if (select) {
@@ -1004,6 +1023,7 @@ class TemplateManager {
             });
         }
     }
+
 
     bindPaginationEvents() {
         document.querySelectorAll('.page-link-custom').forEach(link => {
