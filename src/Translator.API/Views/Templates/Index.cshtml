@@ -180,7 +180,7 @@
 
 <!-- Pagination container -->
 <div id="paginationContainer">
-    @if (Model != null && Model.Any())
+    @if (Model != null && Model.Any() && (totalCount > pageSize || totalPages > 1))
     {
         <nav class="mt-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -251,11 +251,17 @@
             </ul>
         </nav>
     }
+    else if (Model != null && Model.Any())
+    {
+        <div class="mt-4 text-center">
+            <small class="text-muted">Showing all @totalCount results</small>
+        </div>
+    }
 </div>
 
 <!-- Page size selector container -->
 <div id="pageSizeContainer">
-    @if (Model != null && Model.Any())
+    @if (Model != null && Model.Any() && totalCount > 5)
     {
         <div class="d-flex justify-content-end align-items-center mt-3">
             <label class="form-label me-2 mb-0">Show:</label>
@@ -268,6 +274,7 @@
         </div>
     }
 </div>
+
 
 <!-- Delete Modal -->
 <div class="modal fade" id="deleteTemplateModal" tabindex="-1">
@@ -316,6 +323,7 @@ class TemplateManager {
         this.initializeAutocomplete();
     }
     
+    
     initializeAutocomplete() {
         // Инициализируем автокомплит для всех существующих полей
         document.querySelectorAll('.value-input').forEach(input => {
@@ -326,17 +334,20 @@ class TemplateManager {
     setupAutocomplete(inputElement) {
         const dropdown = inputElement.parentElement.querySelector('.autocomplete-dropdown');
         let currentFocus = -1;
-        
+
         inputElement.addEventListener('input', (e) => {
             const value = e.target.value.trim();
-            
+
+            // Check for duplicates in real-time
+            this.validateDuplicateValue(inputElement);
+
             clearTimeout(this.searchTimeout);
-            
+
             if (value.length < 1) {
                 this.hideDropdown(dropdown);
                 return;
             }
-            
+
             this.searchTimeout = setTimeout(() => {
                 this.searchValues(value, dropdown, inputElement);
             }, 300);
@@ -372,7 +383,39 @@ class TemplateManager {
             }, 200);
         });
     }
-    
+
+    validateDuplicateValue(currentInput) {
+        const currentValue = currentInput.value.trim().toLowerCase();
+        const allInputs = document.querySelectorAll('input[name="values"]');
+        let isDuplicate = false;
+
+        // Clear previous error styling
+        currentInput.classList.remove('is-invalid');
+        const existingError = currentInput.parentElement.querySelector('.duplicate-error');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        if (currentValue) {
+            allInputs.forEach(input => {
+                if (input !== currentInput && input.value.trim().toLowerCase() === currentValue) {
+                    isDuplicate = true;
+                }
+            });
+
+            if (isDuplicate) {
+                currentInput.classList.add('is-invalid');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback duplicate-error';
+                errorDiv.textContent = 'This value already exists (case-insensitive)';
+                currentInput.parentElement.appendChild(errorDiv);
+            }
+        }
+
+        return !isDuplicate;
+    }
+
+
     async searchValues(searchTerm, dropdown, inputElement) {
         try {
             const params = new URLSearchParams({
@@ -538,25 +581,38 @@ class TemplateManager {
         const form = document.getElementById('createTemplateForm');
         const submitBtn = form.querySelector('button[type="submit"]');
         const spinner = submitBtn.querySelector('.spinner-border');
-        
+
         const templateName = document.getElementById('templateName').value.trim();
         const valueInputs = document.querySelectorAll('input[name="values"]');
         const values = [];
+        const seenValues = new Set(); // Track case-insensitive values
+        let hasDuplicates = false;
+        let duplicateValue = '';
 
         valueInputs.forEach(input => {
             const val = input.value.trim();
             if (val) {
+                const lowerVal = val.toLowerCase();
+                if (seenValues.has(lowerVal)) {
+                    hasDuplicates = true;
+                    duplicateValue = val;
+                    return;
+                }
+                seenValues.add(lowerVal);
                 values.push(val);
             }
         });
-
-        console.log('All values:', values);
 
         if (!templateName || values.length === 0) {
             this.showError('Template name and at least one value are required');
             return;
         }
-        
+
+        if (hasDuplicates) {
+            this.showError(`Duplicate value detected: "${duplicateValue}". Values are case-insensitive and must be unique.`);
+            return;
+        }
+
         submitBtn.disabled = true;
         if (spinner) spinner.classList.remove('d-none');
         
@@ -849,47 +905,58 @@ class TemplateManager {
     renderPagination(responseData) {
         const { currentPage, totalPages, totalCount } = responseData;
         const container = document.getElementById('paginationContainer');
-        
-        if (totalPages <= 1) {
-            container.innerHTML = '';
+
+        // Hide pagination if total count is less than or equal to page size
+        // OR if there's only one page
+        if (totalCount <= this.pageSize || totalPages <= 1) {
+            // Show simple results count without pagination controls when there are results
+            if (totalCount > 0) {
+                container.innerHTML = `
+                <div class="mt-4 text-center">
+                    <small class="text-muted">Showing all ${totalCount} results</small>
+                </div>
+            `;
+            } else {
+                container.innerHTML = '';
+            }
             return;
         }
 
         const showingStart = (currentPage - 1) * this.pageSize + 1;
         const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
-        
+
         let html = `
-            <nav class="mt-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
-                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
-                </div>
-                <ul class="pagination justify-content-center">
-        `;
-        
+        <nav class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
+                <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
+            </div>
+            <ul class="pagination justify-content-center">
+    `;
+
         // First & Previous
         if (currentPage > 1) {
             html += `
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="1">
-                        <i class="fas fa-angle-double-left"></i> First
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
-                </li>
-            `;
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="1">
+                    <i class="fas fa-angle-double-left"></i> First
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
+            </li>
+        `;
         } else {
             html += `
-                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
-                <li class="page-item disabled"><span class="page-link">Previous</span></li>
-            `;
+            <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
+            <li class="page-item disabled"><span class="page-link">Previous</span></li>
+        `;
         }
 
         // Page numbers
         const startPage = Math.max(1, currentPage - 2);
         const endPage = Math.min(totalPages, currentPage + 2);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             if (i === currentPage) {
                 html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
@@ -901,50 +968,51 @@ class TemplateManager {
         // Next & Last
         if (currentPage < totalPages) {
             html += `
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
-                        Last <i class="fas fa-angle-double-right"></i>
-                    </a>
-                </li>
-            `;
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
+                    Last <i class="fas fa-angle-double-right"></i>
+                </a>
+            </li>
+        `;
         } else {
             html += `
-                <li class="page-item disabled"><span class="page-link">Next</span></li>
-                <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
-            `;
+            <li class="page-item disabled"><span class="page-link">Next</span></li>
+            <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
+        `;
         }
 
         html += '</ul></nav>';
         container.innerHTML = html;
-        
+
         // Rebind pagination events
         this.bindPaginationEvents();
     }
 
     renderPageSizeSelector(responseData) {
         const container = document.getElementById('pageSizeContainer');
-        
-        if (!responseData.data || responseData.data.length === 0) {
+
+        // Hide page size selector if no data OR total count is less than minimum page size
+        if (!responseData.data || responseData.data.length === 0 || responseData.totalCount <= 5) {
             container.innerHTML = '';
             return;
         }
-        
+
         const html = `
-            <div class="d-flex justify-content-end align-items-center mt-3">
-                <label class="form-label me-2 mb-0">Show:</label>
-                <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-                    <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
-                    <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
-                    <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
-                    <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
-                </select>
-            </div>
-        `;
+        <div class="d-flex justify-content-end align-items-center mt-3">
+            <label class="form-label me-2 mb-0">Show:</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
+                <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
+                <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
+                <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
+            </select>
+        </div>
+    `;
         container.innerHTML = html;
-        
+
         // Rebind page size change event
         const select = document.getElementById('pageSizeSelect');
         if (select) {
@@ -955,6 +1023,7 @@ class TemplateManager {
             });
         }
     }
+
 
     bindPaginationEvents() {
         document.querySelectorAll('.page-link-custom').forEach(link => {
@@ -1104,12 +1173,20 @@ function addValueInput() {
     if (templateManager && newInput) {
         console.log('Setting up autocomplete for new input');
         templateManager.setupAutocomplete(newInput);
+
+        // Add validation event listener for existing inputs when new one is added
+        document.querySelectorAll('input[name="values"]').forEach(input => {
+            input.addEventListener('blur', () => {
+                templateManager.validateDuplicateValue(input);
+            });
+        });
     } else {
         console.error('templateManager not available or newInput not found');
     }
 
     updateRemoveButtons();
 }
+
 
 function removeValueInput(button) {
     button.closest('.value-input-group').remove();
@@ -1189,6 +1266,27 @@ document.addEventListener('DOMContentLoaded', function() {
     .autocomplete-item:last-child {
         border-bottom: none;
     }
+
+    .is-invalid {
+        border-color: #dc3545;
+    }
+
+    .invalid-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+
+    .duplicate-error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 0.25rem;
+        padding: 0.375rem 0.75rem;
+        margin-top: 0.5rem;
+    }
+
 
     .badge {
         font-size: 0.875em;
