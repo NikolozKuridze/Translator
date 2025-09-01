@@ -164,7 +164,7 @@
 
 <!-- Pagination container -->
 <div id="paginationContainer">
-    @if (Model != null && Model.Any())
+    @if (Model != null && Model.Any() && totalPages > 1)
     {
         <nav class="mt-4">
             <div class="d-flex justify-content-between align-items-center mb-2">
@@ -252,6 +252,7 @@
         </div>
     }
 </div>
+
 
 <!-- Delete Modal -->
 <div class="modal fade" id="deleteValueModal" tabindex="-1">
@@ -694,7 +695,8 @@ class ValuesManager {
     renderPagination(responseData) {
         const { currentPage, totalPages, totalCount } = responseData;
         const container = document.getElementById('paginationContainer');
-        
+
+        // Show pagination only when there are multiple pages
         if (totalPages <= 1) {
             container.innerHTML = '';
             return;
@@ -702,94 +704,110 @@ class ValuesManager {
 
         const showingStart = (currentPage - 1) * this.pageSize + 1;
         const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
-        
+
         let html = `
-            <nav class="mt-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
-                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
-                </div>
-                <ul class="pagination justify-content-center">
-        `;
+    <nav class="mt-4">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+            <small class="text-muted" id="paginationInfo">
+                Showing ${showingStart} to ${showingEnd} of ${totalCount} results
+            </small>
+            <small class="text-muted" id="pageInfo">Page ${currentPage} of ${totalPages}</small>
+        </div>
         
-        // First & Previous
+        <ul class="pagination justify-content-center">`;
+
+        // First & Previous buttons
         if (currentPage > 1) {
             html += `
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="1">
-                        <i class="fas fa-angle-double-left"></i> First
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
-                </li>
-            `;
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
+                    <i class="fas fa-angle-double-left"></i> First
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
+            </li>`;
         } else {
             html += `
-                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
-                <li class="page-item disabled"><span class="page-link">Previous</span></li>
-            `;
+            <li class="page-item disabled">
+                <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Previous</span>
+            </li>`;
         }
 
-        // Page numbers
+        // Page numbers (show 5 pages max: 2 before current, current, 2 after current)
         const startPage = Math.max(1, currentPage - 2);
         const endPage = Math.min(totalPages, currentPage + 2);
-        
+
         for (let i = startPage; i <= endPage; i++) {
             if (i === currentPage) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+                html += `
+                <li class="page-item active">
+                    <span class="page-link">${i}</span>
+                </li>`;
             } else {
-                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
+                html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a>
+                </li>`;
             }
         }
 
-        // Next & Last
+        // Next & Last buttons
         if (currentPage < totalPages) {
             html += `
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
-                        Last <i class="fas fa-angle-double-right"></i>
-                    </a>
-                </li>
-            `;
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
+            </li>
+            <li class="page-item">
+                <a class="page-link page-link-custom" href="#" data-page="${totalPages}" title="Last page">
+                    Last <i class="fas fa-angle-double-right"></i>
+                </a>
+            </li>`;
         } else {
             html += `
-                <li class="page-item disabled"><span class="page-link">Next</span></li>
-                <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
-            `;
+            <li class="page-item disabled">
+                <span class="page-link">Next</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+            </li>`;
         }
 
-        html += '</ul></nav>';
+        html += `
+        </ul>
+    </nav>`;
+
         container.innerHTML = html;
-        
-        // Rebind pagination events
+
+        // Rebind pagination events after rendering
         this.bindPaginationEvents();
     }
 
     renderPageSizeSelector(responseData) {
         const container = document.getElementById('pageSizeContainer');
-        
+
+        // Show page size selector whenever there's data
         if (!responseData.data || responseData.data.length === 0) {
             container.innerHTML = '';
             return;
         }
-        
+
         const html = `
-            <div class="d-flex justify-content-end align-items-center mt-3">
-                <label class="form-label me-2 mb-0">Show:</label>
-                <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-                    <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
-                    <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
-                    <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
-                    <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
-                </select>
-            </div>
-        `;
+        <div class="d-flex justify-content-end align-items-center mt-3">
+            <label class="form-label me-2 mb-0">Show:</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
+                <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
+                <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
+                <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
+            </select>
+        </div>
+    `;
         container.innerHTML = html;
-        
+
         // Rebind page size change event
         const select = document.getElementById('pageSizeSelect');
         if (select) {
@@ -800,6 +818,7 @@ class ValuesManager {
             });
         }
     }
+
 
     bindPaginationEvents() {
         document.querySelectorAll('.page-link-custom').forEach(link => {
