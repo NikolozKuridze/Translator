@@ -1,8 +1,8 @@
-@model IEnumerable<Translator.Application.Features.Category.Queries.GetRootCategories.Response>
+@model Translator.Domain.Pagination.PaginatedResponse<Translator.Application.Features.Category.Queries.GetRootCategories.Response>
 @{
-    ViewData["Title"] = "Categories Management";
-    Layout = "_Layout";
-    var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
+ViewData["Title"] = "Categories Management";
+Layout = "_Layout";
+var categoryTypes = ViewBag.CategoryTypes as List<string> ?? new List<string>();
 }
 
 <style>
@@ -32,7 +32,202 @@
         opacity: 0.9;
     }
 
-    /* Form Overlays */
+    /* Search Bar Styles */
+    .search-container {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border: 1px solid #f1f5f9;
+    }
+
+    .search-input-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+
+    .search-input {
+        flex: 1;
+        padding: 0.875rem 1rem;
+        padding-left: 3rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.5rem;
+        font-size: 1rem;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        background: #fafbfc;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: #4f46e5;
+        background: white;
+        box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .search-icon {
+        position: absolute;
+        left: 1rem;
+        color: #64748b;
+        font-size: 1.125rem;
+        z-index: 10;
+    }
+
+    .search-clear-btn {
+        position: absolute;
+        right: 0.75rem;
+        background: #ef4444;
+        color: white;
+        border: none;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-size: 0.75rem;
+        z-index: 10;
+        transition: all 0.2s ease;
+    }
+
+    .search-clear-btn:hover {
+        background: #dc2626;
+        transform: scale(1.1);
+    }
+
+    .search-clear-btn.show {
+        display: flex;
+    }
+
+    /* Pagination Styles */
+    .pagination-container {
+        background: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+        padding: 1.5rem;
+        margin-top: 1rem;
+        border: 1px solid #f1f5f9;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .pagination-info {
+        color: #64748b;
+        font-size: 0.875rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .page-size-selector {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .page-size-selector select {
+        padding: 0.5rem;
+        border: 2px solid #e2e8f0;
+        border-radius: 0.375rem;
+        font-size: 0.875rem;
+        background: white;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .page-size-selector select:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .pagination-btn {
+        padding: 0.5rem 0.75rem;
+        border: 2px solid #e2e8f0;
+        background: white;
+        color: #64748b;
+        border-radius: 0.375rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.875rem;
+        min-width: 40px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pagination-btn:hover:not(.disabled) {
+        border-color: #4f46e5;
+        color: #4f46e5;
+        background: #f8fafc;
+        text-decoration: none;
+    }
+
+    .pagination-btn.active {
+        background: #4f46e5;
+        border-color: #4f46e5;
+        color: white;
+    }
+
+    .pagination-btn.disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+
+    .pagination-ellipsis {
+        padding: 0.5rem;
+        color: #94a3b8;
+        font-size: 0.875rem;
+    }
+
+    /* Loading state */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(2px);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        border-radius: 0.5rem;
+    }
+
+    .loading-overlay.show {
+        display: flex;
+    }
+
+    .loading-spinner {
+        width: 32px;
+        height: 32px;
+        border: 3px solid #f3f3f3;
+        border-top: 3px solid #4f46e5;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+    
+    .categories-section-wrapper {
+        position: relative;
+    }
+
+    /* Form Overlays and other existing styles remain the same */
     .form-overlay {
         position: fixed;
         top: 0;
@@ -150,7 +345,7 @@
         letter-spacing: 0.5px;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
-    
+
     /* Compact Type list styles */
     .type-list-item {
         display: inline-flex;
@@ -386,41 +581,6 @@
         cursor: not-allowed;
         pointer-events: none;
         transform: none;
-    }
-
-    /* Show All Button */
-    .show-all-btn {
-        background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-        color: white;
-        border: none;
-        padding: 0.5rem 1rem;
-        border-radius: 0.375rem;
-        font-weight: 600;
-        font-size: 0.875rem;
-        cursor: pointer;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        display: inline-flex;
-        align-items: center;
-        gap: 0.375rem;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-        margin: 1rem 1.5rem;
-    }
-
-    .show-all-btn:hover {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-    }
-
-    .show-all-btn:focus {
-        outline: 2px solid #4f46e5;
-        outline-offset: 2px;
-    }
-
-    /* Hide items initially */
-    .type-item.hidden,
-    .category-row.hidden {
-        display: none;
     }
 
     /* Category Types */
@@ -739,26 +899,6 @@
         gap: 0.5rem;
     }
 
-    /* Validation feedback styles */
-    .is-invalid {
-        border-color: #ef4444 !important;
-        box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
-    }
-
-    .validation-feedback {
-        color: #ef4444;
-        font-size: 0.75rem;
-        margin-top: 0.25rem;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-        font-weight: 500;
-    }
-
-    .validation-feedback i {
-        font-size: 0.7rem;
-    }
-
     /* Enhanced error alerts */
     .alert {
         border: none;
@@ -767,7 +907,7 @@
         margin-bottom: 1.5rem;
         box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
         border-left: 4px solid;
-        white-space: pre-line; /* Preserve line breaks */
+        white-space: pre-line;
     }
 
     .form-actions, .modal-actions {
@@ -820,19 +960,6 @@
     .loading {
         pointer-events: none;
         opacity: 0.7;
-    }
-
-    .loading::after {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: 20px;
-        height: 20px;
-        margin: -10px 0 0 -10px;
-        border: 2px solid #f3f3f3;
-        border-top: 2px solid #4f46e5;
-        border-radius: 50%;
     }
 
     .modal-body {
@@ -889,18 +1016,18 @@
     <div id="alertContainer">
         @if (ViewBag.ErrorMessage != null)
         {
-            <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                @ViewBag.ErrorMessage
-            </div>
+        <div class="alert alert-danger rounded-3 shadow-sm mb-3" role="alert">
+            <i class="fas fa-exclamation-circle me-2"></i>
+            @ViewBag.ErrorMessage
+        </div>
         }
 
         @if (ViewBag.SuccessMessage != null)
         {
-            <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                @ViewBag.SuccessMessage
-            </div>
+        <div class="alert alert-success rounded-3 shadow-sm mb-3" role="alert">
+            <i class="fas fa-check-circle me-2"></i>
+            @ViewBag.SuccessMessage
+        </div>
         }
     </div>
 
@@ -1123,7 +1250,6 @@
         </div>
     </div>
 
-
     <div class="row">
         <div class="col-12">
             <!-- Category Types Section -->
@@ -1165,8 +1291,49 @@
                     </div>
                 </div>
 
-                <div id="rootCategoriesSection">
-                    <!-- Categories will be loaded here -->
+                <!-- Search Bar -->
+                <div class="search-container">
+                    <div class="search-input-group">
+                        <i class="fas fa-search search-icon"></i>
+                        <input type="text"
+                               id="searchInput"
+                               class="search-input"
+                               placeholder="Search categories by name..."
+                               value="@ViewBag.Search">
+                        <button type="button" id="searchClearBtn" class="search-clear-btn" onclick="clearSearch()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Categories Section with Loading Overlay -->
+                <div class="categories-section-wrapper">
+                    <div class="loading-overlay" id="loadingOverlay">
+                        <div class="loading-spinner"></div>
+                    </div>
+
+                    <div id="rootCategoriesSection">
+                        <!-- Categories will be loaded here -->
+                    </div>
+
+                    <!-- Pagination Container -->
+                    <div class="pagination-container" id="paginationContainer">
+                        <div class="pagination-info">
+                            <span id="paginationInfo">Showing 0 - 0 of 0 categories</span>
+                            <div class="page-size-selector">
+                                <label for="pageSizeSelect">Show:</label>
+                                <select id="pageSizeSelect" onchange="changePageSize()">
+                                    <option value="5" @(ViewBag.PageSize == 5 ? "selected" : "")>5</option>
+                                    <option value="10" @(ViewBag.PageSize == 10 ? "selected" : "")>10</option>
+                                    <option value="25" @(ViewBag.PageSize == 25 ? "selected" : "")>25</option>
+                                    <option value="50" @(ViewBag.PageSize == 50 ? "selected" : "")>50</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="pagination-controls" id="paginationControls">
+                            <!-- Pagination buttons will be generated here -->
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -1230,14 +1397,24 @@
     let typesList = [];
     let selectedTypes = new Set();
     let categoryTypes = @Html.Raw(Json.Serialize(ViewBag.CategoryTypes ?? new List<string>()));
-    let categories = @Html.Raw(Json.Serialize(Model));
-    let showingAllTypes = false;
-    let showingAllCategories = false;
+    let categories = [];
+    let currentPagination = {
+        page: @(ViewBag.Page ?? 1),
+        pageSize: @(ViewBag.PageSize ?? 10),
+        totalItems: 0,
+        totalPages: 0,
+        hasNextPage: false,
+        hasPreviousPage: false,
+        isFirstPage: true,
+        isLastPage: true
+    };
+    let currentSearch = '@(ViewBag.Search ?? "")';
+    let searchTimeout = null;
 
     // Add validation constants (adjust these values based on your DatabaseConstants)
     const VALIDATION_CONSTANTS = {
-        TYPE_NAME_MIN_LENGTH: 2, // Replace with actual DatabaseConstants.Type.NAME_MIN_LENGTH
-        TYPE_NAME_MAX_LENGTH: 48, // Replace with actual DatabaseConstants.Type.NAME_MAX_LENGTH
+        TYPE_NAME_MIN_LENGTH: 2,
+        TYPE_NAME_MAX_LENGTH: 48,
         TYPE_NAME_PATTERN: /^[a-zA-Z-]+$/
     };
 
@@ -1249,9 +1426,6 @@
             if (!Array.isArray(categoryTypes)) {
                 categoryTypes = [];
             }
-            if (!Array.isArray(categories)) {
-                categories = [];
-            }
             this.init();
         }
 
@@ -1259,16 +1433,274 @@
             this.loadInitialData();
             this.bindEvents();
             this.setupFieldValidation();
+            this.setupSearchFunctionality();
+        }
+
+        setupSearchFunctionality() {
+            const searchInput = $('#searchInput');
+            const searchClearBtn = $('#searchClearBtn');
+
+            // Show/hide clear button based on input value
+            const updateClearButton = () => {
+                if (searchInput.val().trim()) {
+                    searchClearBtn.addClass('show');
+                } else {
+                    searchClearBtn.removeClass('show');
+                }
+            };
+
+            // Initial state
+            updateClearButton();
+
+            // Search input handler with debounce
+            searchInput.on('input', () => {
+                updateClearButton();
+
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+
+                searchTimeout = setTimeout(() => {
+                    this.performSearch();
+                }, 500); // 500ms debounce
+            });
+
+            // Enter key handler
+            searchInput.on('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    if (searchTimeout) {
+                        clearTimeout(searchTimeout);
+                    }
+                    this.performSearch();
+                }
+            });
+        }
+
+        performSearch() {
+            const searchValue = $('#searchInput').val().trim();
+            currentSearch = searchValue;
+            currentPagination.page = 1; // Reset to first page on new search
+            this.loadCategories();
+        }
+
+        clearSearch() {
+            $('#searchInput').val('');
+            $('#searchClearBtn').removeClass('show');
+            currentSearch = '';
+            currentPagination.page = 1;
+            this.loadCategories();
+        }
+
+        changePageSize(newPageSize) {
+            currentPagination.pageSize = parseInt(newPageSize);
+            currentPagination.page = 1; // Reset to first page
+            this.loadCategories();
+        }
+
+        goToPage(page) {
+            currentPagination.page = page;
+            this.loadCategories();
+        }
+
+        async loadCategories() {
+            this.showLoading(true);
+
+            try {
+                const params = new URLSearchParams({
+                    page: currentPagination.page,
+                    pageSize: currentPagination.pageSize
+                });
+
+                if (currentSearch) {
+                    params.append('search', currentSearch);
+                }
+
+                const response = await $.ajax({
+                    url: `/Categories?${params.toString()}`,
+                    method: 'GET',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                });
+
+                if (response.success) {
+                    categories = response.categories || [];
+                    currentPagination = response.pagination;
+                    this.renderCategories(categories);
+                    this.updatePagination();
+                } else {
+                    this.showError(response.message || 'Failed to load categories');
+                    categories = [];
+                    this.renderCategories(categories);
+                    this.updatePagination();
+                }
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                this.showError('Failed to load categories: ' + (error.message || 'Network error'));
+                categories = [];
+                this.renderCategories(categories);
+                this.updatePagination();
+            } finally {
+                this.showLoading(false);
+            }
+        }
+
+        showLoading(show) {
+            if (show) {
+                $('#loadingOverlay').addClass('show');
+            } else {
+                $('#loadingOverlay').removeClass('show');
+            }
+        }
+
+        updatePagination() {
+            const info = $('#paginationInfo');
+            const controls = $('#paginationControls');
+            const container = $('#paginationContainer');
+
+            if (currentPagination.totalItems === 0) {
+                info.text('No categories found');
+                controls.empty();
+                return;
+            }
+
+            // Update info text
+            const startItem = ((currentPagination.page - 1) * currentPagination.pageSize) + 1;
+            const endItem = Math.min(currentPagination.page * currentPagination.pageSize, currentPagination.totalItems);
+            info.text(`Showing ${startItem} - ${endItem} of ${currentPagination.totalItems} categories`);
+
+            // Update pagination controls
+            controls.empty();
+
+            const totalPages = currentPagination.totalPages;
+            const currentPage = currentPagination.page;
+
+            if (totalPages <= 1) {
+                return; // No pagination needed for single page
+            }
+
+            // Previous button
+            if (currentPagination.hasPreviousPage) {
+                controls.append(`
+            <button class="pagination-btn" onclick="categoriesManager.goToPage(${currentPage - 1})" title="Previous Page">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        `);
+            } else {
+                controls.append('<button class="pagination-btn disabled"><i class="fas fa-chevron-left"></i></button>');
+            }
+
+            if (totalPages <= 5) {
+                // Show all pages if 5 or fewer
+                for (let i = 1; i <= totalPages; i++) {
+                    const activeClass = i === currentPage ? ' active' : '';
+                    controls.append(`
+                <button class="pagination-btn${activeClass}" onclick="categoriesManager.goToPage(${i})">
+                    ${i}
+                </button>
+            `);
+                }
+            } else {
+                // For more than 5 pages: show First, Previous, Current, Next, Last pattern
+                const buttonsToShow = new Set();
+
+                // Always add first page
+                buttonsToShow.add(1);
+
+                // Add previous page if current page > 1
+                if (currentPage > 1) {
+                    buttonsToShow.add(currentPage - 1);
+                }
+
+                // Add current page if it's not first or last
+                if (currentPage !== 1 && currentPage !== totalPages) {
+                    buttonsToShow.add(currentPage);
+                }
+
+                // Add next page if current page < total
+                if (currentPage < totalPages) {
+                    buttonsToShow.add(currentPage + 1);
+                }
+
+                // Always add last page if total > 1
+                if (totalPages > 1) {
+                    buttonsToShow.add(totalPages);
+                }
+
+                // Convert to sorted array
+                const sortedButtons = Array.from(buttonsToShow).sort((a, b) => a - b);
+
+                // Add buttons with ellipsis where needed
+                for (let i = 0; i < sortedButtons.length; i++) {
+                    const pageNum = sortedButtons[i];
+                    const prevPageNum = i > 0 ? sortedButtons[i - 1] : 0;
+
+                    // Add ellipsis if there's a gap
+                    if (i > 0 && pageNum - prevPageNum > 1) {
+                        controls.append('<span class="pagination-ellipsis">...</span>');
+                    }
+
+                    // Add the page button
+                    const activeClass = pageNum === currentPage ? ' active' : '';
+                    controls.append(`
+                <button class="pagination-btn${activeClass}" onclick="categoriesManager.goToPage(${pageNum})">
+                    ${pageNum}
+                </button>
+            `);
+                }
+            }
+
+            // Next button
+            if (currentPagination.hasNextPage) {
+                controls.append(`
+            <button class="pagination-btn" onclick="categoriesManager.goToPage(${currentPage + 1})" title="Next Page">
+                <i class="fas fa-chevron-right"></i>
+            </button>
+        `);
+            } else {
+                controls.append('<button class="pagination-btn disabled"><i class="fas fa-chevron-right"></i></button>');
+            }
         }
 
         loadInitialData() {
+            // Load from the model data passed from the controller
+            const modelData = @Html.Raw(Json.Serialize(Model ?? new object()));
+
+            if (modelData && modelData.Items) {
+                categories = modelData.Items || [];
+                currentPagination = {
+                    page: modelData.Page || 1,
+                    pageSize: modelData.PageSize || 10,
+                    totalItems: modelData.TotalItems || 0,
+                    totalPages: modelData.TotalPages || 0,
+                    hasNextPage: modelData.HasNextPage || false,
+                    hasPreviousPage: modelData.HasPreviousPage || false,
+                    isFirstPage: modelData.IsFirstPage || true,
+                    isLastPage: modelData.IsLastPage || true
+                };
+            } else {
+                // Fallback: Load data via AJAX if model is empty
+                categories = [];
+                currentPagination = {
+                    page: 1,
+                    pageSize: 10,
+                    totalItems: 0,
+                    totalPages: 0,
+                    hasNextPage: false,
+                    hasPreviousPage: false,
+                    isFirstPage: true,
+                    isLastPage: true
+                };
+
+                // Load data via AJAX on first load if no model data
+                this.loadCategories();
+            }
+
             this.renderCategoryTypes(categoryTypes);
             this.renderCategories(categories);
             this.populateTypeSelect(categoryTypes);
+            this.updatePagination();
         }
 
         closeTypeForm() {
-            // Clear timeout when closing form
             if (this.validationTimeout) {
                 clearTimeout(this.validationTimeout);
                 this.validationTimeout = null;
@@ -1281,8 +1713,6 @@
                 const button = $(e.currentTarget);
                 const categoryId = button.data('category-id');
                 const category = this.categoriesData[categoryId];
-
-                console.log('Category data:', category); // Debug log to verify data
 
                 if (category) {
                     this.showEditForm(
@@ -1306,7 +1736,7 @@
 
         validateJSON(jsonString) {
             if (!jsonString || jsonString.trim() === '') {
-                return true; // Empty is valid (optional field)
+                return true;
             }
             try {
                 JSON.parse(jsonString);
@@ -1318,7 +1748,7 @@
 
         validateShortcode(shortcode) {
             if (!shortcode || shortcode.trim() === '') {
-                return true; // Empty is valid (optional field)
+                return true;
             }
             const trimmed = shortcode.trim();
             return /^[a-zA-Z]{2,5}$/.test(trimmed);
@@ -1432,41 +1862,6 @@
             });
         }
 
-        async loadData() {
-            try {
-                const response = await $.ajax({
-                    url: '/Categories/',
-                    method: 'GET',
-                    headers: {'X-Requested-With': 'XMLHttpRequest'}
-                });
-
-                if (response.success) {
-                    // Ensure arrays are properly handled
-                    categoryTypes = Array.isArray(response.categoryTypes) ? response.categoryTypes : [];
-                    categories = Array.isArray(response.categories) ? response.categories : [];
-
-                    this.renderCategoryTypes(categoryTypes);
-                    this.renderCategories(categories);
-                    this.populateTypeSelect(categoryTypes);
-                } else {
-                    console.warn('Load data response:', response.message || 'Failed to load data');
-                    categoryTypes = [];
-                    categories = [];
-                    this.renderCategoryTypes(categoryTypes);
-                    this.renderCategories(categories);
-                    this.populateTypeSelect(categoryTypes);
-                }
-            } catch (error) {
-                console.error('Error loading data:', error);
-                this.showError('Network error: ' + error.message);
-                categoryTypes = [];
-                categories = [];
-                this.renderCategoryTypes(categoryTypes);
-                this.renderCategories(categories);
-                this.populateTypeSelect(categoryTypes);
-            }
-        }
-
         // Enhanced client-side validation
         validateTypeName(typeName) {
             const errors = [];
@@ -1493,29 +1888,22 @@
             return errors;
         }
 
-        // New debounced update method
         debouncedUpdateTypeForm() {
-            // Clear any existing timeout
             if (this.validationTimeout) {
                 clearTimeout(this.validationTimeout);
             }
 
-            // Clear validation errors immediately when typing
             const input = $('#typeNameInput');
             input.removeClass('is-invalid');
             this.hideValidationError();
-
-            // Update button states immediately (but without validation errors)
             this.updateAddMoreButtonImmediate();
             this.updateSubmitButton();
 
-            // Set new timeout for validation
             this.validationTimeout = setTimeout(() => {
                 this.updateTypeFormWithValidation();
             }, 2000);
         }
 
-        // Immediate button update without validation errors
         updateAddMoreButtonImmediate() {
             const input = $('#typeNameInput');
             const addMoreBtn = $('#addMoreBtn');
@@ -1525,7 +1913,6 @@
             if (inputValue) {
                 addMoreBtn.show();
 
-                // Only check for duplicates, no validation errors yet
                 const isDuplicate = typesList.some(type => type.toLowerCase() === inputValue.toLowerCase());
 
                 if (isDuplicate) {
@@ -1549,25 +1936,21 @@
             const duplicateWarning = $('#duplicateWarning');
             const inputValue = input.val().trim();
 
-            // Clear previous validation states
             input.removeClass('is-invalid');
             this.hideValidationError();
 
             if (inputValue) {
-                // Client-side validation
                 const validationErrors = this.validateTypeName(inputValue);
 
                 if (validationErrors.length > 0) {
-                    // Show validation errors
                     input.addClass('is-invalid');
-                    this.showValidationError(validationErrors[0]); // Show first error
+                    this.showValidationError(validationErrors[0]);
 
-                    addMoreBtn.show(); // Keep button visible but disabled
+                    addMoreBtn.show();
                     addMoreBtn.prop('disabled', true);
                     addMoreBtn.attr('title', 'Fix validation errors first');
                     duplicateWarning.hide();
                 } else {
-                    // Check for duplicates
                     const isDuplicate = typesList.some(type => type.toLowerCase() === inputValue.toLowerCase());
 
                     addMoreBtn.show();
@@ -1608,9 +1991,7 @@
             validationError.hide();
         }
 
-        // Update the original method to use immediate validation when needed
         updateAddMoreButton() {
-            // This method is now used for immediate validation (like when adding/removing from list)
             this.updateTypeFormWithValidation();
         }
 
@@ -1620,7 +2001,6 @@
             const input = $('#typeNameInput');
             const inputValue = input.val().trim();
 
-            // For submit button, we check if input has content and is valid
             const hasValidInputValue = inputValue && this.validateTypeName(inputValue).length === 0;
             const hasListItems = typesList.length > 0;
 
@@ -1630,7 +2010,6 @@
             submitText.text(totalCount > 1 ? 'Create Types' : 'Create Type');
         }
 
-        // Update the legacy updateTypeForm method to use the new debounced version
         updateTypeForm() {
             this.debouncedUpdateTypeForm();
         }
@@ -1658,11 +2037,11 @@
             let html = '<div class="types-list" id="categoryTypesList">';
 
             sortedTypes.forEach((type, index) => {
-                const rawTypeName = String(type).trim().toLowerCase(); // Keep lowercase for data
-                const displayName = this.toTitleCase(rawTypeName); // Title case for display
+                const rawTypeName = String(type).trim().toLowerCase();
+                const displayName = this.toTitleCase(rawTypeName);
 
                 html += `
-            <div class="type-item ${index >= 10 ? 'hidden' : ''}" 
+            <div class="type-item" 
                  data-index="${index}" 
                  data-type-name="${this.escapeHtml(rawTypeName)}"
                  data-type="${this.escapeHtml(rawTypeName)}">
@@ -1673,16 +2052,6 @@
             });
 
             html += '</div>';
-
-            if (types.length > 10) {
-                html += `
-            <button type="button" class="show-all-btn" id="showAllTypesBtn" onclick="categoriesManager.toggleShowAllTypes()">
-                <i class="fas fa-eye me-1"></i>
-                Show All (${types.length})
-            </button>
-        `;
-            }
-
             container.html(html);
             this.initializeCategoryTypeSelection();
         }
@@ -1691,16 +2060,22 @@
             const container = $('#rootCategoriesSection');
 
             if (!categories || categories.length === 0) {
+                let emptyMessage = 'No Categories Found';
+                let emptyDescription = 'Start by creating your first category.';
+
+                if (currentSearch) {
+                    emptyMessage = 'No Matching Categories';
+                    emptyDescription = `No categories found matching "${currentSearch}". Try a different search term.`;
+                }
+
                 container.html(`
             <div class="empty-state">
                 <div class="empty-state-icon">
                     <i class="fas fa-folder-open"></i>
                 </div>
-                <h4>No Categories Found</h4>
-                <p>Start by creating your first category.</p>
-                <button type="button" class="add-btn" onclick="categoriesManager.openCreateForm()">
-                    <i class="fas fa-plus me-1"></i>Create First Category
-                </button>
+                <h4>${emptyMessage}</h4>
+                <p>${emptyDescription}</p>
+                ${!currentSearch ? '<button type="button" class="add-btn" onclick="categoriesManager.openCreateForm()"><i class="fas fa-plus me-1"></i>Create First Category</button>' : ''}
             </div>
         `);
                 return;
@@ -1708,7 +2083,6 @@
 
             const sortedCategories = categories.sort((a, b) => (a.order || Number.MAX_VALUE) - (b.order || Number.MAX_VALUE));
 
-            // Store categories data for easy access
             this.categoriesData = {};
 
             let html = `
@@ -1726,22 +2100,20 @@
                 <tbody>
     `;
 
-            sortedCategories.forEach((category, index) => {
-                // Store full category data
+            sortedCategories.forEach((category) => {
                 this.categoriesData[category.id] = category;
 
                 const rawTypeName = category.typeName.toLowerCase();
                 const displayTypeName = this.toTitleCase(rawTypeName);
                 const escapedValue = this.escapeHtml(category.value);
 
-                // Create shortcode badge if shortcode exists
                 let shortcodeBadge = '';
                 if (category.shortcode && category.shortcode.trim() !== '') {
                     shortcodeBadge = `<span class="category-shortcode-badge ms-2">${this.escapeHtml(category.shortcode)}</span>`;
                 }
 
                 html += `
-            <tr class="category-row ${index >= 10 ? 'hidden' : ''}" data-index="${index}">
+            <tr class="category-row">
                 <td>
                     ${category.order != null
                     ? `<span class="category-order-badge">${category.order}</span>`
@@ -1794,25 +2166,16 @@
             });
 
             html += '</tbody></table></div>';
-
-            if (categories.length > 10) {
-                html += `
-            <button type="button" class="show-all-btn" id="showAllCategoriesBtn" onclick="categoriesManager.toggleShowAllCategories()">
-                <i class="fas fa-eye me-1"></i>
-                Show All (${categories.length})
-            </button>
-        `;
-            }
-
             container.html(html);
             this.bindEditButtons();
         }
+
         populateTypeSelect(types) {
             const select = $('#type');
             select.html('<option value="">Select a type</option>');
             types.forEach(type => {
-                const rawType = String(type).trim().toLowerCase(); // Keep lowercase for value
-                const displayName = this.toTitleCase(rawType); // Title case for display
+                const rawType = String(type).trim().toLowerCase();
+                const displayName = this.toTitleCase(rawType);
                 select.append(`<option value="${this.escapeHtml(rawType)}">${this.escapeHtml(displayName)}</option>`);
             });
         }
@@ -1825,24 +2188,18 @@
         }
 
         toggleTypeSelection(typeElement) {
-            // Get the raw type name from data-type-name attribute (not HTML escaped)
             let typeName = $(typeElement).attr('data-type-name');
 
-            // Fallback to data-type if data-type-name is not available
             if (!typeName) {
                 typeName = $(typeElement).data('type');
             }
 
-            // Last fallback to text content (but remove icon and convert back to raw format)
             if (!typeName) {
-                const displayText = $(typeElement).text().trim().replace(/^\s*\S+\s+/, ''); // Remove the icon
-                typeName = displayText; // Keep as raw format (no case conversion needed)
+                const displayText = $(typeElement).text().trim().replace(/^\s*\S+\s+/, '');
+                typeName = displayText;
             }
 
-            // Ensure typeName is always a clean string
             typeName = String(typeName).trim();
-
-            console.log('Toggling selection for type:', typeName); // Debug log
 
             if (selectedTypes.has(typeName)) {
                 selectedTypes.delete(typeName);
@@ -1862,7 +2219,6 @@
             this.updateDeleteButtonState();
             this.hideSelectionCount();
 
-            // Force update of delete button state after clearing
             setTimeout(() => {
                 this.updateDeleteButtonState();
             }, 100);
@@ -1908,55 +2264,13 @@
             $('.selection-count').remove();
         }
 
-        toggleShowAllTypes() {
-            const button = $('#showAllTypesBtn');
-            const hiddenTypes = $('#categoryTypesList .type-item.hidden');
-
-            showingAllTypes = !showingAllTypes;
-
-            if (showingAllTypes) {
-                hiddenTypes.removeClass('hidden');
-                button.html('<i class="fas fa-eye-slash me-1"></i>Show Less');
-            } else {
-                $('#categoryTypesList .type-item').each((index, item) => {
-                    if (index >= 10) {
-                        $(item).addClass('hidden');
-                    }
-                });
-                const totalCount = $('#categoryTypesList .type-item').length;
-                button.html(`<i class="fas fa-eye me-1"></i>Show All (${totalCount})`);
-            }
-        }
-
-        toggleShowAllCategories() {
-            const button = $('#showAllCategoriesBtn');
-            const hiddenRows = $('#categoriesTable .category-row.hidden');
-
-            showingAllCategories = !showingAllCategories;
-
-            if (showingAllCategories) {
-                hiddenRows.removeClass('hidden');
-                button.html('<i class="fas fa-eye-slash me-1"></i>Show Less');
-            } else {
-                $('#categoriesTable .category-row').each((index, row) => {
-                    if (index >= 10) {
-                        $(row).addClass('hidden');
-                    }
-                });
-                const totalCount = $('#categoriesTable .category-row').length;
-                button.html(`<i class="fas fa-eye me-1"></i>Show All (${totalCount})`);
-            }
-        }
-
         addCategoryType() {
             this.closeAllForms();
-            // Don't reset the form here - only reset when explicitly canceling
             $('#typeForm').addClass('show');
             setTimeout(() => $('#typeNameInput').focus(), 300);
         }
 
         resetTypeForm() {
-            // Clear the timeout when resetting
             if (this.validationTimeout) {
                 clearTimeout(this.validationTimeout);
                 this.validationTimeout = null;
@@ -1975,21 +2289,17 @@
             const input = $('#typeNameInput');
             const typeName = input.val().trim();
 
-            // Clear any pending validation timeout since we're taking action
             if (this.validationTimeout) {
                 clearTimeout(this.validationTimeout);
                 this.validationTimeout = null;
             }
 
-            // Validate before adding (immediate validation for user action)
             const validationErrors = this.validateTypeName(typeName);
             if (validationErrors.length > 0) {
-                // Show validation errors immediately when user tries to add
                 input.addClass('is-invalid');
                 this.showValidationError(validationErrors[0]);
                 this.showError('Please fix validation errors before adding the type.');
 
-                // Update button state
                 const addMoreBtn = $('#addMoreBtn');
                 addMoreBtn.prop('disabled', true);
                 addMoreBtn.attr('title', 'Fix validation errors first');
@@ -1997,7 +2307,7 @@
             }
 
             if (typeName && !typesList.some(type => type.toLowerCase() === typeName.toLowerCase())) {
-                typesList.push(typeName); // Store original case
+                typesList.push(typeName);
                 input.val('').removeClass('is-invalid');
                 this.hideValidationError();
                 $('#duplicateWarning').hide();
@@ -2015,11 +2325,11 @@
             typesList = typesList.filter(type => type !== typeName);
             this.updateTypesDisplay();
             this.updateSubmitButton();
-            this.updateAddMoreButtonImmediate(); // Use immediate version
+            this.updateAddMoreButtonImmediate();
             $('#typeNameInput').focus();
         }
 
-        updateTypesDisplay() {
+                updateTypesDisplay() {
             const typesList_div = $('#typesList');
             const typesContainer = $('#typesContainer');
 
@@ -2043,7 +2353,6 @@
         }
 
         toggleTypeForm() {
-            // Clear timeout when closing form
             if (this.validationTimeout) {
                 clearTimeout(this.validationTimeout);
                 this.validationTimeout = null;
@@ -2062,8 +2371,6 @@
         }
 
         showEditForm(id, value, order, metadata = null, shortcode = null) {
-            console.log('showEditForm called with:', { id, value, order, metadata, shortcode }); // Debug log
-
             this.closeAllForms();
 
             $('#editId').val(id);
@@ -2074,16 +2381,13 @@
             let metadataValue = '';
             if (metadata && metadata !== 'null' && metadata !== 'undefined') {
                 try {
-                    // If metadata is a string, try to parse and re-stringify it with formatting
                     if (typeof metadata === 'string') {
                         const parsedMetadata = JSON.parse(metadata);
                         metadataValue = JSON.stringify(parsedMetadata, null, 2);
                     } else {
-                        // If it's already an object, stringify it with formatting
                         metadataValue = JSON.stringify(metadata, null, 2);
                     }
                 } catch (error) {
-                    // If JSON parsing fails, use the original value
                     console.warn('Failed to parse metadata JSON:', error);
                     metadataValue = typeof metadata === 'string' ? metadata : JSON.stringify(metadata, null, 2);
                 }
@@ -2144,7 +2448,6 @@
 
             if (selectedArray.length === 0) return;
 
-            // ✅ UPDATED: Show raw type names without title case transformation
             container.html(selectedArray.map(type => `
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                     <i class="fas fa-tag" style="color: #3b82f6;"></i>
@@ -2163,10 +2466,8 @@
         closeDeleteTypeModal() {
             $('#deleteTypeModal').removeClass('show');
 
-            // Clear any form states
             $('#selectedTypesContainer').html('');
 
-            // Reset modal content to default state
             setTimeout(() => {
                 const modalHeader = $('#deleteTypeModal .modal-header h4');
                 const deleteButton = $('#deleteTypeModal .btn-delete');
@@ -2186,10 +2487,8 @@
             const input = $('#typeNameInput');
             const currentInput = input.val().trim();
 
-            // Create a copy of the existing types list
             let allTypeNames = [...typesList];
 
-            // Validate current input if it exists
             if (currentInput) {
                 const validationErrors = this.validateTypeName(currentInput);
                 if (validationErrors.length > 0) {
@@ -2197,7 +2496,6 @@
                     return;
                 }
 
-                // Check for duplicates
                 if (!allTypeNames.some(type => type.toLowerCase() === currentInput.toLowerCase())) {
                     allTypeNames.push(currentInput);
                 }
@@ -2219,14 +2517,14 @@
                     response = await $.ajax({
                         url: '/Categories/CreateCategoryType',
                         method: 'POST',
-                        data: {typeName: allTypeNames[0]}, // Send original case
+                        data: {typeName: allTypeNames[0]},
                         headers: {'X-Requested-With': 'XMLHttpRequest'}
                     });
                 } else {
                     response = await $.ajax({
                         url: '/Categories/CreateBulkCategoryType',
                         method: 'POST',
-                        data: {typeNames: allTypeNames}, // Send original case array
+                        data: {typeNames: allTypeNames},
                         headers: {'X-Requested-With': 'XMLHttpRequest'}
                     });
                 }
@@ -2239,16 +2537,19 @@
                         this.showSuccess(response.message);
                     }
 
-                    // Update data
                     categoryTypes = response.categoryTypes;
-                    categories = response.categories || categories;
+                    
+                    // Update pagination data and categories
+                    if (response.pagination) {
+                        currentPagination = response.pagination;
+                        categories = response.categories || [];
+                    }
 
-                    // Re-render
                     this.renderCategoryTypes(categoryTypes);
                     this.renderCategories(categories);
                     this.populateTypeSelect(categoryTypes);
+                    this.updatePagination();
                 } else {
-                    // Handle validation errors specifically
                     if (response.validationErrors && response.validationErrors.length > 0) {
                         const errorMessages = response.validationErrors.map(ve => ve.error).join('\n');
                         this.showError(`Validation failed:\n${errorMessages}`);
@@ -2260,14 +2561,12 @@
                     }
                 }
 
-                // Reset and close the form after processing (success or failure)
                 this.resetTypeForm();
                 this.closeTypeForm();
 
             } catch (error) {
                 console.error('Error:', error);
 
-                // Handle validation errors from server
                 if (error.responseJSON && error.responseJSON.validationErrors) {
                     const errorMessages = error.responseJSON.validationErrors.map(ve => ve.error).join('\n');
                     this.showError(`Validation failed:\n${errorMessages}`);
@@ -2277,7 +2576,6 @@
                     this.showError('An error occurred while creating category types.');
                 }
 
-                // Reset and close the form on error too
                 this.resetTypeForm();
                 this.closeTypeForm();
             } finally {
@@ -2289,7 +2587,6 @@
         async handleCreateCategory(e) {
             e.preventDefault();
 
-            // Validate fields before submitting
             const metadataValid = this.validateJSON($('#metadata').val());
             const shortcodeValid = this.validateShortcode($('#shortcode').val());
 
@@ -2327,15 +2624,22 @@
                 if (response.success) {
                     this.showSuccess(response.message);
 
-                    // Update data
-                    categories = response.categories;
                     categoryTypes = response.categoryTypes || categoryTypes;
+                    
+                    // Update pagination data and categories
+                    if (response.pagination) {
+                        currentPagination = response.pagination;
+                        categories = response.categories || [];
+                        
+                        this.renderCategories(categories);
+                        this.updatePagination();
+                    } else {
+                        // Fallback: reload categories
+                        await this.loadCategories();
+                    }
 
-                    // Re-render
-                    this.renderCategories(categories);
                     this.populateTypeSelect(categoryTypes);
 
-                    // Reset and close form
                     $('#createCategoryForm')[0].reset();
                     $('#metadata, #shortcode').removeClass('is-invalid');
                     $('#metadataValidation, #shortcodeValidation').hide();
@@ -2360,7 +2664,6 @@
         async handleUpdateCategory(e) {
             e.preventDefault();
 
-            // Validate fields before submitting
             const metadataValid = this.validateJSON($('#editMetadata').val());
             const shortcodeValid = this.validateShortcode($('#editShortcode').val());
 
@@ -2393,14 +2696,21 @@
                 if (response.success) {
                     this.showSuccess(response.message);
 
-                    // Update data
-                    categories = response.categories;
                     categoryTypes = response.categoryTypes || categoryTypes;
+                    
+                    // Update pagination data and categories
+                    if (response.pagination) {
+                        currentPagination = response.pagination;
+                        categories = response.categories || [];
+                        
+                        this.renderCategories(categories);
+                        this.updatePagination();
+                    } else {
+                        // Fallback: reload categories
+                        await this.loadCategories();
+                    }
 
-                    // Re-render
-                    this.renderCategories(categories);
                     this.populateTypeSelect(categoryTypes);
-
                     this.toggleEditForm();
                 } else {
                     this.showError(response.message);
@@ -2431,12 +2741,20 @@
                 if (response.success) {
                     this.showSuccess(response.message);
 
-                    // Update data
-                    categories = response.categories;
                     categoryTypes = response.categoryTypes || categoryTypes;
+                    
+                    // Update pagination data and categories
+                    if (response.pagination) {
+                        currentPagination = response.pagination;
+                        categories = response.categories || [];
+                        
+                        this.renderCategories(categories);
+                        this.updatePagination();
+                    } else {
+                        // Fallback: reload categories
+                        await this.loadCategories();
+                    }
 
-                    // Re-render
-                    this.renderCategories(categories);
                     this.populateTypeSelect(categoryTypes);
                 } else {
                     this.showError(response.message);
@@ -2450,12 +2768,9 @@
         async handleDeleteTypes(e) {
             e.preventDefault();
 
-            // Convert Set to Array and ensure all items are clean strings (keep raw values)
             const selectedTypeNames = Array.from(selectedTypes)
                 .map(type => String(type).trim())
                 .filter(type => type.length > 0);
-
-            console.log('Selected types for deletion:', selectedTypeNames); // Debug log
 
             if (selectedTypeNames.length === 0) {
                 this.showError('No types selected for deletion.');
@@ -2472,34 +2787,34 @@
                     url: '/Categories/DeleteCategoryTypes',
                     method: 'POST',
                     contentType: 'application/json',
-                    data: JSON.stringify(selectedTypeNames), // Send raw values
+                    data: JSON.stringify(selectedTypeNames),
                     headers: {'X-Requested-With': 'XMLHttpRequest'}
                 });
 
-                console.log('Delete response:', response); // Debug log
-
-                // Always close modal and clear selections first
                 this.closeDeleteTypeModal();
                 this.clearAllSelections();
 
                 if (response.success) {
                     this.showSuccess(response.message);
 
-                    // Update data
                     categoryTypes = response.categoryTypes || [];
-                    categories = response.categories || [];
+                    
+                    // Update pagination data and categories
+                    if (response.pagination) {
+                        currentPagination = response.pagination;
+                        categories = response.categories || [];
+                    }
 
-                    // Re-render with updated data
                     this.renderCategoryTypes(categoryTypes);
                     this.renderCategories(categories);
                     this.populateTypeSelect(categoryTypes);
+                    this.updatePagination();
                 } else {
                     this.showError(response.error || 'Failed to delete category types');
-                    await this.loadData();
+                    await this.loadCategories();
                 }
             } catch (error) {
                 console.error('Error deleting types:', error);
-                console.error('Error response:', error.responseJSON); // Additional debug log
 
                 this.closeDeleteTypeModal();
                 this.clearAllSelections();
@@ -2514,7 +2829,7 @@
                 }
 
                 try {
-                    await this.loadData();
+                    await this.loadCategories();
                 } catch (loadError) {
                     console.error('Error reloading data:', loadError);
                 }
@@ -2564,9 +2879,7 @@
             this.showAlert(message, 'success');
         }
 
-        // Enhanced error display method
         showError(message) {
-            // Convert newlines to HTML breaks for better display
             const htmlMessage = message.replace(/\n/g, '<br>');
             this.showAlert(htmlMessage, 'danger');
         }
@@ -2585,7 +2898,7 @@
                 </div>
             `);
 
-            container.html(''); // Clear existing alerts
+            container.html('');
             container.append(alertDiv);
 
             setTimeout(() => {
@@ -2624,14 +2937,6 @@
         categoriesManager.deleteCategoryType();
     }
 
-    function toggleShowAllTypes() {
-        categoriesManager.toggleShowAllTypes();
-    }
-
-    function toggleShowAllCategories() {
-        categoriesManager.toggleShowAllCategories();
-    }
-
     function addTypeToList() {
         categoriesManager.addTypeToList();
     }
@@ -2656,7 +2961,6 @@
         categoriesManager.showEditForm(id, value, order, metadata, shortcode);
     }
 
-
     function toggleEditForm() {
         categoriesManager.toggleEditForm();
     }
@@ -2679,6 +2983,15 @@
 
     function copyToClipboard(text, button) {
         categoriesManager.copyToClipboard(text, button);
+    }
+
+    function clearSearch() {
+        categoriesManager.clearSearch();
+    }
+
+    function changePageSize() {
+        const newPageSize = $('#pageSizeSelect').val();
+        categoriesManager.changePageSize(newPageSize);
     }
 
     // Initialize

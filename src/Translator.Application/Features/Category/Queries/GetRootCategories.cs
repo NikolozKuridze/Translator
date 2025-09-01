@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using CategoryEntity = Translator.Domain.Entities.Category;
 
@@ -7,7 +8,7 @@ namespace Translator.Application.Features.Category.Queries;
 
 public abstract class GetRootCategories
 {
-    public sealed record Query : IRequest<IEnumerable<Response>>;
+    public sealed record Query(PaginationRequest PaginationRequest) : IRequest<PaginatedResponse<Response>>;
 
     public sealed record Response(
         Guid Id,
@@ -17,30 +18,40 @@ public abstract class GetRootCategories
         string? Shortcode,
         int? Order);
 
-    public class Handler(IRepository<CategoryEntity> categoryRepository) : IRequestHandler<Query, IEnumerable<Response>>
+    public class Handler(IRepository<CategoryEntity> categoryRepository) : IRequestHandler<Query, PaginatedResponse<Response>>
     {
-        public async Task<IEnumerable<Response>> Handle(Query request, CancellationToken cancellationToken)
+        public async Task<PaginatedResponse<Response>> Handle(Query request, CancellationToken cancellationToken)
         {
-            var categories = await categoryRepository
+            var query = categoryRepository
                 .AsQueryable()
                 .Where(c => c.ParentId == null)
                 .Include(c => c.Type)
-                .OrderBy(c => c.Order)
-                .ToListAsync(cancellationToken);
+                .OrderBy(c => c.Order);
 
-            return await MapToResponse(categories);
-        }
+            var totalCount = await query.CountAsync(cancellationToken);
 
-        private static async Task<IEnumerable<Response>> MapToResponse(IEnumerable<CategoryEntity> categories)
-        {
-            return await Task.FromResult(categories.Select(c
-                => new Response(
+            var items = await query
+                .Skip((request.PaginationRequest.Page - 1) * request.PaginationRequest.PageSize)
+                .Take(request.PaginationRequest.PageSize)
+                .Select(c => new Response(
                     c.Id,
                     c.Value,
                     c.Type.Name,
                     c.Metadata,
                     c.Shortcode,
-                    c.Order)).ToList());
+                    c.Order
+                ))
+                .ToListAsync(cancellationToken);
+
+            return new PaginatedResponse<Response>
+            {
+                Page = request.PaginationRequest.Page,
+                PageSize = request.PaginationRequest.PageSize,
+                TotalItems = totalCount,
+                HasNextPage = (request.PaginationRequest.Page * request.PaginationRequest.PageSize) < totalCount,
+                HasPreviousPage = request.PaginationRequest.Page > 1,
+                Items = items
+            };
         }
     }
 }
