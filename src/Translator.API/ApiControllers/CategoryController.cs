@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Translator.API.Models;
 using Translator.Application.Features.Category.Commands;
 using Translator.Application.Features.Category.Queries;
+using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
@@ -34,12 +35,25 @@ public class CategoryController(IMediator mediator) : ControllerBase
         return Results.Ok(category);
     }
 
-    [HttpGet("roots")]
-    public async Task<IResult> GetRootCategories()
+    [HttpGet("root-catgories/{pageNumber}/{pageSize}")]
+    public async Task<IResult> GetRootCategories(int pageNumber = 1, int pageSize = 10)
     {
-        var categories = await mediator.Send(new GetRootCategories.Query());
+        var query = new GetRootCategories.Query(new PaginationRequest(pageNumber, pageSize, null, null, null, null));
+        var result = await mediator.Send(query);
 
-        return Results.Ok(categories);
+        return Results.Ok(result);
+    }
+
+    [HttpGet("search-categories")]
+    public async Task<IResult> SearchRootCategories(string categoryName, int pageNumber, int pageSize)
+    {
+        var command = new SearchRootCategories.Query(
+            categoryName,
+            new PaginationRequest(pageNumber, pageSize, null, null, null, null));
+        
+        var result = await mediator.Send(command);
+        
+        return Results.Ok(result);
     }
 
     [HttpDelete]
