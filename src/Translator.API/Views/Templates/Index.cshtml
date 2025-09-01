@@ -316,6 +316,7 @@ class TemplateManager {
         this.initializeAutocomplete();
     }
     
+    
     initializeAutocomplete() {
         // Инициализируем автокомплит для всех существующих полей
         document.querySelectorAll('.value-input').forEach(input => {
@@ -326,17 +327,20 @@ class TemplateManager {
     setupAutocomplete(inputElement) {
         const dropdown = inputElement.parentElement.querySelector('.autocomplete-dropdown');
         let currentFocus = -1;
-        
+
         inputElement.addEventListener('input', (e) => {
             const value = e.target.value.trim();
-            
+
+            // Check for duplicates in real-time
+            this.validateDuplicateValue(inputElement);
+
             clearTimeout(this.searchTimeout);
-            
+
             if (value.length < 1) {
                 this.hideDropdown(dropdown);
                 return;
             }
-            
+
             this.searchTimeout = setTimeout(() => {
                 this.searchValues(value, dropdown, inputElement);
             }, 300);
@@ -372,7 +376,39 @@ class TemplateManager {
             }, 200);
         });
     }
-    
+
+    validateDuplicateValue(currentInput) {
+        const currentValue = currentInput.value.trim().toLowerCase();
+        const allInputs = document.querySelectorAll('input[name="values"]');
+        let isDuplicate = false;
+
+        // Clear previous error styling
+        currentInput.classList.remove('is-invalid');
+        const existingError = currentInput.parentElement.querySelector('.duplicate-error');
+        if (existingError) {
+            existingError.remove();
+        }
+
+        if (currentValue) {
+            allInputs.forEach(input => {
+                if (input !== currentInput && input.value.trim().toLowerCase() === currentValue) {
+                    isDuplicate = true;
+                }
+            });
+
+            if (isDuplicate) {
+                currentInput.classList.add('is-invalid');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback duplicate-error';
+                errorDiv.textContent = 'This value already exists (case-insensitive)';
+                currentInput.parentElement.appendChild(errorDiv);
+            }
+        }
+
+        return !isDuplicate;
+    }
+
+
     async searchValues(searchTerm, dropdown, inputElement) {
         try {
             const params = new URLSearchParams({
@@ -538,25 +574,38 @@ class TemplateManager {
         const form = document.getElementById('createTemplateForm');
         const submitBtn = form.querySelector('button[type="submit"]');
         const spinner = submitBtn.querySelector('.spinner-border');
-        
+
         const templateName = document.getElementById('templateName').value.trim();
         const valueInputs = document.querySelectorAll('input[name="values"]');
         const values = [];
+        const seenValues = new Set(); // Track case-insensitive values
+        let hasDuplicates = false;
+        let duplicateValue = '';
 
         valueInputs.forEach(input => {
             const val = input.value.trim();
             if (val) {
+                const lowerVal = val.toLowerCase();
+                if (seenValues.has(lowerVal)) {
+                    hasDuplicates = true;
+                    duplicateValue = val;
+                    return;
+                }
+                seenValues.add(lowerVal);
                 values.push(val);
             }
         });
-
-        console.log('All values:', values);
 
         if (!templateName || values.length === 0) {
             this.showError('Template name and at least one value are required');
             return;
         }
-        
+
+        if (hasDuplicates) {
+            this.showError(`Duplicate value detected: "${duplicateValue}". Values are case-insensitive and must be unique.`);
+            return;
+        }
+
         submitBtn.disabled = true;
         if (spinner) spinner.classList.remove('d-none');
         
@@ -1104,12 +1153,20 @@ function addValueInput() {
     if (templateManager && newInput) {
         console.log('Setting up autocomplete for new input');
         templateManager.setupAutocomplete(newInput);
+
+        // Add validation event listener for existing inputs when new one is added
+        document.querySelectorAll('input[name="values"]').forEach(input => {
+            input.addEventListener('blur', () => {
+                templateManager.validateDuplicateValue(input);
+            });
+        });
     } else {
         console.error('templateManager not available or newInput not found');
     }
 
     updateRemoveButtons();
 }
+
 
 function removeValueInput(button) {
     button.closest('.value-input-group').remove();
@@ -1189,6 +1246,27 @@ document.addEventListener('DOMContentLoaded', function() {
     .autocomplete-item:last-child {
         border-bottom: none;
     }
+
+    .is-invalid {
+        border-color: #dc3545;
+    }
+
+    .invalid-feedback {
+        display: block;
+        width: 100%;
+        margin-top: 0.25rem;
+        font-size: 0.875em;
+        color: #dc3545;
+    }
+
+    .duplicate-error {
+        background-color: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 0.25rem;
+        padding: 0.375rem 0.75rem;
+        margin-top: 0.5rem;
+    }
+
 
     .badge {
         font-size: 0.875em;
