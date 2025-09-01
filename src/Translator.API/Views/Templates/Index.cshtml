@@ -145,8 +145,13 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-1">
-                                        <a href="@Url.Action("Details", "Templates", new { templateId = template.TemplateId })" 
-                                           class="btn btn-sm btn-outline-primary">
+                                        <a href="@Url.Action("Details", "Templates", new { 
+                                                     templateId = template.TemplateId, 
+                                                     templateName = template.TemplateName,
+                                                     lang = "",
+                                                     pageNumber = 1,
+                                                     pageSize = 10 
+                                                 })" class="btn btn-sm btn-outline-primary">
                                             <i class="fas fa-eye"></i> View
                                         </a>
                                         <button class="btn btn-sm btn-outline-danger" 
@@ -780,35 +785,36 @@ class TemplateManager {
 
     createTemplateRow(template) {
         return `
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary">${this.escapeHtml(template.templateName)}</span>
-                        <button class="btn btn-sm btn-outline-secondary copy-template-btn" 
-                                data-id="${template.templateId}" 
-                                title="Copy Template ID">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </td>
-                <td>
-                    <span class="badge bg-secondary">${template.valueCount}</span>
-                </td>
-                <td>
-                    <div class="d-flex gap-1">
-                        <a href="/Templates/Details/${template.templateId}" 
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye"></i> View
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger delete-template-btn" 
-                                data-template="${this.escapeHtml(template.templateName)}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
+        <tr>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary">${this.escapeHtml(template.templateName)}</span>
+                    <button class="btn btn-sm btn-outline-secondary copy-template-btn" 
+                            data-id="${template.templateId}" 
+                            title="Copy Template ID">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </td>
+            <td>
+                <span class="badge bg-secondary">${template.valueCount}</span>
+            </td>
+            <td>
+                <div class="d-flex gap-1">
+                    <a href="/Templates/Details?templateId=${template.templateId}&templateName=${encodeURIComponent(template.templateName)}&lang=&pageNumber=1&pageSize=10" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> View
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger delete-template-btn" 
+                            data-template="${this.escapeHtml(template.templateName)}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
     }
+
 
     bindTableEvents() {
         // Copy buttons
