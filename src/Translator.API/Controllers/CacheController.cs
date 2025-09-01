@@ -142,9 +142,20 @@ public class CacheController : Controller
             var cacheCommand = new CacheTemplateCommand(
                 templateCacheDto.TemplateId,
                 templateCacheDto.TemplateName,
-                templateCacheDto.Translations
-                );
+                templateCacheDto.Translations);
             await _mediator.Send(cacheCommand);
+
+            await Task.Delay(100);
+        
+            var verifyQuery = new GetCachedTemplatesCommand(
+                new PaginationRequest(1, int.MaxValue, null, null, null, null));
+            var cached = await _mediator.Send(verifyQuery);
+            var isCached = cached.Items.Any(t => t.TemplateId == templateId);
+        
+            if (!isCached)
+            {
+                return Json(new { success = false, message = "Template cached but verification failed" });
+            }
 
             return Json(new { success = true, message = $"Template '{templateName}' cached successfully!" });
         }
