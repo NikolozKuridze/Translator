@@ -128,9 +128,20 @@
                                     <code class="text-muted">@translation.ValueKey</code>
                                 </td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-danger" onclick="showDeleteTranslationModal('@Html.Raw(Html.Encode(valueName))', '@Html.Raw(Html.Encode(translation.LanguageCode))', '@Html.Raw(Html.Encode(translation.ValueTranslation))')">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                                    @if (Model.Count() > 1)
+                                    {
+                                        <button class="btn btn-sm btn-outline-danger" onclick="showDeleteTranslationModal('@Html.Raw(Html.Encode(valueName))', '@Html.Raw(Html.Encode(translation.LanguageCode))', '@Html.Raw(Html.Encode(translation.ValueTranslation))')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-sm btn-outline-secondary" disabled 
+                                                title="Cannot delete the last translation - at least one translation must exist"
+                                                data-bs-toggle="tooltip" data-bs-placement="top">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    }
                                 </td>
                             </tr>
                         }
