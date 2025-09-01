@@ -1,14 +1,14 @@
 @model IEnumerable<Translator.API.Controllers.CachedItemViewModel>
 
 @{
-Layout = "_Layout";
-ViewBag.Title = "Cache Management";
-var currentPage = ViewBag.CurrentPage ?? 1;
-var pageSize = ViewBag.PageSize ?? 10;
-var totalPages = ViewBag.TotalPages ?? 1;
-var totalCount = ViewBag.TotalCount ?? 0;
-var templatesCount = ViewBag.TemplatesCount ?? 0;
-var valuesCount = ViewBag.ValuesCount ?? 0;
+    Layout = "_Layout";
+    ViewBag.Title = "Cache Management";
+    var currentPage = ViewBag.CurrentPage ?? 1;
+    var pageSize = ViewBag.PageSize ?? 10;
+    var totalPages = ViewBag.TotalPages ?? 1;
+    var totalCount = ViewBag.TotalCount ?? 0;
+    var templatesCount = ViewBag.TemplatesCount ?? 0;
+    var valuesCount = ViewBag.ValuesCount ?? 0;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -25,18 +25,18 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
 <div id="alertContainer">
     @if (TempData["SuccessMessage"] != null)
     {
-    <div class="alert alert-success alert-dismissible fade show">
-        @TempData["SuccessMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
 
     @if (TempData["ErrorMessage"] != null)
     {
-    <div class="alert alert-danger alert-dismissible fade show">
-        @TempData["ErrorMessage"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
+        <div class="alert alert-danger alert-dismissible fade show">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
 </div>
 
@@ -113,7 +113,7 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
                                 <div class="d-flex gap-1">
                                     @if (item.Type == "Template")
                                     {
-                                        <a href="@Url.Action("Details", "Templates", new { templateId = item.Id, lang = "en"})"
+                                        <a href="@Url.Action("Details", "Templates", new { templateId = item.Id, templateName = item.Name, lang = "en" })"
                                            class="btn btn-sm btn-outline-primary" title="View Details">
                                             <i class="fas fa-eye"></i> Details
                                         </a>
@@ -157,74 +157,74 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
 <div id="paginationContainer">
     @if (Model != null && Model.Any() && totalPages > 1)
     {
-    <nav class="mt-4">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <small class="text-muted">
-                Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
-            </small>
-            <small class="text-muted">Page @currentPage of @totalPages</small>
-        </div>
+        <nav class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted">
+                    Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
+                </small>
+                <small class="text-muted">Page @currentPage of @totalPages</small>
+            </div>
 
-        <ul class="pagination justify-content-center">
-            @if (currentPage > 1)
-            {
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
-                    <i class="fas fa-angle-double-left"></i> First
-                </a>
-            </li>
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
-            </li>
-            }
-            else
-            {
-            <li class="page-item disabled">
-                <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link">Previous</span>
-            </li>
-            }
+            <ul class="pagination justify-content-center">
+                @if (currentPage > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
+                            <i class="fas fa-angle-double-left"></i> First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
+                    </li>
+                }
 
-            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
-            {
-            if (i == currentPage)
-            {
-            <li class="page-item active">
-                <span class="page-link">@i</span>
-            </li>
-            }
-            else
-            {
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="@i">@i</a>
-            </li>
-            }
-            }
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    if (i == currentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link page-link-custom" href="#" data-page="@i">@i</a>
+                        </li>
+                    }
+                }
 
-            @if (currentPage < totalPages)
-            {
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="@totalPages" title="Last page">
-                    Last <i class="fas fa-angle-double-right"></i>
-                </a>
-            </li>
-            }
-            else
-            {
-            <li class="page-item disabled">
-                <span class="page-link">Next</span>
-            </li>
-            <li class="page-item disabled">
-                <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
-            </li>
-            }
-        </ul>
-    </nav>
+                @if (currentPage < totalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@totalPages" title="Last page">
+                            Last <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                    </li>
+                }
+            </ul>
+        </nav>
     }
 </div>
 
@@ -232,15 +232,15 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
 <div id="pageSizeContainer">
     @if (Model != null && Model.Any())
     {
-    <div class="d-flex justify-content-end align-items-center mt-3">
-        <label class="form-label me-2 mb-0">Show:</label>
-        <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-            <option value="5" @(pageSize == 5 ? "selected" : "")>5</option>
-            <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
-            <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
-            <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
-        </select>
-    </div>
+        <div class="d-flex justify-content-end align-items-center mt-3">
+            <label class="form-label me-2 mb-0">Show:</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="5" @(pageSize == 5 ? "selected" : "")>5</option>
+                <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
+                <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
+                <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
+            </select>
+        </div>
     }
 </div>
 
@@ -371,39 +371,40 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
             const badgeIcon = isTemplate ? "fas fa-layer-group" : "fas fa-font";
             const badgeText = item.type;
             const detailsUrl = isTemplate
-                ? `/Templates/Details/${item.id}?lang=en`
+                ? `/Templates/Details?templateId=${item.id}&templateName=${encodeURIComponent(item.name)}&lang=en`
                 : `/Values/Details/${item.id}`;
 
             return `
-            <tr>
-                <td>
-                    <span class="badge ${badgeClass}">
-                        <i class="${badgeIcon} me-1"></i>${badgeText}
-                    </span>
-                </td>
-                <td>
-                    <strong>${this.escapeHtml(item.name)}</strong>
-                </td>
-                <td>
-                    <span class="badge bg-info">${item.count} items</span>
-                </td>
-                <td>
-                    <div class="d-flex gap-1">
-                        <a href="${detailsUrl}" class="btn btn-sm btn-outline-primary" title="View Details">
-                            <i class="fas fa-eye"></i> Details
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger remove-cache-btn"
-                                data-id="${item.id}" 
-                                data-type="${item.type}" 
-                                data-name="${this.escapeHtml(item.name)}"
-                                title="Remove from Cache">
-                            <i class="fas fa-trash"></i> Remove
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
+    <tr>
+        <td>
+            <span class="badge ${badgeClass}">
+                <i class="${badgeIcon} me-1"></i>${badgeText}
+            </span>
+        </td>
+        <td>
+            <strong>${this.escapeHtml(item.name)}</strong>
+        </td>
+        <td>
+            <span class="badge bg-info">${item.count} items</span>
+        </td>
+        <td>
+            <div class="d-flex gap-1">
+                <a href="${detailsUrl}" class="btn btn-sm btn-outline-primary" title="View Details">
+                    <i class="fas fa-eye"></i> Details
+                </a>
+                <button class="btn btn-sm btn-outline-danger remove-cache-btn"
+                        data-id="${item.id}" 
+                        data-type="${item.type}" 
+                        data-name="${this.escapeHtml(item.name)}"
+                        title="Remove from Cache">
+                    <i class="fas fa-trash"></i> Remove
+                </button>
+            </div>
+        </td>
+    </tr>
+`;
         }
+
 
         bindTableEvents() {
             // Remove cache buttons
@@ -623,8 +624,13 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
             });
         }
 
-        showSuccess(message) { this.showAlert(message, 'success'); }
-        showError(message) { this.showAlert(message, 'danger'); }
+        showSuccess(message) {
+            this.showAlert(message, 'success');
+        }
+
+        showError(message) {
+            this.showAlert(message, 'danger');
+        }
 
         showAlert(message, type) {
             const container = document.getElementById('alertContainer');
@@ -646,10 +652,10 @@ var valuesCount = ViewBag.ValuesCount ?? 0;
             return div.innerHTML;
         }
     }
-    
+
     // Initialize
     let cacheManager;
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         console.log('🎉 DOM loaded, initializing CacheManager...');
         cacheManager = new CacheManager();
 
