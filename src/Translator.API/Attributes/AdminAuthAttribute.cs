@@ -11,6 +11,12 @@ public class AdminAuthAttribute : ActionFilterAttribute
     {
         try
         {
+            var response = context.HttpContext.Response;
+            response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate, private");
+            response.Headers.Append("Pragma", "no-cache");
+            response.Headers.Append("Expires", "0");
+            response.Headers.Append("Last-Modified", DateTime.UtcNow.ToString("R"));
+
             var authSettings = context.HttpContext.RequestServices
                 .GetRequiredService<IOptions<AdminAuthSettings>>().Value;
 
@@ -33,7 +39,8 @@ public class AdminAuthAttribute : ActionFilterAttribute
                                 context.HttpContext.Request.QueryString;
                 
                 context.Result = new RedirectToActionResult("Login", "Auth", 
-                    new { returnUrl = returnUrl });
+                    new { returnUrl });
+                return;
             }
         }
         catch (Exception ex)
@@ -44,6 +51,7 @@ public class AdminAuthAttribute : ActionFilterAttribute
             logger.LogError(ex, "Session validation error");
             
             context.Result = new RedirectToActionResult("Login", "Auth", null);
+            return;
         }
 
         base.OnActionExecuting(context);
