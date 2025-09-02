@@ -16,12 +16,12 @@ public static class LanguageDetector
             throw new UknownLanguageException("Empty input");
 
         var activeLanguages = languages.Where(l => l.IsActive).ToList();
-        if (!activeLanguages.Any())
+        if (activeLanguages.Count == 0)
             return new List<Language>();
 
         var significantChars = input.Where(c => !IsNeutralCharacter(c)).ToList();
         
-        if (!significantChars.Any())
+        if (significantChars.Count == 0)
             return new List<Language>();
 
         var candidateLanguages = new List<Language>();
@@ -30,7 +30,7 @@ public static class LanguageDetector
         {
             var ranges = GetCachedRanges(language.UnicodeRange);
             
-            bool allCharsMatch = significantChars.All(c => IsInRanges(c, ranges));
+            var allCharsMatch = significantChars.All(c => IsInRanges(c, ranges));
             
             if (allCharsMatch)
                 candidateLanguages.Add(language);

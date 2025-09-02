@@ -44,7 +44,7 @@ public class GetAllValuesHandler : IRequestHandler<GetAllValuesCommand, Paginate
             .Select(t => new GetAllValuesResponse(
                 t.Key, 
                 t.Id,
-                t.Translations.Count, 
+                t.Translations.Count(x => x.Language.IsActive), 
                 t.CreatedAt))
             .ToArrayAsync(cancellationToken);
 
