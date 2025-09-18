@@ -1,6 +1,5 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.ValueGeneration.Internal;
 using Translator.Domain.Entities;
 using Translator.Infrastructure.Database.Postgres.Configurations.Constants;
 
@@ -12,10 +11,11 @@ public class TemplateConfiguration : IEntityTypeConfiguration<Template>
     {
         templateBuilder
             .HasKey(x => x.Id);
+
         templateBuilder
-            .HasIndex(x => x.Hash)
+            .HasIndex(x => new { x.Hash, x.OwnerId })
             .IsUnique();
-        
+
         templateBuilder
             .Property(x => x.Hash)
             .HasMaxLength(DatabaseConstants.Template.TEMPLATE_HASH_MAX_LENGTH);
@@ -28,7 +28,7 @@ public class TemplateConfiguration : IEntityTypeConfiguration<Template>
             .HasMany(x => x.Values)
             .WithMany(x => x.Templates)
             .UsingEntity(x => x.ToTable("TemplateValues"));
-        
+
         templateBuilder.HasOne(t => t.Owner)
             .WithMany(t => t.Templates)
             .HasForeignKey(t => t.OwnerId)

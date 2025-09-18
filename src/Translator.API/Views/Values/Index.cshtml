@@ -1,21 +1,33 @@
-@model IEnumerable<Translator.Application.Features.Values.Queries.GetAllValues.GetAllValuesResponse>
+@model IEnumerable<Translator.Application.Features.ValuesAdmin.Queries.AdminGetAllValues.Response>
 
 @{
-    Layout = "_Layout";
-    ViewBag.Title = "Values";
-    var currentPage = ViewBag.CurrentPage ?? 1;
-    var pageSize = ViewBag.PageSize ?? 10;
-    var totalPages = ViewBag.TotalPages ?? 1;
-    var totalCount = ViewBag.TotalCount ?? 0;
-    var sortBy = ViewBag.SortBy as string ?? "date";
-    var sortDirection = ViewBag.SortDirection as string ?? "asc";
-    var searchKey = ViewBag.ValueKey as string ?? "";
+Layout = "_Layout";
+ViewBag.Title = "Values Management";
+var currentPage = ViewBag.CurrentPage ?? 1;
+var pageSize = ViewBag.PageSize ?? 10;
+var totalPages = ViewBag.TotalPages ?? 1;
+var totalCount = ViewBag.TotalCount ?? 0;
+var sortBy = ViewBag.SortBy as string ?? "date";
+var sortDirection = ViewBag.SortDirection as string ?? "desc";
+var searchKey = ViewBag.ValueKey as string ?? "";
+var ownerName = ViewBag.OwnerName as string ?? "";
+var ownershipType = ViewBag.OwnershipType as string ?? "";
+var globalCount = ViewBag.GlobalCount ?? 0;
+var userCount = ViewBag.UserCount ?? 0;
+var hasNextPage = ViewBag.HasNextPage ?? false;
+var hasPreviousPage = ViewBag.HasPreviousPage ?? false;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Values <small class="text-muted" id="totalCountInfo">(@totalCount total)</small></h2>
+    <div>
+        <h2>Values Management <small class="text-muted" id="totalCountInfo">(@totalCount total)</small></h2>
+        <div class="d-flex gap-2 mt-2">
+            <span class="badge bg-primary fs-7">Global: @globalCount</span>
+            <span class="badge bg-secondary fs-7">User-owned: @userCount</span>
+        </div>
+    </div>
     <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createValueSection">
-        <i class="fas fa-plus"></i> Create Value
+        <i class="fas fa-plus"></i> Create Global Value
     </button>
 </div>
 
@@ -23,38 +35,68 @@
 <div id="alertContainer">
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show">
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     }
 
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show">
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     }
 </div>
 
 <!-- Search Form -->
 <div class="card mb-3">
+    <div class="card-header">
+        <h5 class="mb-0">
+            <i class="fas fa-search"></i> Search & Filter Values
+        </h5>
+    </div>
     <div class="card-body">
         <form id="searchForm" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <label class="form-label">Search by Key</label>
-                <input type="text" id="searchInput" name="valueKey" 
-                       value="@searchKey" 
+                <input type="text" id="searchInput" name="valueKey"
+                       value="@searchKey"
                        class="form-control"
                        placeholder="Enter key to search..." />
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">
+            <div class="col-md-3">
+                <label class="form-label">Owner Name</label>
+                <input type="text" id="ownerNameInput" name="ownerName"
+                       value="@ownerName"
+                       class="form-control"
+                       placeholder="Enter username..." />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Type</label>
+                <select id="ownershipTypeSelect" name="ownershipType" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="Global" @(ownershipType == "Global" ? "selected" : "")>Global</option>
+                    <option value="User" @(ownershipType == "User" ? "selected" : "")>User-owned</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Page Size</label>
+                <select id="pageSizeSelect" class="form-select">
+                    <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
+                    <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
+                    <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
+                    <option value="100" @(pageSize == 100 ? "selected" : "")>100</option>
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end gap-1">
+                <button type="submit" class="btn btn-primary flex-fill">
                     <i class="fas fa-search"></i> Search
                 </button>
-                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary" style="display: @(string.IsNullOrEmpty(searchKey) ? "none" : "inline-block")">
-                    <i class="fas fa-times"></i> Clear
+                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary"
+                        style="display: @(string.IsNullOrEmpty(searchKey) && string.IsNullOrEmpty(ownerName) && string.IsNullOrEmpty(ownershipType) ? "none" : "inline-block")">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </form>
@@ -64,22 +106,26 @@
 <!-- Create Value Form -->
 <div class="collapse mb-4" id="createValueSection">
     <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Create New Value</h5>
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">
+                <i class="fas fa-plus"></i> Create New Global Value
+            </h5>
         </div>
         <div class="card-body">
             <form id="createValueForm" class="row g-3">
                 <div class="col-md-5">
                     <label for="valueKey" class="form-label">Key</label>
-                    <input type="text" id="valueKey" name="key" class="form-control" required placeholder="Enter key..." />
+                    <input type="text" id="valueKey" name="key" class="form-control" required placeholder="Enter unique key..." />
+                    <div class="form-text">This will be a global value accessible to all users</div>
                 </div>
                 <div class="col-md-5">
                     <label for="valueValue" class="form-label">Value</label>
-                    <input type="text" id="valueValue" name="value" class="form-control" required placeholder="Enter value..." />
+                    <input type="text" id="valueValue" name="value" class="form-control" required placeholder="Enter default translation..." />
+                    <div class="form-text">Enter the default English translation</div>
                 </div>
                 <div class="col-md-2 d-flex align-items-end">
                     <button type="submit" class="btn btn-success w-100">
-                        Create
+                        <i class="fas fa-globe"></i> Create Global
                     </button>
                 </div>
             </form>
@@ -87,191 +133,197 @@
     </div>
 </div>
 
+<!-- Loading Indicator -->
+<div id="loadingIndicator" class="text-center py-4" style="display: none;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+    <div class="mt-2">Loading values...</div>
+</div>
+
 <!-- Values Table -->
 <div class="card">
-    <div class="card-body" style="padding:0;">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Values List</h5>
+        <div class="d-flex gap-2 align-items-center">
+            <small class="text-muted">Page @currentPage of @totalPages</small>
+        </div>
+    </div>
+    <div class="card-body p-0">
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
-                    <tr>
-                        <th>
-                            Key
-                            <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="key" title="Sort by key">
-                                <i class="fas fa-sort sort-icon-key"></i>
-                            </button>
-                        </th>
-                        <th>Translations Count</th>
-                        <th>
-                            Created Date
-                            <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="date" title="Sort by date">
-                                <i class="fas fa-sort sort-icon-date"></i>
-                            </button>
-                        </th>
-                        <th>Actions</th>
-                    </tr>
+                <tr>
+                    <th>
+                        Key
+                        <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="key" title="Sort by key">
+                            <i class="fas fa-sort sort-icon-key"></i>
+                        </button>
+                    </th>
+                    <th>
+                        Owner
+                        <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="owner" title="Sort by owner">
+                            <i class="fas fa-sort sort-icon-owner"></i>
+                        </button>
+                    </th>
+                    <th>Translations</th>
+                    <th>
+                        Created Date
+                        <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="date" title="Sort by date">
+                            <i class="fas fa-sort sort-icon-date"></i>
+                        </button>
+                    </th>
+                    <th>Actions</th>
+                </tr>
                 </thead>
                 <tbody id="valuesTableBody">
-                    @if (Model != null && Model.Any())
-                    {
-                        foreach (var value in Model)
+                @if (Model != null && Model.Any())
+                {
+                foreach (var value in Model)
+                {
+                <tr>
+                    <td>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary fs-6">@value.Key</span>
+                            <button class="btn btn-sm btn-outline-secondary copy-value-btn"
+                                    data-id="@value.ValueId"
+                                    title="Copy Value ID">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        @if (value.OwnershipType == "Global")
                         {
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-primary">@value.Key</span>
-                                        <button class="btn btn-sm btn-outline-secondary" 
-                                                onclick="copyValueId('@value.ValueId')" 
-                                                title="Copy Value ID">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-info">@value.TranslationsCount</span>
-                                </td>
-                                <td>
-                                    <small class="text-muted">@value.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
-                                </td>
-                                <td>
-                                    <div class="d-flex gap-1">
-                                        <a href="@Url.Action("Details", "Values", new { valueId = value.ValueId })" 
-                                           class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i> Details
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-danger" 
-                                                onclick="showDeleteModal('@Html.Raw(Html.Encode(value.Key))')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                        <span class="badge bg-success">
+                                            <i class="fas fa-globe"></i> Global
+                                        </span>
                         }
-                    }
-                    else
-                    {
-                        <tr id="emptyState">
-                            <td colspan="4" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-3x mb-3"></i>
-                                <div>No values found</div>
-                            </td>
-                        </tr>
-                    }
+                        else
+                        {
+                        <div class="d-flex align-items-center gap-1">
+                                            <span class="badge bg-info">
+                                                <i class="fas fa-user"></i> @value.OwnerName
+                                            </span>
+                        </div>
+                        }
+                    </td>
+                    <td>
+                        <span class="badge bg-info fs-6">@value.TranslationsCount</span>
+                    </td>
+                    <td>
+                        <small class="text-muted">@value.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                    </td>
+                    <td>
+                        <div class="d-flex gap-1">
+                            <a href="@Url.Action("Details", "Values", new { valueId = value.ValueId })"
+                               class="btn btn-sm btn-outline-primary" title="View Details">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <button class="btn btn-sm btn-outline-danger delete-value-btn"
+                                    data-key="@Html.Encode(value.Key)"
+                                    data-ownership="@value.OwnershipType"
+                                    data-owner="@Html.Encode(value.OwnerName)"
+                                    title="Delete Value">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                }
+                }
+                else
+                {
+                <tr id="emptyState">
+                    <td colspan="5" class="text-center text-muted py-5">
+                        <i class="fas fa-inbox fa-3x mb-3"></i>
+                        <div class="h5">No values found</div>
+                        <div>Try adjusting your search criteria or create a new value</div>
+                    </td>
+                </tr>
+                }
                 </tbody>
             </table>
         </div>
     </div>
 </div>
 
-<!-- Pagination container -->
-<div id="paginationContainer">
-    @if (Model != null && Model.Any())
-    {
-        <nav class="mt-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <small class="text-muted" id="paginationInfo">
-                    Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
-                </small>
-                <small class="text-muted" id="pageInfo">Page @currentPage of @totalPages</small>
-            </div>
-            
-            <ul class="pagination justify-content-center">
-                @if (currentPage > 1)
-                {
-                    <li class="page-item">
-                        <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
-                            <i class="fas fa-angle-double-left"></i> First
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
-                    </li>
-                }
-                else
-                {
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">Previous</span>
-                    </li>
-                }
+<!-- Pagination -->
+@if (totalPages > 1)
+{
+<div class="d-flex justify-content-between align-items-center mt-4">
+    <div class="text-muted">
+        Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount entries
+    </div>
+    <nav aria-label="Values pagination">
+        <ul class="pagination mb-0">
+            @if (hasPreviousPage)
+            {
+            <li class="page-item">
+                <button class="page-link pagination-btn" data-page="1" title="First page">
+                    <i class="fas fa-angle-double-left"></i>
+                </button>
+            </li>
+            <li class="page-item">
+                <button class="page-link pagination-btn" data-page="@(currentPage - 1)" title="Previous page">
+                    <i class="fas fa-angle-left"></i>
+                </button>
+            </li>
+            }
 
-                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
-                {
-                    if (i == currentPage)
-                    {
-                        <li class="page-item active">
-                            <span class="page-link">@i</span>
-                        </li>
-                    }
-                    else
-                    {
-                        <li class="page-item">
-                            <a class="page-link page-link-custom" href="#" data-page="@i">@i</a>
-                        </li>
-                    }
-                }
+            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+            {
+            <li class="page-item @(i == currentPage ? "active" : "")">
+                <button class="page-link pagination-btn" data-page="@i">@i</button>
+            </li>
+            }
 
-                @if (currentPage < totalPages)
-                {
-                    <li class="page-item">
-                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link page-link-custom" href="#" data-page="@totalPages" title="Last page">
-                            Last <i class="fas fa-angle-double-right"></i>
-                        </a>
-                    </li>
-                }
-                else
-                {
-                    <li class="page-item disabled">
-                        <span class="page-link">Next</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
-                    </li>
-                }
-            </ul>
-        </nav>
-    }
+            @if (hasNextPage)
+            {
+            <li class="page-item">
+                <button class="page-link pagination-btn" data-page="@(currentPage + 1)" title="Next page">
+                    <i class="fas fa-angle-right"></i>
+                </button>
+            </li>
+            <li class="page-item">
+                <button class="page-link pagination-btn" data-page="@totalPages" title="Last page">
+                    <i class="fas fa-angle-double-right"></i>
+                </button>
+            </li>
+            }
+        </ul>
+    </nav>
 </div>
+}
 
-<!-- Page size selector container -->
-<div id="pageSizeContainer">
-    @if (Model != null && Model.Any())
-    {
-        <div class="d-flex justify-content-end align-items-center mt-3">
-            <label class="form-label me-2 mb-0">Show:</label>
-            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-                <option value="5" @(pageSize == 5 ? "selected" : "")>5</option>
-                <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
-                <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
-                <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
-            </select>
-        </div>
-    }
-</div>
-
-<!-- Delete Modal -->
+<!-- Delete Confirmation Modal -->
 <div class="modal fade" id="deleteValueModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Delete Value</h5>
+                <h5 class="modal-title">
+                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                    Delete Value
+                </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to delete value <strong id="valueNameToDelete"></strong>?</p>
+                <div id="ownershipInfo" class="mb-3">
+                    <p><strong>Type:</strong> <span id="valueTypeToDelete" class="badge"></span></p>
+                    <p id="ownerInfo" style="display: none;"><strong>Owner:</strong> <span id="valueOwnerToDelete"></span></p>
+                </div>
                 <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle"></i>
-                    <strong>Warning:</strong> This action cannot be undone!
+                    <strong>Warning:</strong> This action cannot be undone and will delete all translations associated with this value!
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
                 <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
-                    <i class="fas fa-trash"></i> Delete
+                    <i class="fas fa-trash"></i> Delete Permanently
                 </button>
             </div>
         </div>
@@ -279,359 +331,233 @@
 </div>
 
 <script>
-class ValuesManager {
-    constructor() {
-        this.currentPage = @currentPage;
-        this.pageSize = @pageSize;
-        this.sortBy = '@sortBy';
-        this.sortDirection = '@sortDirection';
-        this.searchKey = '@Html.Raw(searchKey)';
-        this.totalCount = @totalCount;
-        this.totalPages = @totalPages;
-        
-        this.init();
-    }
+    class ValuesManager {
+        constructor() {
+            this.currentPage = @currentPage;
+            this.pageSize = @pageSize;
+            this.sortBy = '@sortBy';
+            this.sortDirection = '@sortDirection';
+            this.searchKey = '@Html.Raw(searchKey)';
+            this.ownerName = '@Html.Raw(ownerName)';
+            this.ownershipType = '@Html.Raw(ownershipType)';
+            this.totalCount = @totalCount;
+            this.totalPages = @totalPages;
 
-    init() {
-        console.log('🚀 Initializing ValuesManager...');
-        this.bindEvents();
-        this.updateUI();
-    }
-    
-    bindEvents() {
-        document.getElementById('searchForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.performSearch();
-        });
+            this.init();
+        }
 
-        const searchInput = document.getElementById('searchInput');
-        let debounceTimeout;
+        init() {
+            console.log('🚀 Initializing ValuesManager...');
+            this.bindEvents();
+            this.updateUI();
+        }
 
-        // Fix: Separate the live search from form submission
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(debounceTimeout);
-
-            // Update the internal search key without triggering full search
-            const inputValue = e.target.value.trim();
-
-            debounceTimeout = setTimeout(() => {
-                // Only update search key and perform search without updating the input field
-                this.searchKey = inputValue;
-                this.currentPage = 1;
-                this.loadDataWithoutInputUpdate();
-                this.updateSearchUI();
-            }, 300);
-        });
-
-        // Clear search
-        document.getElementById('clearSearchBtn').addEventListener('click', () => {
-            this.clearSearch();
-        });
-        // Create form
-        document.getElementById('createValueForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.createValue();
-        });
-
-        // Sort buttons
-        document.querySelectorAll('.sort-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+        bindEvents() {
+            document.getElementById('searchForm').addEventListener('submit', (e) => {
                 e.preventDefault();
-                const sortBy = btn.getAttribute('data-sort');
-                this.sortValues(sortBy);
+                this.performSearch();
             });
-        });
 
-        // Page size selector
-        const pageSizeSelect = document.getElementById('pageSizeSelect');
-        if (pageSizeSelect) {
-            pageSizeSelect.addEventListener('change', (e) => {
-                this.pageSize = parseInt(e.target.value);
+            const searchInput = document.getElementById('searchInput');
+            const ownerNameInput = document.getElementById('ownerNameInput');
+            const ownershipTypeSelect = document.getElementById('ownershipTypeSelect');
+            let debounceTimeout;
+
+            [searchInput, ownerNameInput].forEach(input => {
+                input.addEventListener('input', (e) => {
+                    clearTimeout(debounceTimeout);
+                    debounceTimeout = setTimeout(() => {
+                        this.updateSearchFields();
+                        this.currentPage = 1;
+                        this.loadData();
+                        this.updateSearchUI();
+                    }, 300);
+                });
+            });
+
+            ownershipTypeSelect.addEventListener('change', (e) => {
+                this.updateSearchFields();
                 this.currentPage = 1;
                 this.loadData();
-            });
-        }
-
-        // Delete confirmation
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-            const valueName = document.getElementById('valueNameToDelete').textContent;
-            this.deleteValue(valueName);
-        });
-
-        // Bind pagination and table events
-        this.bindPaginationEvents();
-    }
-
-    async performSearch() {
-        const searchInput = document.getElementById('searchInput');
-        const submitBtn = document.querySelector('#searchForm button[type="submit"]');
-
-        this.searchKey = searchInput.value.trim();
-        this.currentPage = 1;
-
-        submitBtn.disabled = true;
-
-        try {
-            await this.loadData();
-            this.updateSearchUI();
-        } finally {
-            submitBtn.disabled = false;
-        }
-    }
-
-    clearSearch() {
-        document.getElementById('searchInput').value = '';
-        this.searchKey = '';
-        this.currentPage = 1;
-        this.loadData();
-        this.updateSearchUI();
-    }
-
-    updateSearchUI() {
-        const clearBtn = document.getElementById('clearSearchBtn');
-        clearBtn.style.display = this.searchKey ? 'inline-block' : 'none';
-    }
-
-    async createValue() {
-        const form = document.getElementById('createValueForm');
-        const submitBtn = form.querySelector('button[type="submit"]');
-        
-        const formData = new FormData(form);
-        
-        submitBtn.disabled = true;
-        
-        try {
-            const response = await fetch('/Values/Create', {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
+                this.updateSearchUI();
             });
 
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showSuccess(result.message);
-                form.reset();
-                this.hideCreateForm();
-                this.loadData();
-            } else {
-                this.showError(result.message);
-            }
-        } catch (error) {
-            console.error('Error creating value:', error);
-            this.showError('Failed to create value');
-        } finally {
-            submitBtn.disabled = false;
-        }
-    }
-
-    async deleteValue(valueName) {
-        const deleteBtn = document.getElementById('confirmDeleteBtn');
-        
-        deleteBtn.disabled = true;
-
-        try {
-            const formData = new FormData();
-            formData.append('valueName', valueName);
-
-            const response = await fetch('/Values/Delete', {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
+            document.getElementById('clearSearchBtn').addEventListener('click', () => {
+                this.clearSearch();
             });
 
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showSuccess(result.message);
-                const modal = document.getElementById('deleteValueModal');
-                if (window.bootstrap) {
-                    const bsModal = bootstrap.Modal.getInstance(modal);
-                    if (bsModal) bsModal.hide();
-                }
-                this.loadData();
-            } else {
-                this.showError(result.message);
-            }
-        } catch (error) {
-            console.error('Error deleting value:', error);
-            this.showError('Failed to delete value');
-        } finally {
-            deleteBtn.disabled = false;
-        }
-    }
-
-    sortValues(sortBy) {
-        if (this.sortBy === sortBy) {
-            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            this.sortBy = sortBy;
-            this.sortDirection = 'asc';
-        }
-        this.currentPage = 1;
-        this.loadData();
-    }
-
-    async loadData() {
-        console.log('🔄 Loading data...');
-        this.updateSortIcons();
-        
-        try {
-            const params = new URLSearchParams({
-                pageNumber: this.currentPage,
-                pageSize: this.pageSize,
-                sortBy: this.sortBy,
-                sortDirection: this.sortDirection
+            document.getElementById('createValueForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createValue();
             });
 
-            if (this.searchKey) {
-                params.append('valueKey', this.searchKey);
-            }
-
-            const endpoint = this.searchKey ? '/Values/Search' : '/Values/';
-            const response = await fetch(`${endpoint}?${params}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
+            document.querySelectorAll('.sort-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const sortBy = btn.getAttribute('data-sort');
+                    this.sortValues(sortBy);
+                });
             });
 
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            const pageSizeSelect = document.getElementById('pageSizeSelect');
+            if (pageSizeSelect) {
+                pageSizeSelect.addEventListener('change', (e) => {
+                    this.pageSize = parseInt(e.target.value);
+                    this.currentPage = 1;
+                    this.loadData();
+                });
             }
 
-            const result = await response.json();
-            console.log('✅ Response data:', result);
-
-            if (result.success) {
-                this.updatePageData(result);
-                this.renderValues(result.data || []);
-                this.renderPagination(result);
-                this.renderPageSizeSelector(result);
-                this.updateUI();
-            } else {
-                this.showError('Failed to load values: ' + (result.message || 'Unknown error'));
-                this.renderEmptyState();
-            }
-        } catch (error) {
-            console.error('💥 Error loading data:', error);
-            this.showError('Network error: ' + error.message);
-            this.renderEmptyState();
-        }
-    }
-
-    updatePageData(data) {
-        this.currentPage = data.currentPage || 1;
-        this.totalPages = data.totalPages || 1;
-        this.totalCount = data.totalCount || 0;
-        this.pageSize = data.pageSize || 10;
-        this.sortBy = data.sortBy || this.sortBy;
-        this.sortDirection = data.sortDirection || this.sortDirection;
-        if (data.searchKey !== undefined) {
-            this.searchKey = data.searchKey;
-        }
-    }
-
-    async loadDataWithoutInputUpdate() {
-        console.log('🔄 Loading data...');
-        this.updateSortIcons();
-
-        try {
-            const params = new URLSearchParams({
-                pageNumber: this.currentPage,
-                pageSize: this.pageSize,
-                sortBy: this.sortBy,
-                sortDirection: this.sortDirection
+            document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
+                const valueName = document.getElementById('valueNameToDelete').textContent;
+                this.deleteValue(valueName);
             });
 
-            if (this.searchKey) {
-                params.append('valueKey', this.searchKey);
-            }
-
-            const endpoint = this.searchKey ? '/Values/Search' : '/Values/';
-            const response = await fetch(`${endpoint}?${params}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            console.log('✅ Response data:', result);
-
-            if (result.success) {
-                this.updatePageData(result);
-                this.renderValues(result.data || []);
-                this.renderPagination(result);
-                this.renderPageSizeSelector(result);
-                // Don't call this.updateUI() here as it updates the search input
-                document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
-            } else {
-                this.showError('Failed to load values: ' + (result.message || 'Unknown error'));
-                this.renderEmptyState();
-            }
-        } catch (error) {
-            console.error('💥 Error loading data:', error);
-            this.showError('Network error: ' + error.message);
-            this.renderEmptyState();
-        }
-    }
-
-    updateUI() {
-        // Update total count
-        document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
-
-        // Only update search input if it's not currently focused (user is not typing)
-        const searchInput = document.getElementById('searchInput');
-        if (document.activeElement !== searchInput) {
-            searchInput.value = this.searchKey;
-        }
-
-        this.updateSearchUI();
-    }
-
-    renderValues(values) {
-        const tbody = document.getElementById('valuesTableBody');
-        
-        // Remove existing rows except empty state
-        const existingRows = tbody.querySelectorAll('tr:not(#emptyState)');
-        existingRows.forEach(row => row.remove());
-
-        // Remove empty state if it exists
-        const emptyState = document.getElementById('emptyState');
-        if (emptyState) emptyState.remove();
-
-        if (values && values.length > 0) {
-            values.forEach(value => {
-                const row = this.createValueRow(value);
-                tbody.insertAdjacentHTML('beforeend', row);
-            });
+            this.bindPaginationEvents();
             this.bindTableEvents();
-        } else {
-            this.renderEmptyState();
         }
-    }
 
-    createValueRow(value) {
-        const createdDate = new Date(value.createdAt).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: '2-digit', 
-            year: 'numeric',
-            hour: '2-digit',
-            minute: '2-digit'
-        });
+        updateSearchFields() {
+            this.searchKey = document.getElementById('searchInput').value.trim();
+            this.ownerName = document.getElementById('ownerNameInput').value.trim();
+            this.ownershipType = document.getElementById('ownershipTypeSelect').value;
+        }
 
-        return `
+        async performSearch() {
+            const submitBtn = document.querySelector('#searchForm button[type="submit"]');
+
+            this.updateSearchFields();
+            this.currentPage = 1;
+
+            submitBtn.disabled = true;
+
+            try {
+                await this.loadData();
+                this.updateSearchUI();
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('ownerNameInput').value = '';
+            document.getElementById('ownershipTypeSelect').value = '';
+            this.searchKey = '';
+            this.ownerName = '';
+            this.ownershipType = '';
+            this.currentPage = 1;
+            this.loadData();
+            this.updateSearchUI();
+        }
+
+        updateSearchUI() {
+            const clearBtn = document.getElementById('clearSearchBtn');
+            const hasSearch = this.searchKey || this.ownerName || this.ownershipType;
+            clearBtn.style.display = hasSearch ? 'inline-block' : 'none';
+        }
+
+        showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+        }
+
+        hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        async loadData() {
+            console.log('🔄 Loading data...');
+            this.showLoading();
+            this.updateSortIcons();
+
+            try {
+                const params = new URLSearchParams({
+                    pageNumber: this.currentPage,
+                    pageSize: this.pageSize,
+                    sortBy: this.sortBy,
+                    sortDirection: this.sortDirection
+                });
+
+                if (this.searchKey) params.append('valueKey', this.searchKey);
+                if (this.ownerName) params.append('ownerName', this.ownerName);
+                if (this.ownershipType) params.append('ownershipType', this.ownershipType);
+
+                const hasSearch = this.searchKey || this.ownerName || this.ownershipType;
+                const endpoint = hasSearch ? '/Values/Search' : '/Values/';
+
+                const response = await fetch(`${endpoint}?${params}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.updatePageData(result);
+                    this.renderValues(result.data || []);
+                    this.renderPagination(result);
+                    this.updateUI();
+                } else {
+                    this.showError('Failed to load values: ' + (result.message || 'Unknown error'));
+                    this.renderEmptyState();
+                }
+            } catch (error) {
+                console.error('💥 Error loading data:', error);
+                this.showError('Network error: ' + error.message);
+                this.renderEmptyState();
+            } finally {
+                this.hideLoading();
+            }
+        }
+
+        updatePageData(result) {
+            this.currentPage = result.currentPage;
+            this.totalPages = result.totalPages;
+            this.totalCount = result.totalCount;
+            this.pageSize = result.pageSize;
+        }
+
+        renderValues(values) {
+            const tbody = document.getElementById('valuesTableBody');
+            tbody.innerHTML = '';
+
+            if (values.length === 0) {
+                this.renderEmptyState();
+                return;
+            }
+
+            values.forEach(value => {
+                tbody.insertAdjacentHTML('beforeend', this.createValueRow(value));
+            });
+
+            this.bindTableEvents();
+        }
+
+        createValueRow(value) {
+            const createdDate = new Date(value.createdAt).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+
+            const ownerBadge = value.ownershipType === 'Global'
+                ? `<span class="badge bg-success"><i class="fas fa-globe"></i> Global</span>`
+                : `<div class="d-flex align-items-center gap-1"><span class="badge bg-info"><i class="fas fa-user"></i> ${this.escapeHtml(value.ownerName)}</span></div>`;
+
+            return `
             <tr>
                 <td>
                     <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary">${this.escapeHtml(value.key)}</span>
+                        <span class="badge bg-primary fs-6">${this.escapeHtml(value.key)}</span>
                         <button class="btn btn-sm btn-outline-secondary copy-value-btn" 
                                 data-id="${value.valueId}" 
                                 title="Copy Value ID">
@@ -639,8 +565,9 @@ class ValuesManager {
                         </button>
                     </div>
                 </td>
+                <td>${ownerBadge}</td>
                 <td>
-                    <span class="badge bg-info">${value.translationsCount}</span>
+                    <span class="badge bg-info fs-6">${value.translationsCount}</span>
                 </td>
                 <td>
                     <small class="text-muted">${createdDate}</small>
@@ -648,286 +575,251 @@ class ValuesManager {
                 <td>
                     <div class="d-flex gap-1">
                         <a href="/Values/Details/${value.valueId}" 
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye"></i> Details
+                           class="btn btn-sm btn-outline-primary" title="View Details">
+                            <i class="fas fa-eye"></i>
                         </a>
                         <button class="btn btn-sm btn-outline-danger delete-value-btn" 
-                                data-key="${this.escapeHtml(value.key)}">
+                                data-key="${this.escapeHtml(value.key)}"
+                                data-ownership="${value.ownershipType}"
+                                data-owner="${this.escapeHtml(value.ownerName)}"
+                                title="Delete Value">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
                 </td>
             </tr>
         `;
-    }
+        }
 
-    bindTableEvents() {
-        // Copy buttons
-        document.querySelectorAll('.copy-value-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const valueId = btn.getAttribute('data-id');
-                await copyValueId(valueId);
-            });
-        });
-
-        // Delete buttons
-        document.querySelectorAll('.delete-value-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const valueKey = btn.getAttribute('data-key');
-                showDeleteModal(valueKey);
-            });
-        });
-    }
-
-    renderEmptyState() {
-        const tbody = document.getElementById('valuesTableBody');
-        tbody.insertAdjacentHTML('beforeend', `
+        renderEmptyState() {
+            const tbody = document.getElementById('valuesTableBody');
+            tbody.innerHTML = `
             <tr id="emptyState">
-                <td colspan="4" class="text-center text-muted py-4">
+                <td colspan="5" class="text-center text-muted py-5">
                     <i class="fas fa-inbox fa-3x mb-3"></i>
-                    <div>No values found</div>
+                    <div class="h5">No values found</div>
+                    <div>Try adjusting your search criteria or create a new value</div>
                 </td>
             </tr>
-        `);
-    }
-
-    renderPagination(responseData) {
-        const { currentPage, totalPages, totalCount } = responseData;
-        const container = document.getElementById('paginationContainer');
-        
-        if (totalPages <= 1) {
-            container.innerHTML = '';
-            return;
-        }
-
-        const showingStart = (currentPage - 1) * this.pageSize + 1;
-        const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
-        
-        let html = `
-            <nav class="mt-4">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
-                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
-                </div>
-                <ul class="pagination justify-content-center">
         `;
-        
-        // First & Previous
-        if (currentPage > 1) {
-            html += `
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="1">
-                        <i class="fas fa-angle-double-left"></i> First
-                    </a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
-                </li>
-            `;
-        } else {
-            html += `
-                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
-                <li class="page-item disabled"><span class="page-link">Previous</span></li>
-            `;
         }
 
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-        
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === currentPage) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+        bindTableEvents() {
+            document.querySelectorAll('.copy-value-btn').forEach(btn => {
+                btn.addEventListener('click', async (e) => {
+                    const valueId = btn.getAttribute('data-id');
+                    await this.copyValueId(valueId);
+                });
+            });
+
+            document.querySelectorAll('.delete-value-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const valueKey = btn.getAttribute('data-key');
+                    const ownershipType = btn.getAttribute('data-ownership');
+                    const ownerName = btn.getAttribute('data-owner');
+                    this.showDeleteModal(valueKey, ownershipType, ownerName);
+                });
+            });
+        }
+
+        showDeleteModal(valueName, ownershipType, ownerName) {
+            document.getElementById('valueNameToDelete').textContent = valueName;
+
+            const typeElement = document.getElementById('valueTypeToDelete');
+            const ownerInfoElement = document.getElementById('ownerInfo');
+            const ownerNameElement = document.getElementById('valueOwnerToDelete');
+
+            if (ownershipType === 'Global') {
+                typeElement.textContent = 'Global';
+                typeElement.className = 'badge bg-success';
+                ownerInfoElement.style.display = 'none';
             } else {
-                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
+                typeElement.textContent = 'User-owned';
+                typeElement.className = 'badge bg-info';
+                ownerNameElement.textContent = ownerName;
+                ownerInfoElement.style.display = 'block';
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById('deleteValueModal'));
+            modal.show();
+        }
+
+        async copyValueId(valueId) {
+            try {
+                await navigator.clipboard.writeText(valueId);
+                this.showSuccess('Value ID copied to clipboard!');
+            } catch (err) {
+                console.error('Failed to copy: ', err);
+                this.showError('Failed to copy Value ID');
             }
         }
 
-        // Next & Last
-        if (currentPage < totalPages) {
-            html += `
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
-                        Last <i class="fas fa-angle-double-right"></i>
-                    </a>
-                </li>
-            `;
-        } else {
-            html += `
-                <li class="page-item disabled"><span class="page-link">Next</span></li>
-                <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
-            `;
-        }
+        async createValue() {
+            const form = document.getElementById('createValueForm');
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
 
-        html += '</ul></nav>';
-        container.innerHTML = html;
-        
-        // Rebind pagination events
-        this.bindPaginationEvents();
-    }
+            submitBtn.disabled = true;
 
-    renderPageSizeSelector(responseData) {
-        const container = document.getElementById('pageSizeContainer');
-        
-        if (!responseData.data || responseData.data.length === 0) {
-            container.innerHTML = '';
-            return;
-        }
-        
-        const html = `
-            <div class="d-flex justify-content-end align-items-center mt-3">
-                <label class="form-label me-2 mb-0">Show:</label>
-                <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-                    <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
-                    <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
-                    <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
-                    <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
-                </select>
-            </div>
-        `;
-        container.innerHTML = html;
-        
-        // Rebind page size change event
-        const select = document.getElementById('pageSizeSelect');
-        if (select) {
-            select.addEventListener('change', (e) => {
-                this.pageSize = parseInt(e.target.value);
-                this.currentPage = 1;
-                this.loadData();
-            });
-        }
-    }
+            try {
+                const response = await fetch('/Values/Create', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
 
-    bindPaginationEvents() {
-        document.querySelectorAll('.page-link-custom').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const page = parseInt(link.getAttribute('data-page'));
-                if (page && page !== this.currentPage) {
-                    this.currentPage = page;
-                    this.loadData();
+                const result = await response.json();
+
+                if (result.success) {
+                    this.showSuccess(result.message);
+                    form.reset();
+                    const collapse = document.getElementById('createValueSection');
+                    const bsCollapse = bootstrap.Collapse.getInstance(collapse);
+                    if (bsCollapse) bsCollapse.hide();
+                    await this.loadData();
+                } else {
+                    this.showError(result.message);
                 }
+            } catch (error) {
+                console.error('Error creating value:', error);
+                this.showError('Network error: ' + error.message);
+            } finally {
+                submitBtn.disabled = false;
+            }
+        }
+
+        async deleteValue(valueName) {
+            try {
+                const formData = new FormData();
+                formData.append('valueName', valueName);
+
+                const response = await fetch('/Values/Delete', {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.showSuccess(result.message);
+                    await this.loadData();
+                } else {
+                    this.showError(result.message);
+                }
+            } catch (error) {
+                console.error('Error deleting value:', error);
+                this.showError('Network error: ' + error.message);
+            }
+
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteValueModal'));
+            modal.hide();
+        }
+
+        sortValues(sortBy) {
+            if (this.sortBy === sortBy) {
+                this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                this.sortBy = sortBy;
+                this.sortDirection = 'asc';
+            }
+            this.loadData();
+        }
+
+        updateSortIcons() {
+            document.querySelectorAll('.sort-icon-key, .sort-icon-date, .sort-icon-owner').forEach(icon => {
+                icon.className = 'fas fa-sort';
             });
-        });
-    }
 
-    updateSortIcons() {
-        // Reset all icons
-        document.querySelectorAll('.sort-icon-key, .sort-icon-date').forEach(icon => {
-            icon.className = 'fas fa-sort';
-        });
-        
-        // Set correct icon for current sort
-        const iconClass = this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
-        const currentIcon = document.querySelector(`.sort-icon-${this.sortBy}`);
-        if (currentIcon) {
-            currentIcon.className = `fas ${iconClass}`;
+            const iconClass = this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
+            const currentIcon = document.querySelector(`.sort-icon-${this.sortBy}`);
+            if (currentIcon) {
+                currentIcon.className = `fas ${iconClass}`;
+            }
         }
-    }
 
-    hideCreateForm() {
-        const section = document.getElementById('createValueSection');
-        if (window.bootstrap) {
-            const collapse = bootstrap.Collapse.getInstance(section);
-            if (collapse) collapse.hide();
+        bindPaginationEvents() {
+            document.querySelectorAll('.pagination-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const page = parseInt(btn.getAttribute('data-page'));
+                    if (page !== this.currentPage) {
+                        this.currentPage = page;
+                        this.loadData();
+                    }
+                });
+            });
         }
-    }
 
-    showSuccess(message) { this.showAlert(message, 'success'); }
-    showError(message) { this.showAlert(message, 'danger'); }
+        renderPagination(result) {
+            // Pagination is server-rendered, just update current page display
+            const pageInfo = document.querySelector('.text-muted');
+            if (pageInfo) {
+                const start = (this.currentPage - 1) * this.pageSize + 1;
+                const end = Math.min(this.currentPage * this.pageSize, this.totalCount);
+                pageInfo.textContent = `Showing ${start} to ${end} of ${this.totalCount} entries`;
+            }
+        }
 
-    showAlert(message, type) {
-        const container = document.getElementById('alertContainer');
-        container.innerHTML = `
+        updateUI() {
+            document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
+            this.updateSearchUI();
+        }
+
+        escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        showSuccess(message) {
+            this.showAlert(message, 'success');
+        }
+
+        showError(message) {
+            this.showAlert(message, 'danger');
+        }
+
+        showAlert(message, type) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertHtml = `
             <div class="alert alert-${type} alert-dismissible fade show">
-                ${this.escapeHtml(message)}
+                ${message}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
-        setTimeout(() => {
-            const alert = container.querySelector('.alert');
-            if (alert) alert.remove();
-        }, 5000);
-    }
+            alertContainer.insertAdjacentHTML('beforeend', alertHtml);
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-}
-
-// Global functions for backward compatibility
-function showDeleteModal(valueName) {
-    document.getElementById('valueNameToDelete').textContent = valueName;
-    const modal = new bootstrap.Modal(document.getElementById('deleteValueModal'));
-    modal.show();
-}
-
-async function copyValueId(valueId) {
-    try {
-        await navigator.clipboard.writeText(valueId);
-        showToast('📋 Value ID copied to clipboard!', 'success');
-    } catch (error) {
-        console.error('Failed to copy:', error);
-        showToast('Failed to copy to clipboard', 'error');
-    }
-}
-
-function showToast(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = 'position-fixed top-0 end-0 p-3';
-    toast.style.zIndex = '9999';
-    
-    const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-    
-    toast.innerHTML = `
-        <div class="toast show ${bgClass} text-white" role="alert">
-            <div class="toast-header ${bgClass} text-white border-0">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
-                <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
-                <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
-            </div>
-            <div class="toast-body">${message}</div>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
+            setTimeout(() => {
+                const alerts = alertContainer.querySelectorAll('.alert');
+                if (alerts.length > 3) {
+                    alerts[0].remove();
+                }
+            }, 100);
         }
-    }, 3000);
-}
-
-// Initialize
-let valuesManager;
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎉 DOM loaded, initializing ValuesManager...');
-    valuesManager = new ValuesManager();
-
-    // Auto-hide TempData alerts
-    const successAlert = document.querySelector('.alert-success');
-    if (successAlert) {
-        setTimeout(() => new bootstrap.Alert(successAlert).close(), 5000);
     }
 
-    const errorAlert = document.querySelector('.alert-danger');
-    if (errorAlert) {
-        setTimeout(() => new bootstrap.Alert(errorAlert).close(), 5000);
-    }
-});
+    let valuesManager;
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('🎉 DOM loaded, initializing ValuesManager...');
+        valuesManager = new ValuesManager();
+    });
 </script>
 
 <style>
-    .text-truncate {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+    .fs-6 {
+        font-size: 0.875rem;
+    }
+
+    .fs-7 {
+        font-size: 0.875rem;
     }
 
     .badge {
@@ -940,5 +832,41 @@ document.addEventListener('DOMContentLoaded', function() {
 
     .gap-2 {
         gap: 0.5rem;
+    }
+
+    .sort-btn {
+        text-decoration: none;
+        color: #6c757d;
+    }
+
+    .sort-btn:hover {
+        color: #495057;
+    }
+
+    .table th {
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .copy-value-btn {
+        opacity: 0.6;
+        transition: opacity 0.2s;
+    }
+
+    .copy-value-btn:hover {
+        opacity: 1;
+    }
+
+    .alert {
+        margin-bottom: 1rem;
+    }
+
+    .pagination .page-link {
+        padding: 0.375rem 0.75rem;
+    }
+
+    .pagination .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
     }
 </style>

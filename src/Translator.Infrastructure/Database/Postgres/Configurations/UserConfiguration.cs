@@ -26,13 +26,11 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
         builder.HasMany(u => u.Templates)
             .WithOne(t => t.Owner)
             .HasForeignKey(t => t.OwnerId)
-            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.HasMany(u => u.Values)
             .WithOne(v => v.Owner)
             .HasForeignKey(v => v.OwnerId)
-            .IsRequired()
             .OnDelete(DeleteBehavior.Cascade);
     }
 }
