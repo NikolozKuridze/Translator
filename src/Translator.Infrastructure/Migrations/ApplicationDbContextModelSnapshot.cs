@@ -902,12 +902,12 @@ namespace Translator.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("pk_templates");
 
-                    b.HasIndex("Hash")
-                        .IsUnique()
-                        .HasDatabaseName("ix_templates_hash");
-
                     b.HasIndex("OwnerId")
                         .HasDatabaseName("ix_templates_owner_id");
+
+                    b.HasIndex("Hash", "OwnerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_templates_hash_owner_id");
 
                     b.ToTable("templates", (string)null);
                 });
@@ -1016,12 +1016,12 @@ namespace Translator.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("pk_values");
 
-                    b.HasIndex("Hash")
-                        .IsUnique()
-                        .HasDatabaseName("ix_values_hash");
-
                     b.HasIndex("OwnerId")
                         .HasDatabaseName("ix_values_owner_id");
+
+                    b.HasIndex("Hash", "OwnerId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_values_hash_owner_id");
 
                     b.ToTable("values", (string)null);
                 });
