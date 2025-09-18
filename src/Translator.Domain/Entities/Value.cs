@@ -6,7 +6,8 @@ public class Value : BaseEntity
     public string Key { get; private set; }
     public string Hash { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
-    
+    public Guid OwnerId { get; set; }
+    public User Owner { get; set; }
     private List<Template> _templates = [];
     public ICollection<Template> Templates => _templates.AsReadOnly();
     
