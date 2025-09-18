@@ -895,7 +895,7 @@ namespace Translator.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
-                    b.Property<Guid>("OwnerId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_id");
 
@@ -1005,7 +1005,7 @@ namespace Translator.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("key");
 
-                    b.Property<Guid>("OwnerId")
+                    b.Property<Guid?>("OwnerId")
                         .HasColumnType("uuid")
                         .HasColumnName("owner_id");
 
@@ -1069,7 +1069,6 @@ namespace Translator.Infrastructure.Migrations
                         .WithMany("Templates")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_templates_users_owner_id");
 
                     b.Navigation("Owner");
@@ -1102,7 +1101,6 @@ namespace Translator.Infrastructure.Migrations
                         .WithMany("Values")
                         .HasForeignKey("OwnerId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
                         .HasConstraintName("fk_values_users_owner_id");
 
                     b.Navigation("Owner");
