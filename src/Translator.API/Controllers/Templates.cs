@@ -7,7 +7,7 @@ using Translator.Application.Features.Template.Commands.DeleteTemplate;
 using Translator.Application.Features.Template.Queries.GetAllTemplates;
 using Translator.Application.Features.Template.Queries.GetTemplate;
 using Translator.Application.Features.Template.Queries.SearchTemplate;
-using Translator.Application.Features.Values.Commands.DeleteValueFromTemplate;
+using Translator.Application.Features.Values.Commands;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
@@ -218,7 +218,7 @@ public class Templates : Controller
     }
     
     [HttpPost("DeleteValueFromTemplate")]
-    public async Task<IActionResult> DeleteValueFromTemplate([FromBody] DeleteValueFromTemplateCommand command)
+    public async Task<IActionResult> DeleteValueFromTemplate([FromBody] DeleteValueFromTemplate.Command command)
     {
         try
         {
