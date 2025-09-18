@@ -8,7 +8,8 @@ public class Template : BaseEntity
     private const int HashMaxLength = 24;
     public string Name { get; private set; }
     public string Hash { get; private set; }
-    
+    public Guid OwnerId { get; set; }
+    public User Owner { get; set; }
     private List<Value> _values = new();
     public ICollection<Value> Values => _values.AsReadOnly();
     
