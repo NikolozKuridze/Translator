@@ -9,6 +9,7 @@ namespace Translator.Infrastructure.Database.Postgres;
 public class ApplicationDbContext : DbContext
 {
     private readonly IOptions<LanguageSeedingConfiguration> _languageSeedingConfiguration;
+    public DbSet<User> Users { get; set; }
     public DbSet<Template> Templates { get; set; }
     public DbSet<Language> Languages { get; set; }
     public DbSet<Translation> Translations { get; set; }
