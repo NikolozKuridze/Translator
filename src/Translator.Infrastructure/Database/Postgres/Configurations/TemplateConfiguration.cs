@@ -28,5 +28,10 @@ public class TemplateConfiguration : IEntityTypeConfiguration<Template>
             .HasMany(x => x.Values)
             .WithMany(x => x.Templates)
             .UsingEntity(x => x.ToTable("TemplateValues"));
+        
+        templateBuilder.HasOne(t => t.Owner)
+            .WithMany(t => t.Templates)
+            .HasForeignKey(t => t.OwnerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
