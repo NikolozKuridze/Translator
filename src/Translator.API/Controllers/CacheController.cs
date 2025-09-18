@@ -32,16 +32,20 @@ public class CacheController : Controller
     {
         try
         {
-            var templatesTask = _mediator.Send(new GetCachedTemplatesCommand(new PaginationRequest(1, int.MaxValue, null, null, null, null)));
-            var valuesTask = _mediator.Send(new GetCachedValueCommand(new PaginationRequest(1, int.MaxValue, null, null, null, null)));
-            
+            var templatesTask =
+                _mediator.Send(
+                    new GetCachedTemplatesCommand(new PaginationRequest(1, int.MaxValue, null, null, null, null)));
+            var valuesTask =
+                _mediator.Send(
+                    new GetCachedValueCommand(new PaginationRequest(1, int.MaxValue, null, null, null, null)));
+
             await Task.WhenAll(templatesTask, valuesTask);
-            
+
             var templates = await templatesTask;
             var values = await valuesTask;
-            
+
             var cachedItems = new List<CachedItemViewModel>();
-            
+
             cachedItems.AddRange(templates.Items.Select(t => new CachedItemViewModel
             {
                 Id = t.TemplateId,
@@ -50,7 +54,7 @@ public class CacheController : Controller
                 Count = t.ValuesCount,
                 TotalCount = templates.TotalItems
             }));
-            
+
             cachedItems.AddRange(values.Items.Select(v => new CachedItemViewModel
             {
                 Id = v.ValueId,
@@ -59,13 +63,13 @@ public class CacheController : Controller
                 Count = v.TranslationsCount,
                 TotalCount = values.TotalItems
             }));
-            
+
             cachedItems = cachedItems.OrderBy(x => x.Name).ToList();
-            
+
             var totalItems = cachedItems.Count;
             var totalPages = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
             pageNumber = Math.Max(1, Math.Min(pageNumber, totalPages));
-            
+
             var pagedItems = cachedItems
                 .Skip((pageNumber - 1) * pageSize)
                 .Take(pageSize)
@@ -73,25 +77,26 @@ public class CacheController : Controller
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                return Json(new { 
-                    success = true, 
+                return Json(new
+                {
+                    success = true,
                     data = pagedItems,
                     currentPage = pageNumber,
                     totalPages = totalPages,
                     totalCount = totalItems,
                     pageSize = pageSize,
                     templatesCount = templates.Items.Count(),
-                    valuesCount = values.Items.Count()        
+                    valuesCount = values.Items.Count()
                 });
             }
-            
+
             ViewBag.CurrentPage = pageNumber;
             ViewBag.PageSize = pageSize;
             ViewBag.TotalPages = totalPages;
             ViewBag.TotalCount = totalItems;
-            ViewBag.TemplatesCount = templates.Items.Count(); 
-            ViewBag.ValuesCount = values.Items.Count();       
-            
+            ViewBag.TemplatesCount = templates.Items.Count();
+            ViewBag.ValuesCount = values.Items.Count();
+
             return View(pagedItems);
         }
         catch (Exception ex)
@@ -100,7 +105,7 @@ public class CacheController : Controller
             {
                 return Json(new { success = false, message = ex.Message });
             }
-            
+
             TempData["ErrorMessage"] = $"Failed to load cached items: {ex.Message}";
             return View(new List<CachedItemViewModel>());
         }
@@ -124,7 +129,7 @@ public class CacheController : Controller
                 return Json(new { success = false, message = "Template not found" });
             }
 
-            var templateName = templateData.Items.First().Key; 
+            var templateName = templateData.Items.First().Key;
 
             var translations = templateData.Items.Select(t => new TranslationDto(
                 t.Key,
@@ -138,13 +143,24 @@ public class CacheController : Controller
                 templateName,
                 translations
             );
-            
+
             var cacheCommand = new CacheTemplateCommand(
                 templateCacheDto.TemplateId,
                 templateCacheDto.TemplateName,
-                templateCacheDto.Translations
-                );
+                templateCacheDto.Translations);
             await _mediator.Send(cacheCommand);
+
+            await Task.Delay(100);
+
+            var verifyQuery = new GetCachedTemplatesCommand(
+                new PaginationRequest(1, int.MaxValue, null, null, null, null));
+            var cached = await _mediator.Send(verifyQuery);
+            var isCached = cached.Items.Any(t => t.TemplateId == templateId);
+
+            if (!isCached)
+            {
+                return Json(new { success = false, message = "Template cached but verification failed" });
+            }
 
             return Json(new { success = true, message = $"Template '{templateName}' cached successfully!" });
         }
@@ -176,12 +192,12 @@ public class CacheController : Controller
             )).ToList();
 
             var valueCacheDto = new ValueCacheDto(valueId, valueKey, translations);
-                
+
             var cacheCommand = new CacheValueCommand(
                 valueCacheDto.Id,
                 valueCacheDto.Key,
                 valueCacheDto.Translations
-                );
+            );
             await _mediator.Send(cacheCommand);
 
             return Json(new { success = true, message = $"Value '{valueKey}' cached successfully!" });
@@ -199,7 +215,7 @@ public class CacheController : Controller
         {
             var command = new DeleteTemplateCacheCommand(templateId);
             await _mediator.Send(command);
-            
+
             return Json(new { success = true, message = "Template removed from cache successfully!" });
         }
         catch (Exception ex)
@@ -215,7 +231,7 @@ public class CacheController : Controller
         {
             var command = new DeleteCommandCacheCommand(valueId);
             await _mediator.Send(command);
-            
+
             return Json(new { success = true, message = "Value removed from cache successfully!" });
         }
         catch (Exception ex)
@@ -229,7 +245,7 @@ public class CachedItemViewModel
 {
     public Guid Id { get; set; }
     public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty; 
+    public string Type { get; set; } = string.Empty;
     public int Count { get; set; }
     public long TotalCount { get; set; }
 }

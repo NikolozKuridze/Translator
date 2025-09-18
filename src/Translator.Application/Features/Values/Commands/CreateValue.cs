@@ -67,7 +67,7 @@ public abstract class CreateValue
 
         var detectedLanguages = LanguageDetector.DetectLanguages(request.Value, languages);
 
-        if (!detectedLanguages.Any())
+        if (detectedLanguages.Count == 0)
             throw new UknownLanguageException($"No compatible language found for value: {request.Value}");
 
         var selectedLanguage =

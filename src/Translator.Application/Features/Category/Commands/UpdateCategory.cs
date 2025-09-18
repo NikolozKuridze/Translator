@@ -79,14 +79,11 @@ public abstract class UpdateCategory
                 throw new CategoryNotFoundException(request.Id);
 
             var proposedValue = request.Value ?? categoryToUpdate.Value;
-            var proposedOrder = request.Order ?? categoryToUpdate.Order;
-            var proposedMetadata = request.Metadata ?? categoryToUpdate.Metadata;
-            var proposedShortcode = request.Shortcode ?? categoryToUpdate.Shortcode;
 
             categoryToUpdate.Value = proposedValue.ToLower().Trim();
-            categoryToUpdate.Order = proposedOrder;
-            categoryToUpdate.Metadata = proposedMetadata;
-            categoryToUpdate.Shortcode = proposedShortcode?.ToLower().Trim();
+            categoryToUpdate.Order = request.Order;
+            categoryToUpdate.Metadata = request.Metadata;
+            categoryToUpdate.Shortcode = request.Shortcode?.ToLower().Trim();
 
             await categoryRepository.UpdateAsync(categoryToUpdate);
             await categoryRepository.SaveChangesAsync(cancellationToken);

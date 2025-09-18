@@ -7,6 +7,7 @@ using Translator.Application.Features.Category.Commands;
 using Translator.Application.Features.Category.Queries;
 using Translator.Application.Features.CategoryTypes.Commands;
 using Translator.Application.Features.CategoryTypes.Queries;
+using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
 
@@ -17,24 +18,52 @@ public class CategoriesController(IMediator mediator) : Controller
 {
     [HttpGet("")]
     [HttpGet("Index")]
-    public async Task<IActionResult> Index()
+    public async Task<IActionResult> Index(string? search = null, int page = 1, int pageSize = 10)
     {
         try
         {
-            var categories = await mediator.Send(new GetRootCategories.Query());
+            var paginationRequest = new PaginationRequest(page, pageSize, null, null, null, null);
+            
+            PaginatedResponse<GetRootCategories.Response> categories;
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var searchQuery = new SearchRootCategories.Query(search, paginationRequest);
+                categories = await mediator.Send(searchQuery);
+            }
+            else
+            {
+                var getRootQuery = new GetRootCategories.Query(paginationRequest);
+                categories = await mediator.Send(getRootQuery);
+            }
+            
             var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new
                 {
                     success = true,
-                    categories = categories.ToList(),
-                    categoryTypes = categoryTypes.TypeNames.ToList()
+                    categories = categories.Items.ToList(),
+                    categoryTypes = categoryTypes.TypeNames.ToList(),
+                    pagination = new
+                    {
+                        page = categories.Page,
+                        pageSize = categories.PageSize,
+                        totalItems = categories.TotalItems,
+                        totalPages = categories.TotalPages,
+                        hasNextPage = categories.HasNextPage,
+                        hasPreviousPage = categories.HasPreviousPage,
+                        isFirstPage = categories.IsFirstPage,
+                        isLastPage = categories.IsLastPage
+                    }
                 });
 
             // Ensure ViewBag has proper data
             ViewBag.CategoryTypes = categoryTypes.TypeNames.ToList();
-            return View(categories.ToList());
+            ViewBag.Search = search;
+            ViewBag.Page = page;
+            ViewBag.PageSize = pageSize;
+            
+            return View(categories);
         }
         catch (Exception ex)
         {
@@ -44,12 +73,26 @@ public class CategoriesController(IMediator mediator) : Controller
                     success = false,
                     message = ex.Message,
                     categories = new List<GetRootCategories.Response>(),
-                    categoryTypes = new List<string>()
+                    categoryTypes = new List<string>(),
+                    pagination = new
+                    {
+                        page = 1,
+                        pageSize = 10,
+                        totalItems = 0,
+                        totalPages = 0,
+                        hasNextPage = false,
+                        hasPreviousPage = false,
+                        isFirstPage = true,
+                        isLastPage = true
+                    }
                 });
 
             ViewBag.ErrorMessage = ex.Message;
             ViewBag.CategoryTypes = new List<string>();
-            return View(new List<GetRootCategories.Response>());
+            ViewBag.Search = search;
+            ViewBag.Page = page;
+            ViewBag.PageSize = pageSize;
+            return View(new PaginatedResponse<GetRootCategories.Response>());
         }
     }
 
@@ -96,15 +139,28 @@ public class CategoriesController(IMediator mediator) : Controller
                     });
                 }
 
-                var categories = await mediator.Send(new GetRootCategories.Query());
+                // Return updated data for index page
+                var paginationRequest = new PaginationRequest(1, 10, null, null, null, null);
+                var categories = await mediator.Send(new GetRootCategories.Query(paginationRequest));
                 var updatedCategoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
                 return Json(new
                 {
                     success = true,
                     message = "Category created successfully.",
                     categoryId = result,
-                    categories,
-                    categoryTypes = updatedCategoryTypes.TypeNames.ToList()
+                    categories = categories.Items.ToList(),
+                    categoryTypes = updatedCategoryTypes.TypeNames.ToList(),
+                    pagination = new
+                    {
+                        page = categories.Page,
+                        pageSize = categories.PageSize,
+                        totalItems = categories.TotalItems,
+                        totalPages = categories.TotalPages,
+                        hasNextPage = categories.HasNextPage,
+                        hasPreviousPage = categories.HasPreviousPage,
+                        isFirstPage = categories.IsFirstPage,
+                        isLastPage = categories.IsLastPage
+                    }
                 });
             }
 
@@ -150,14 +206,27 @@ public class CategoriesController(IMediator mediator) : Controller
                     });
                 }
 
-                var categories = await mediator.Send(new GetRootCategories.Query());
+                // Return updated data for index page
+                var paginationRequest = new PaginationRequest(1, 10, null, null, null, null);
+                var categories = await mediator.Send(new GetRootCategories.Query(paginationRequest));
                 var updatedCategoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
                 return Json(new
                 {
                     success = true,
                     message = "Category updated successfully.",
-                    categories,
-                    categoryTypes = updatedCategoryTypes.TypeNames.ToList()
+                    categories = categories.Items.ToList(),
+                    categoryTypes = updatedCategoryTypes.TypeNames.ToList(),
+                    pagination = new
+                    {
+                        page = categories.Page,
+                        pageSize = categories.PageSize,
+                        totalItems = categories.TotalItems,
+                        totalPages = categories.TotalPages,
+                        hasNextPage = categories.HasNextPage,
+                        hasPreviousPage = categories.HasPreviousPage,
+                        isFirstPage = categories.IsFirstPage,
+                        isLastPage = categories.IsLastPage
+                    }
                 });
             }
 
@@ -179,66 +248,78 @@ public class CategoriesController(IMediator mediator) : Controller
         }
     }
 
-  [HttpPost("Delete")]
-public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
-{
-    try
+    [HttpPost("Delete")]
+    public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
     {
-        var command = new DeleteCategory.Command(id);
-        await mediator.Send(command);
-
-        // If we're deleting the root category itself (the one we're viewing the tree of),
-        // redirect to index instead of trying to return to the deleted category's tree
-        bool isRootCategoryDeleted = returnToTreeId.HasValue && returnToTreeId.Value == id;
-
-        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        try
         {
-            if (returnToTreeId.HasValue && !isRootCategoryDeleted)
+            var command = new DeleteCategory.Command(id);
+            await mediator.Send(command);
+
+            // If we're deleting the root category itself (the one we're viewing the tree of),
+            // redirect to index instead of trying to return to the deleted category's tree
+            bool isRootCategoryDeleted = returnToTreeId.HasValue && returnToTreeId.Value == id;
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                var treeCategory = await mediator.Send(new GetCategoryTree.Query(returnToTreeId.Value));
-                var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
+                if (returnToTreeId.HasValue && !isRootCategoryDeleted)
+                {
+                    var treeCategory = await mediator.Send(new GetCategoryTree.Query(returnToTreeId.Value));
+                    var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
+                    return Json(new
+                    {
+                        success = true,
+                        message = "Category deleted successfully.",
+                        treeData = treeCategory,
+                        categoryTypes = categoryTypes.TypeNames.ToList()
+                    });
+                }
+
+                // Return updated data for index page
+                var paginationRequest = new PaginationRequest(1, 10, null, null, null, null);
+                var categories = await mediator.Send(new GetRootCategories.Query(paginationRequest));
+                var updatedCategoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
                 return Json(new
                 {
                     success = true,
                     message = "Category deleted successfully.",
-                    treeData = treeCategory,
-                    categoryTypes = categoryTypes.TypeNames.ToList()
+                    categories = categories.Items.ToList(),
+                    categoryTypes = updatedCategoryTypes.TypeNames.ToList(),
+                    redirectToIndex = isRootCategoryDeleted, // Flag to indicate redirect needed
+                    pagination = new
+                    {
+                        page = categories.Page,
+                        pageSize = categories.PageSize,
+                        totalItems = categories.TotalItems,
+                        totalPages = categories.TotalPages,
+                        hasNextPage = categories.HasNextPage,
+                        hasPreviousPage = categories.HasPreviousPage,
+                        isFirstPage = categories.IsFirstPage,
+                        isLastPage = categories.IsLastPage
+                    }
                 });
             }
 
-            var categories = await mediator.Send(new GetRootCategories.Query());
-            var updatedCategoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
-            return Json(new
-            {
-                success = true,
-                message = "Category deleted successfully.",
-                categories,
-                categoryTypes = updatedCategoryTypes.TypeNames.ToList(),
-                redirectToIndex = isRootCategoryDeleted // Flag to indicate redirect needed
-            });
+            TempData["SuccessMessage"] = "Category deleted successfully.";
+            return (returnToTreeId.HasValue && !isRootCategoryDeleted)
+                ? RedirectToAction("Tree", new { id = returnToTreeId.Value })
+                : RedirectToAction("Index");
         }
+        catch (Exception ex)
+        {
+            var errorMessage = "An error occurred while deleting the category: " + ex.Message;
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { success = false, message = errorMessage });
 
-        TempData["SuccessMessage"] = "Category deleted successfully.";
-        return (returnToTreeId.HasValue && !isRootCategoryDeleted)
-            ? RedirectToAction("Tree", new { id = returnToTreeId.Value })
-            : RedirectToAction("Index");
+            TempData["ErrorMessage"] = errorMessage;
+            
+            // On error, also avoid returning to deleted category tree
+            bool isRootCategoryDeleted = returnToTreeId.HasValue && returnToTreeId.Value == id;
+            return (returnToTreeId.HasValue && !isRootCategoryDeleted)
+                ? RedirectToAction("Tree", new { id = returnToTreeId.Value })
+                : RedirectToAction("Index");
+        }
     }
-    catch (Exception ex)
-    {
-        var errorMessage = "An error occurred while deleting the category: " + ex.Message;
-        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            return Json(new { success = false, message = errorMessage });
-
-        TempData["ErrorMessage"] = errorMessage;
-        
-        // On error, also avoid returning to deleted category tree
-        bool isRootCategoryDeleted = returnToTreeId.HasValue && returnToTreeId.Value == id;
-        return (returnToTreeId.HasValue && !isRootCategoryDeleted)
-            ? RedirectToAction("Tree", new { id = returnToTreeId.Value })
-            : RedirectToAction("Index");
-    }
-}
-
 
     [HttpPost("CreateCategoryType")]
     public async Task<IActionResult> CreateCategoryType(string typeName)
@@ -253,14 +334,26 @@ public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
             await mediator.Send(command);
 
             var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
-            var categories = await mediator.Send(new GetRootCategories.Query());
+            var paginationRequest = new PaginationRequest(1, 10, null, null, null, null);
+            var categories = await mediator.Send(new GetRootCategories.Query(paginationRequest));
 
             return Json(new
             {
                 success = true,
                 message = "Category type created successfully.",
                 categoryTypes = categoryTypes.TypeNames.ToList(),
-                categories
+                categories = categories.Items.ToList(),
+                pagination = new
+                {
+                    page = categories.Page,
+                    pageSize = categories.PageSize,
+                    totalItems = categories.TotalItems,
+                    totalPages = categories.TotalPages,
+                    hasNextPage = categories.HasNextPage,
+                    hasPreviousPage = categories.HasPreviousPage,
+                    isFirstPage = categories.IsFirstPage,
+                    isLastPage = categories.IsLastPage
+                }
             });
         }
         catch (ValidationException ex)
@@ -300,7 +393,8 @@ public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
             var result = await mediator.Send(command);
 
             var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
-            var categories = await mediator.Send(new GetRootCategories.Query());
+            var paginationRequest = new PaginationRequest(1, 10, null, null, null, null);
+            var categories = await mediator.Send(new GetRootCategories.Query(paginationRequest));
 
             var createdCount = result.CreatedTypeNames.Count();
             var existingCount = result.ExistingTypeNames.Count();
@@ -316,7 +410,18 @@ public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
                     existingTypes = result.ExistingTypeNames.ToArray(),
                     createdTypes = result.CreatedTypeNames.ToArray(),
                     categoryTypes = categoryTypes.TypeNames.ToList(),
-                    categories
+                    categories = categories.Items.ToList(),
+                    pagination = new
+                    {
+                        page = categories.Page,
+                        pageSize = categories.PageSize,
+                        totalItems = categories.TotalItems,
+                        totalPages = categories.TotalPages,
+                        hasNextPage = categories.HasNextPage,
+                        hasPreviousPage = categories.HasPreviousPage,
+                        isFirstPage = categories.IsFirstPage,
+                        isLastPage = categories.IsLastPage
+                    }
                 }),
                 > 0 => Json(new
                 {
@@ -324,7 +429,18 @@ public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
                     message = $"Successfully created {createdCount} category type(s).",
                     createdTypes = result.CreatedTypeNames.ToArray(),
                     categoryTypes = categoryTypes.TypeNames.ToList(),
-                    categories
+                    categories = categories.Items.ToList(),
+                    pagination = new
+                    {
+                        page = categories.Page,
+                        pageSize = categories.PageSize,
+                        totalItems = categories.TotalItems,
+                        totalPages = categories.TotalPages,
+                        hasNextPage = categories.HasNextPage,
+                        hasPreviousPage = categories.HasPreviousPage,
+                        isFirstPage = categories.IsFirstPage,
+                        isLastPage = categories.IsLastPage
+                    }
                 }),
                 _ => Json(new
                 {
@@ -367,7 +483,8 @@ public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
             await mediator.Send(command);
 
             var categoryTypes = await mediator.Send(new GetAllCategoryTypes.Query());
-            var categories = await mediator.Send(new GetRootCategories.Query());
+            var paginationRequest = new PaginationRequest(1, 10, null, null, null, null);
+            var categories = await mediator.Send(new GetRootCategories.Query(paginationRequest));
 
             var message = cleanedTypeNames.Count == 1
                 ? "Category type deleted successfully."
@@ -378,7 +495,18 @@ public async Task<IActionResult> Delete(Guid id, Guid? returnToTreeId = null)
                 success = true,
                 message,
                 categoryTypes = categoryTypes.TypeNames.ToList(),
-                categories
+                categories = categories.Items.ToList(),
+                pagination = new
+                {
+                    page = categories.Page,
+                    pageSize = categories.PageSize,
+                    totalItems = categories.TotalItems,
+                    totalPages = categories.TotalPages,
+                    hasNextPage = categories.HasNextPage,
+                    hasPreviousPage = categories.HasPreviousPage,
+                    isFirstPage = categories.IsFirstPage,
+                    isLastPage = categories.IsLastPage
+                }
             });
         }
         catch (ValidationException ex)
