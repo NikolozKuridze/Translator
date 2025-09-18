@@ -12,7 +12,7 @@ using Translator.Infrastructure.Database.Postgres;
 namespace Translator.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250829123314_Initial")]
+    [Migration("20250918093057_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -898,12 +898,19 @@ namespace Translator.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
                     b.HasKey("Id")
                         .HasName("pk_templates");
 
-                    b.HasIndex("Hash")
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("ix_templates_owner_id");
+
+                    b.HasIndex("Hash", "OwnerId")
                         .IsUnique()
-                        .HasDatabaseName("ix_templates_hash");
+                        .HasDatabaseName("ix_templates_hash_owner_id");
 
                     b.ToTable("templates", (string)null);
                 });
@@ -945,6 +952,39 @@ namespace Translator.Infrastructure.Migrations
                     b.ToTable("translations", (string)null);
                 });
 
+            modelBuilder.Entity("Translator.Domain.Entities.User", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("SecretKey")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("secret_key");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("username");
+
+                    b.HasKey("Id")
+                        .HasName("pk_users");
+
+                    b.HasIndex("SecretKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_secret_key");
+
+                    b.HasIndex("Username")
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_username");
+
+                    b.ToTable("users", (string)null);
+                });
+
             modelBuilder.Entity("Translator.Domain.Entities.Value", b =>
                 {
                     b.Property<Guid>("Id")
@@ -968,6 +1008,10 @@ namespace Translator.Infrastructure.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("key");
 
+                    b.Property<Guid?>("OwnerId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("owner_id");
+
                     b.Property<Guid?>("TemplateId")
                         .HasColumnType("uuid")
                         .HasColumnName("template_id");
@@ -975,9 +1019,12 @@ namespace Translator.Infrastructure.Migrations
                     b.HasKey("Id")
                         .HasName("pk_values");
 
-                    b.HasIndex("Hash")
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("ix_values_owner_id");
+
+                    b.HasIndex("Hash", "OwnerId")
                         .IsUnique()
-                        .HasDatabaseName("ix_values_hash");
+                        .HasDatabaseName("ix_values_hash_owner_id");
 
                     b.ToTable("values", (string)null);
                 });
@@ -1019,6 +1066,17 @@ namespace Translator.Infrastructure.Migrations
                     b.Navigation("Type");
                 });
 
+            modelBuilder.Entity("Translator.Domain.Entities.Template", b =>
+                {
+                    b.HasOne("Translator.Domain.Entities.User", "Owner")
+                        .WithMany("Templates")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_templates_users_owner_id");
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("Translator.Domain.Entities.Translation", b =>
                 {
                     b.HasOne("Translator.Domain.Entities.Language", "Language")
@@ -1040,6 +1098,17 @@ namespace Translator.Infrastructure.Migrations
                     b.Navigation("Value");
                 });
 
+            modelBuilder.Entity("Translator.Domain.Entities.Value", b =>
+                {
+                    b.HasOne("Translator.Domain.Entities.User", "Owner")
+                        .WithMany("Values")
+                        .HasForeignKey("OwnerId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_values_users_owner_id");
+
+                    b.Navigation("Owner");
+                });
+
             modelBuilder.Entity("Translator.Domain.Entities.Category", b =>
                 {
                     b.Navigation("Children");
@@ -1053,6 +1122,13 @@ namespace Translator.Infrastructure.Migrations
             modelBuilder.Entity("Translator.Domain.Entities.Language", b =>
                 {
                     b.Navigation("Translations");
+                });
+
+            modelBuilder.Entity("Translator.Domain.Entities.User", b =>
+                {
+                    b.Navigation("Templates");
+
+                    b.Navigation("Values");
                 });
 
             modelBuilder.Entity("Translator.Domain.Entities.Value", b =>

@@ -41,31 +41,16 @@ namespace Translator.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "templates",
+                name: "users",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    hash = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false)
+                    username = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    secret_key = table.Column<string>(type: "character varying(16)", maxLength: 16, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_templates", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "values",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    template_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    hash = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_values", x => x.id);
+                    table.PrimaryKey("pk_users", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -93,6 +78,48 @@ namespace Translator.Infrastructure.Migrations
                         name: "fk_categories_category_types_type_id",
                         column: x => x.type_id,
                         principalTable: "category_types",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "templates",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    hash = table.Column<string>(type: "character varying(24)", maxLength: 24, nullable: false),
+                    owner_id = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_templates", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_templates_users_owner_id",
+                        column: x => x.owner_id,
+                        principalTable: "users",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "values",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    template_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    key = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    hash = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    owner_id = table.Column<Guid>(type: "uuid", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_values", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_values_users_owner_id",
+                        column: x => x.owner_id,
+                        principalTable: "users",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -273,10 +300,15 @@ namespace Translator.Infrastructure.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "ix_templates_hash",
+                name: "ix_templates_hash_owner_id",
                 table: "templates",
-                column: "hash",
+                columns: new[] { "hash", "owner_id" },
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_templates_owner_id",
+                table: "templates",
+                column: "owner_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_template_values_values_id",
@@ -294,10 +326,27 @@ namespace Translator.Infrastructure.Migrations
                 column: "template_value_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_values_hash",
-                table: "values",
-                column: "hash",
+                name: "ix_users_secret_key",
+                table: "users",
+                column: "secret_key",
                 unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_users_username",
+                table: "users",
+                column: "username",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_values_hash_owner_id",
+                table: "values",
+                columns: new[] { "hash", "owner_id" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "ix_values_owner_id",
+                table: "values",
+                column: "owner_id");
         }
 
         /// <inheritdoc />
@@ -323,6 +372,9 @@ namespace Translator.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "values");
+
+            migrationBuilder.DropTable(
+                name: "users");
         }
     }
 }

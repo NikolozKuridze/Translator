@@ -1,15 +1,14 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Attributes;
 using Translator.API.Models;
-using Translator.Application.Features.Values.Commands.CreateValue;
-using Translator.Application.Features.Values.Commands.DeleteValue;
-using Translator.Application.Features.Values.Queries.GetAllValues;
-using Translator.Application.Features.Values.Queries.GetValue;
-using Translator.Application.Features.Values.Queries.SearchValue;
+using Translator.Application.Features.Values.Commands;
+using Translator.Application.Features.Values.Queries;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
+[UserAuth]
 [ApiController]
 [Route("api")]
 public class ValueController : ControllerBase
@@ -19,22 +18,26 @@ public class ValueController : ControllerBase
     public ValueController(IMediator mediator) => _mediator = mediator;
 
     [HttpGet("get-value/")]
+    [ProducesResponseType(typeof(GetValue.Response), StatusCodes.Status200OK)]
     public async Task<IResult> GetValue(
         [FromQuery] Guid valueId,
         [FromQuery] bool allTranslations,
         [FromQuery] string lang = "")
     {
-        var command = new GetValueCommand(valueId, lang, allTranslations);
+        var command = new GetValue.Command(valueId, lang, allTranslations);
         var result = await _mediator.Send(command);
         return Results.Ok(result);
-    }       
+    }
 
     [HttpGet("get-all-values/")]
-    public async Task<IResult> GetValue(
-        [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10,
-        [FromQuery] string sortBy = "date", [FromQuery] string sortDirection = "asc")
+    [ProducesResponseType(typeof(GetAllValues.Response), StatusCodes.Status200OK)]
+    public async Task<IResult> GetAllValues(
+        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string sortBy = "date", 
+        [FromQuery] string sortDirection = "asc")
     {
-        var command = new GetAllValuesCommand(
+        var command = new GetAllValues.Command(
             new PaginationRequest(
                 pageNumber,
                 pageSize,
@@ -48,12 +51,13 @@ public class ValueController : ControllerBase
     }
 
     [HttpGet("search-value")]
+    [ProducesResponseType(typeof(PaginatedResponse<GetAllValues.Response>), StatusCodes.Status200OK)]
     public async Task<IResult> SearchValue(
         [FromQuery] string valueKey,
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 10)
     {
-        var command = new SearchValueCommand(valueKey, new PaginationRequest(page, pageSize, null, null, null, null));
+        var command = new SearchValue.Command(valueKey, new PaginationRequest(page, pageSize, null, null, null, null));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
@@ -62,18 +66,16 @@ public class ValueController : ControllerBase
     public async Task<IResult> AddValue(
         [FromBody] CreateValueModel model)
     {
-        var command = new CreateValueCommand(model.Key.Trim(), model.Value.Trim());
+        var command = new CreateValue.Command(model.Key.Trim(), model.Value.Trim());
         await _mediator.Send(command);
-        return Results.Ok();
+        return Results.Ok(new { success = true, message = "Value created successfully" });
     }
 
     [HttpDelete("delete-value")]
-    public async Task<IResult> DeleteValue(
-        [FromBody] DeleteValueModel model)
+    public async Task<IResult> DeleteValue([FromBody] DeleteValueModel model)
     {
-        var command = new DeleteValueCommand(model.ValueName);
+        var command = new DeleteValue.Command(model.ValueName);
         await _mediator.Send(command);
-        return Results.NoContent();
+        return Results.Ok(new { success = true, message = "Value deleted successfully" });
     }
-    
 }

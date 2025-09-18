@@ -1,15 +1,12 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
-using Translator.Application.Features.Values.Commands.CreateValue;
-using Translator.Application.Features.Values.Commands.DeleteValue;
-using Translator.Application.Features.Values.Queries.GetValue;
-using Translator.Application.Features.Values.Queries.GetAllValues;
 using Translator.Application.Features.Translation.Commands.CreateTranslation;
 using Translator.Application.Features.Translation.Commands.DeleteTranslation;
 using Translator.Application.Features.Language.Queries.GetLanguages;
-using Translator.Application.Features.Values.Commands.DeleteValueFromTemplate;
-using Translator.Application.Features.Values.Queries.SearchValue;
+using Translator.Application.Features.Values.Commands;
+using Translator.Application.Features.ValuesAdmin.Commands;
+using Translator.Application.Features.ValuesAdmin.Queries;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.Controllers;
@@ -26,7 +23,7 @@ public class ValuesController : Controller
     [HttpGet("")]
     public async Task<IActionResult> Index(
         string sortBy = "date",
-        string sortDirection = "asc",
+        string sortDirection = "desc",
         int pageNumber = 1,
         int pageSize = 10)
     {
@@ -34,7 +31,8 @@ public class ValuesController : Controller
         {
             var paginationRequest =
                 new PaginationRequest(pageNumber, pageSize, null, null, null, sortBy, sortDirection);
-            var command = new GetAllValuesCommand(paginationRequest);
+            
+            var command = new AdminGetAllValues.Command(paginationRequest);
             var result = await _mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -61,6 +59,9 @@ public class ValuesController : Controller
             ViewBag.HasPreviousPage = result.HasPreviousPage;
             ViewBag.SortBy = sortBy;
             ViewBag.SortDirection = sortDirection;
+            
+            ViewBag.GlobalCount = result.Items.Count(x => x.OwnershipType == "Global");
+            ViewBag.UserCount = result.Items.Count(x => x.OwnershipType == "User");
 
             return View(result.Items);
         }
@@ -72,37 +73,50 @@ public class ValuesController : Controller
             }
 
             TempData["ErrorMessage"] = $"Error loading values: {ex.Message}";
-            return View(new List<GetAllValuesResponse>());
+            return View(new List<AdminGetAllValues.Response>());
         }
     }
 
     [HttpGet("Details/{valueId:guid}")]
     public async Task<IActionResult> Details(Guid valueId, string? lang)
     {
-        if (valueId == Guid.Empty)
+        try
+        {
+            if (valueId == Guid.Empty)
+                return RedirectToAction(nameof(Index));
+
+            var command = new AdminGetValue.Command(valueId, lang?.Trim(), true);
+            var result = await _mediator.Send(command);
+
+            var languagesQuery = new GetLanguagesCommand();
+            var availableLanguages = (await _mediator.Send(languagesQuery))
+                .Where(l => l.IsActive)
+                .OrderBy(l => l.LanguageCode)
+                .ToList();
+
+            var firstResult = result.First();
+            ViewBag.ValueId = valueId;
+            ViewBag.ValueKey = firstResult.ValueKey;
+            ViewBag.OwnerId = firstResult.OwnerId;
+            ViewBag.OwnerName = firstResult.OwnerName;
+            ViewBag.OwnershipType = firstResult.OwnershipType;
+            ViewBag.CurrentLanguage = lang ?? "";
+            ViewBag.AvailableLanguages = availableLanguages;
+
+            return View(result);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error loading value details: {ex.Message}";
             return RedirectToAction(nameof(Index));
-
-        var command = new GetValueCommand(valueId, lang?.Trim(), true);
-        var result = await _mediator.Send(command);
-
-        var languagesQuery = new GetLanguagesCommand();
-        var availableLanguages = (await _mediator.Send(languagesQuery))
-            .Where(l => l.IsActive)
-            .OrderBy(l => l.LanguageCode)
-            .ToList();
-
-        ViewBag.ValueId = valueId;
-        ViewBag.CurrentLanguage = lang ?? "";
-        ViewBag.AvailableLanguages = availableLanguages;
-
-        return View(result);
+        }
     }
 
     [HttpGet("Search")]
     public async Task<IActionResult> Search(
         string valueKey = "",
         string sortBy = "date",
-        string sortDirection = "asc",
+        string sortDirection = "desc",
         int pageNumber = 1,
         int pageSize = 10)
     {
@@ -110,7 +124,8 @@ public class ValuesController : Controller
         {
             var paginationRequest =
                 new PaginationRequest(pageNumber, pageSize, null, null, null, sortBy, sortDirection);
-            var command = new SearchValueCommand(valueKey, paginationRequest);
+            
+            var command = new AdminSearchValue.Command(valueKey, paginationRequest);
             var result = await _mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -133,13 +148,17 @@ public class ValuesController : Controller
             ViewBag.PageSize = result.PageSize;
             ViewBag.TotalPages = result.TotalPages;
             ViewBag.TotalCount = result.TotalItems;
+            ViewBag.HasNextPage = result.HasNextPage;
+            ViewBag.HasPreviousPage = result.HasPreviousPage;
             ViewBag.ValueKey = valueKey;
             ViewBag.SortBy = sortBy;
             ViewBag.SortDirection = sortDirection;
+            
+            ViewBag.GlobalCount = result.Items.Count(x => x.OwnershipType == "Global");
+            ViewBag.UserCount = result.Items.Count(x => x.OwnershipType == "User");
 
             return View("Index", result.Items);
         }
-        
         catch (Exception ex)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -148,7 +167,7 @@ public class ValuesController : Controller
             }
 
             TempData["ErrorMessage"] = $"Error searching values: {ex.Message}";
-            return View("Index", new List<GetAllValuesResponse>());
+            return View("Index", new List<AdminGetAllValues.Response>());
         }
     }
 
@@ -169,8 +188,8 @@ public class ValuesController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            await _mediator.Send(new CreateValueCommand(key.Trim(), value.Trim()));
-            var successMsg = "Value created successfully!";
+            await _mediator.Send(new AdminCreateValue.Command(key.Trim(), value.Trim()));
+            var successMsg = "Global value created successfully!";
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
@@ -193,24 +212,68 @@ public class ValuesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpPost("Delete")]
-    public async Task<IActionResult> Delete(string valueName)
+[HttpPost("Delete")]
+public async Task<IActionResult> Delete(string valueName)
+{
+    try
+    {
+        if (string.IsNullOrWhiteSpace(valueName))
+        {
+            var errorMsg = "Value name is required for deletion.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = false, message = errorMsg });
+            }
+
+            TempData["ErrorMessage"] = errorMsg;
+            return RedirectToAction(nameof(Index));
+        }
+
+        var allValues = await _mediator.Send(new AdminGetAllValues.Command(new PaginationRequest(1, 1000, null, null, null, null, null)));
+        var valueToDelete = allValues.Items.FirstOrDefault(v => v.Key.Equals(valueName.Trim(), StringComparison.OrdinalIgnoreCase));
+        
+        if (valueToDelete == null)
+        {
+            var errorMsg = $"Value '{valueName}' not found.";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                return Json(new { success = false, message = errorMsg });
+            }
+            TempData["ErrorMessage"] = errorMsg;
+            return RedirectToAction(nameof(Index));
+        }
+
+        var command = new AdminDeleteValue.Command(valueToDelete.ValueId);
+        await _mediator.Send(command);
+        var successMsg = "Value deleted successfully!";
+
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            return Json(new { success = true, message = successMsg });
+        }
+
+        TempData["SuccessMessage"] = successMsg;
+    }
+    catch (Exception ex)
+    {
+        var errorMsg = $"Error deleting value: {ex.Message}";
+        if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+        {
+            return Json(new { success = false, message = errorMsg });
+        }
+
+        TempData["ErrorMessage"] = errorMsg;
+    }
+
+    return RedirectToAction(nameof(Index));
+}
+
+    [HttpPost("Delete/{valueId:guid}")]
+    public async Task<IActionResult> DeleteById(Guid valueId)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(valueName))
-            {
-                var errorMsg = "Value name is required for deletion.";
-                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-                {
-                    return Json(new { success = false, message = errorMsg });
-                }
-
-                TempData["ErrorMessage"] = errorMsg;
-                return RedirectToAction(nameof(Index));
-            }
-
-            var command = new DeleteValueCommand(valueName.Trim());
+            var command = new AdminDeleteValue.Command(valueId);
             await _mediator.Send(command);
             var successMsg = "Value deleted successfully!";
 
@@ -235,6 +298,7 @@ public class ValuesController : Controller
         return RedirectToAction(nameof(Index));
     }
 
+   
     [HttpPost("CreateTranslation")]
     public async Task<IActionResult> CreateTranslation(string value, Guid ValueId, string translation,
         string languageCode)
@@ -264,18 +328,24 @@ public class ValuesController : Controller
     [HttpPost("DeleteTranslation")]
     public async Task<IActionResult> DeleteTranslation(string value, Guid ValueId, string languageCode)
     {
-        if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(languageCode))
+        try
         {
-            TempData["ErrorMessage"] = "Value and language code are required for deleting translation.";
-            return RedirectToAction("Details", new { valueId = ValueId });
+            if (string.IsNullOrWhiteSpace(value) || string.IsNullOrWhiteSpace(languageCode))
+            {
+                TempData["ErrorMessage"] = "Value and language code are required for deleting translation.";
+                return RedirectToAction("Details", new { valueId = ValueId });
+            }
+
+            var command = new DeleteTranslationCommand(value.Trim(), languageCode.Trim());
+            await _mediator.Send(command);
+
+            TempData["SuccessMessage"] = "Translation deleted successfully!";
         }
-
-        var command = new DeleteTranslationCommand(value.Trim(), languageCode.Trim());
-        await _mediator.Send(command);
-
-        TempData["SuccessMessage"] = "Translation deleted successfully!";
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error deleting translation: {ex.Message}";
+        }
 
         return RedirectToAction("Details", new { valueId = ValueId });
     }
-    
 }

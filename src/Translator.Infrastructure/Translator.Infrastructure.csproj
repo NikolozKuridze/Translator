@@ -5,28 +5,28 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
     <ItemGroup>
-      <PackageReference Include="Bogus" Version="35.6.3" />
-      <PackageReference Include="EFCore.NamingConventions" Version="9.0.0" />
-      <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.7" />
-      <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.7" />
-      <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4" />
-		<PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7" />
-		<PackageReference Include="StackExchange.Redis" Version="2.8.58" />
+        <PackageReference Include="Bogus" Version="35.6.3"/>
+        <PackageReference Include="EFCore.NamingConventions" Version="9.0.0"/>
+        <PackageReference Include="Google.Cloud.Translation.V2" Version="3.4.0"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7"/>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="9.0.7"/>
+        <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.7"/>
+        <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.4"/>
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.7"/>
+        <PackageReference Include="StackExchange.Redis" Version="2.8.58"/>
     </ItemGroup>
-    
+
     <ItemGroup>
-      <ProjectReference Include="..\Translator.Domain\Translator.Domain.csproj" />
+        <ProjectReference Include="..\Translator.Domain\Translator.Domain.csproj"/>
     </ItemGroup>
-    
+
     <ItemGroup>
         <None Update="Database/Postgres/SeedData/languages.json">
             <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </None>
     </ItemGroup>
-    
+
     <ItemGroup>
-      <Compile Remove="Migrations\ApplicationDbContextModelSnapshot.cs" />
+        <Compile Remove="Migrations\ApplicationDbContextModelSnapshot.cs"/>
     </ItemGroup>
 </Project>
