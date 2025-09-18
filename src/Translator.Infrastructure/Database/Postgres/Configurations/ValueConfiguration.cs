@@ -29,5 +29,10 @@ public class ValueConfiguration : IEntityTypeConfiguration<Value>
             .WithOne(t => t.Value)
             .HasForeignKey(t => t.TemplateValueId)
             .OnDelete(DeleteBehavior.Cascade);
+        
+        templateValueBuilder.HasOne(v => v.Owner)
+            .WithMany(u => u.Values)
+            .HasForeignKey(v => v.OwnerId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
