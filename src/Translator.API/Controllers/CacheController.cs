@@ -7,8 +7,8 @@ using Translator.Application.Features.Caching.Commands.DeleteTemplateCache;
 using Translator.Application.Features.Caching.Commands.DeleteValueCache;
 using Translator.Application.Features.Caching.Queries.Template;
 using Translator.Application.Features.Caching.Queries.Value;
-using Translator.Application.Features.Values.Queries.GetValue;
 using Translator.Application.Features.Template.Queries.GetTemplate;
+using Translator.Application.Features.Values.Queries;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Redis.CacheServices;
 
@@ -159,7 +159,7 @@ public class CacheController : Controller
     {
         try
         {
-            var valueQuery = new GetValueCommand(valueId, null, true);
+            var valueQuery = new GetValue.Command(valueId, null, true);
             var valueData = (await _mediator.Send(valueQuery)).ToList();
 
             if (!valueData.Any())
