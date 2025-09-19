@@ -17,16 +17,16 @@ public class HomeController : Controller
     [HttpGet("")]
     public async Task<IActionResult> Index()
     {
-        var command = new GetDashboardStatisticCommand();
         try
         {
+            var command = new GetDashboardStatistics.Query();
             var statistics = await _mediator.Send(command);
             return View(statistics);
         }
         catch (Exception)
         {
-            ViewBag.Error = "Database is not available";
-            return View(new GetDashboardRequestResponse(0, 0, 0, 0));
+            ViewBag.Error = "Database connection error";
+            return View(new GetDashboardStatistics.Response(0, 0, 0, 0, 0, 0, 0, 0, 0));
         }
     }
 }
