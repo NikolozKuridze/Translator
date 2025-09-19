@@ -17,4 +17,8 @@
         <ProjectReference Include="..\Translator.Infrastructure\Translator.Infrastructure.csproj"/>
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="Features\TemplatesAdmin\" />
+    </ItemGroup>
+
 </Project>
