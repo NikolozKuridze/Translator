@@ -1,3 +1,4 @@
+@using Translator.Application.Features.ValuesAdmin.Queries
 @model IEnumerable<Translator.Application.Features.ValuesAdmin.Queries.AdminGetValue.Response>
 
 @{
@@ -10,15 +11,15 @@
     var ownershipType = ViewBag.OwnershipType;
     var availableLanguages = ViewBag.AvailableLanguages as IEnumerable<dynamic>;
     var currentLanguage = ViewBag.CurrentLanguage as string ?? "";
-    var translations = Model?.ToList() ?? new List<Translator.Application.Features.ValuesAdmin.Queries.AdminGetValue.Response>();
+    var translations = Model?.ToList() ?? new List<AdminGetValue.Response>();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
+<div class="d-flex justify-content-between align-items-center mb-3">
     <div>
-        <h2>
-            Value Details: 
-            <span class="badge bg-primary fs-5">@valueKey</span>
-        </h2>
+        <h4>
+            Value Details:
+            <span class="badge bg-primary">@valueKey</span>
+        </h4>
         <div class="d-flex gap-2 mt-2 align-items-center">
             @if (ownershipType == "Global")
             {
@@ -37,10 +38,11 @@
         </div>
     </div>
     <div class="d-flex gap-2">
-        <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createTranslationSection">
+        <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse"
+                data-bs-target="#createTranslationSection">
             <i class="fas fa-plus"></i> Add Translation
         </button>
-        <a href="@Url.Action("Index", "Values")" class="btn btn-outline-secondary">
+        <a href="@Url.Action("Index", "Values")" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-arrow-left"></i> Back to List
         </a>
     </div>
@@ -50,7 +52,7 @@
 <div id="alertContainer">
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show">
+        <div class="alert alert-success alert-dismissible fade show py-2">
             @TempData["SuccessMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -58,7 +60,7 @@
 
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show">
+        <div class="alert alert-danger alert-dismissible fade show py-2">
             @TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
@@ -66,23 +68,24 @@
 </div>
 
 <!-- Value Information Card -->
-<div class="row mb-4">
+<div class="row mb-3">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">
+            <div class="card-header py-2">
+                <h6 class="mb-0">
                     <i class="fas fa-info-circle"></i> Value Information
-                </h5>
+                </h6>
             </div>
-            <div class="card-body">
+            <div class="card-body p-3">
                 <div class="row">
                     <div class="col-md-6">
-                        <table class="table table-borderless mb-0">
+                        <table class="table table-borderless table-sm mb-0">
                             <tr>
-                                <td><strong>Key:</strong></td>
+                                <td width="30%"><strong>Key:</strong></td>
                                 <td>
                                     <span class="badge bg-primary">@valueKey</span>
-                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('@valueKey')" title="Copy Key">
+                                    <button class="btn btn-sm btn-outline-secondary ms-1"
+                                            onclick="copyToClipboard('@valueKey')" title="Copy Key">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </td>
@@ -90,8 +93,9 @@
                             <tr>
                                 <td><strong>Value ID:</strong></td>
                                 <td>
-                                    <code>@valueId</code>
-                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('@valueId')" title="Copy ID">
+                                    <code class="small">@valueId</code>
+                                    <button class="btn btn-sm btn-outline-secondary ms-1"
+                                            onclick="copyToClipboard('@valueId')" title="Copy ID">
                                         <i class="fas fa-copy"></i>
                                     </button>
                                 </td>
@@ -116,16 +120,17 @@
                         </table>
                     </div>
                     <div class="col-md-6">
-                        <table class="table table-borderless mb-0">
+                        <table class="table table-borderless table-sm mb-0">
                             @if (ownershipType != "Global")
                             {
                                 <tr>
-                                    <td><strong>Owner:</strong></td>
+                                    <td width="30%"><strong>Owner:</strong></td>
                                     <td>
                                         <span class="badge bg-secondary">@ownerName</span>
                                         @if (ownerId != null)
                                         {
-                                            <br><small class="text-muted">ID: @ownerId</small>
+                                            <br>
+                                            <small class="text-muted">ID: @ownerId</small>
                                         }
                                     </td>
                                 </tr>
@@ -133,7 +138,8 @@
                             <tr>
                                 <td><strong>Translations:</strong></td>
                                 <td>
-                                    <span class="badge bg-info">@translations.Count languages</span>
+                                    <span class="badge bg-info"
+                                          id="translationsCount">@translations.Count languages</span>
                                 </td>
                             </tr>
                         </table>
@@ -145,22 +151,22 @@
 </div>
 
 <!-- Create Translation Form -->
-<div class="collapse mb-4" id="createTranslationSection">
+<div class="collapse mb-3" id="createTranslationSection">
     <div class="card">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">
+        <div class="card-header py-2 bg-success text-white">
+            <h6 class="mb-0">
                 <i class="fas fa-plus"></i> Add New Translation
-            </h5>
+            </h6>
         </div>
-        <div class="card-body">
-            <form method="post" action="@Url.Action("CreateTranslation", "Values")" id="createTranslationForm">
-                <input type="hidden" name="value" value="@valueKey" />
-                <input type="hidden" name="ValueId" value="@valueId" />
-                
-                <div class="row g-3">
+        <div class="card-body p-3">
+            <form id="createTranslationForm">
+                <input type="hidden" name="value" value="@valueKey"/>
+                <input type="hidden" name="ValueId" value="@valueId"/>
+
+                <div class="row g-2">
                     <div class="col-md-4">
-                        <label for="languageCode" class="form-label">Language</label>
-                        <select id="languageCode" name="languageCode" class="form-select" required>
+                        <label for="languageCode" class="form-label small">Language</label>
+                        <select id="languageCode" name="languageCode" class="form-select form-select-sm" required>
                             <option value="">Select Language</option>
                             @if (availableLanguages != null)
                             {
@@ -176,12 +182,13 @@
                         </select>
                     </div>
                     <div class="col-md-6">
-                        <label for="translation" class="form-label">Translation</label>
-                        <input type="text" id="translation" name="translation" class="form-control" required 
-                               placeholder="Enter translation for selected language..." />
+                        <label for="translation" class="form-label small">Translation</label>
+                        <input type="text" id="translation" name="translation" class="form-control form-control-sm"
+                               required
+                               placeholder="Enter translation for selected language..."/>
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-success w-100">
+                        <button type="submit" class="btn btn-success btn-sm w-100">
                             <i class="fas fa-plus"></i> Add
                         </button>
                     </div>
@@ -193,136 +200,95 @@
 
 <!-- Translations List -->
 <div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">
-            <i class="fas fa-language"></i> Translations (@translations.Count)
-        </h5>
-        @if (translations.Any())
-        {
-            <div class="d-flex gap-2">
+    <div class="card-header py-2 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">
+            <i class="fas fa-language"></i> Translations (<span id="translationsHeaderCount">@translations.Count</span>)
+        </h6>
+        <div class="d-flex gap-2" id="languageFilterContainer">
+            @if (translations.Any())
+            {
                 <select id="languageFilter" class="form-select form-select-sm" style="width: auto;">
                     <option value="">All Languages</option>
                     @foreach (var translation in translations.OrderBy(t => t.LanguageCode))
                     {
-                        <option value="@translation.LanguageCode" @(currentLanguage == translation.LanguageCode ? "selected" : "")>
+                        <option value="@translation.LanguageCode"
+                                @(currentLanguage == translation.LanguageCode ? "selected" : "")>
                             @translation.LanguageCode.ToUpper()
                         </option>
                     }
                 </select>
-            </div>
-        }
+            }
+        </div>
     </div>
-    <div class="card-body p-0">
+
+    <div id="translationsContainer">
         @if (translations.Any())
         {
             <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover table-sm align-middle mb-0">
                     <thead class="table-light">
-                        <tr>
-                            <th>Language</th>
-                            <th>Translation</th>
-                            <th>Character Count</th>
-                            <th>Actions</th>
-                        </tr>
+                    <tr>
+                        <th width="15%">Language</th>
+                        <th width="55%">Translation</th>
+                        <th width="15%">Length</th>
+                        <th width="15%">Actions</th>
+                    </tr>
                     </thead>
                     <tbody id="translationsTableBody">
-                        @foreach (var translation in translations.OrderBy(t => t.LanguageCode))
-                        {
-                            <tr data-language="@translation.LanguageCode">
-                                <td>
-                                    <span class="badge bg-primary">@translation.LanguageCode.ToUpper()</span>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="translation-text">@translation.ValueTranslation</span>
-                                        <button class="btn btn-sm btn-outline-secondary" 
-                                                onclick="copyToClipboard('@Html.Encode(translation.ValueTranslation)')" 
-                                                title="Copy Translation">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <small class="text-muted">@translation.ValueTranslation.Length chars</small>
-                                </td>
-                                <td>
-                                    <div class="d-flex gap-1">
-                                        <button class="btn btn-sm btn-outline-primary edit-translation-btn" 
-                                                data-language="@translation.LanguageCode"
-                                                data-translation="@Html.Encode(translation.ValueTranslation)"
-                                                title="Edit Translation">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <form method="post" action="@Url.Action("DeleteTranslation", "Values")" 
-                                              class="d-inline delete-translation-form">
-                                            <input type="hidden" name="value" value="@valueKey" />
-                                            <input type="hidden" name="ValueId" value="@valueId" />
-                                            <input type="hidden" name="languageCode" value="@translation.LanguageCode" />
-                                            <button type="button" class="btn btn-sm btn-outline-danger delete-translation-btn"
-                                                    data-language="@translation.LanguageCode"
-                                                    title="Delete Translation">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
-                            </tr>
-                        }
+                    @foreach (var translation in translations.OrderBy(t => t.LanguageCode))
+                    {
+                        <tr data-language="@translation.LanguageCode">
+                            <td>
+                                <span class="badge bg-primary">@translation.LanguageCode.ToUpper()</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="translation-text small">@translation.ValueTranslation</span>
+                                    <button class="btn btn-sm btn-outline-secondary px-2 py-1"
+                                            onclick="copyToClipboard('@Html.Encode(translation.ValueTranslation)')"
+                                            title="Copy Translation">
+                                        <i class="fas fa-copy fa-xs"></i>
+                                    </button>
+                                </div>
+                            </td>
+                            <td>
+                                <small class="text-muted">@translation.ValueTranslation.Length chars</small>
+                            </td>
+                            <td>
+                                @if (translations.Count > 1)
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-danger delete-translation-btn"
+                                            data-language="@translation.LanguageCode"
+                                            data-value="@valueKey"
+                                            title="Delete Translation">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary" disabled
+                                            title="Cannot delete - value must have at least one translation"
+                                            data-bs-toggle="tooltip" data-bs-placement="top">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                }
+                            </td>
+                        </tr>
+                    }
                     </tbody>
                 </table>
             </div>
         }
         else
         {
-            <div class="text-center text-muted py-5">
-                <i class="fas fa-language fa-3x mb-3"></i>
-                <div class="h5">No translations available</div>
-                <div>Add your first translation using the form above</div>
+            <div class="card-body">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-language fa-2x mb-3 d-block"></i>
+                    <div class="h6">No translations available</div>
+                    <small>Add your first translation using the form above</small>
+                </div>
             </div>
         }
-    </div>
-</div>
-
-<!-- Edit Translation Modal -->
-<div class="modal fade" id="editTranslationModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-edit"></i> Edit Translation
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <form method="post" action="@Url.Action("CreateTranslation", "Values")" id="editTranslationForm">
-                <input type="hidden" name="value" value="@valueKey" />
-                <input type="hidden" name="ValueId" value="@valueId" />
-                <input type="hidden" name="languageCode" id="editLanguageCode" />
-                
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label">Language</label>
-                        <div>
-                            <span id="editLanguageDisplay" class="badge bg-primary fs-6"></span>
-                        </div>
-                    </div>
-                    <div class="mb-3">
-                        <label for="editTranslation" class="form-label">Translation</label>
-                        <textarea id="editTranslation" name="translation" class="form-control" rows="3" required></textarea>
-                        <div class="form-text">
-                            Character count: <span id="charCount">0</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times"></i> Cancel
-                    </button>
-                    <button type="submit" class="btn btn-success">
-                        <i class="fas fa-save"></i> Update Translation
-                    </button>
-                </div>
-            </form>
-        </div>
     </div>
 </div>
 
@@ -330,25 +296,26 @@
 <div class="modal fade" id="deleteTranslationModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
+            <div class="modal-header py-2">
+                <h6 class="modal-title">
                     <i class="fas fa-exclamation-triangle text-danger"></i>
                     Delete Translation
-                </h5>
+                </h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p>Are you sure you want to delete the translation for language <strong id="deleteLanguageDisplay"></strong>?</p>
-                <div class="alert alert-warning">
+                <p>Are you sure you want to delete the translation for language <strong
+                        id="deleteLanguageDisplay"></strong>?</p>
+                <div class="alert alert-warning py-2">
                     <i class="fas fa-exclamation-triangle"></i>
                     <strong>Warning:</strong> This action cannot be undone!
                 </div>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            <div class="modal-footer py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">
                     <i class="fas fa-times"></i> Cancel
                 </button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteTranslationBtn">
+                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteTranslationBtn">
                     <i class="fas fa-trash"></i> Delete Translation
                 </button>
             </div>
@@ -356,16 +323,341 @@
     </div>
 </div>
 
-<!-- Same JavaScript as before, no changes needed -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Language filter functionality
-    const languageFilter = document.getElementById('languageFilter');
-    if (languageFilter) {
-        languageFilter.addEventListener('change', function() {
-            const selectedLanguage = this.value;
+    class ValueDetailsManager {
+        constructor() {
+            this.valueId = '@valueId';
+            this.valueKey = '@Html.Raw(valueKey)';
+            // FIX: Remove JSON serialization - get data differently
+            this.translations = [];
+            this.availableLanguages = [];
+            this.currentDeleteData = null;
+
+            // Initialize with existing data
+            this.initializeData();
+            this.init();
+        }
+
+        initializeData() {
+            // Get translations from DOM instead of JSON serialization
+            const rows = document.querySelectorAll('#translationsTableBody tr[data-language]');
+            this.translations = Array.from(rows).map(row => {
+                return {
+                    languageCode: row.getAttribute('data-language'),
+                    valueTranslation: row.querySelector('.translation-text').textContent.trim()
+                };
+            });
+
+            // Get available languages from select options
+            const options = document.querySelectorAll('#languageCode option[value]:not([value=""])');
+            this.availableLanguages = Array.from(options).map(option => {
+                const value = option.value;
+                const text = option.textContent;
+                const name = text.split(' (')[0];
+                return {
+                    languageCode: value,
+                    languageName: name
+                };
+            });
+        }
+
+        init() {
+            this.bindEvents();
+            this.initializeTooltips();
+            this.clearOldAlerts(); // FIX: Clear existing alerts
+        }
+
+        clearOldAlerts() {
+            // Remove TempData alerts after 5 seconds
+            setTimeout(() => {
+                const alerts = document.querySelectorAll('#alertContainer .alert');
+                alerts.forEach(alert => {
+                    const bsAlert = bootstrap.Alert.getInstance(alert);
+                    if (bsAlert) bsAlert.close();
+                });
+            }, 5000);
+        }
+
+        initializeTooltips() {
+            const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        }
+
+        bindEvents() {
+            // Create translation form
+            document.getElementById('createTranslationForm').addEventListener('submit', (e) => {
+                e.preventDefault();
+                this.createTranslation();
+            });
+
+            // Language filter
+            const languageFilter = document.getElementById('languageFilter');
+            if (languageFilter) {
+                languageFilter.addEventListener('change', (e) => {
+                    this.filterTranslations(e.target.value);
+                });
+            }
+
+            // Delete confirmation
+            document.getElementById('confirmDeleteTranslationBtn').addEventListener('click', () => {
+                if (this.currentDeleteData) {
+                    this.deleteTranslation(this.currentDeleteData.value, this.currentDeleteData.languageCode);
+                }
+            });
+
+            // Bind existing delete buttons
+            this.bindDeleteButtons();
+        }
+
+        bindDeleteButtons() {
+            document.querySelectorAll('.delete-translation-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const language = btn.getAttribute('data-language');
+                    const value = btn.getAttribute('data-value');
+                    this.showDeleteModal(language, value);
+                });
+            });
+        }
+
+        async createTranslation() {
+            const form = document.getElementById('createTranslationForm');
+            const formData = new FormData(form);
+            const submitBtn = form.querySelector('button[type="submit"]');
+
+            // Disable button and show loading
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+
+            try {
+                const response = await fetch('/Values/CreateTranslation', {  // FIX: Use absolute URL
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.showAlert(result.message, 'success');
+                    this.updateTranslations(result.translations);
+                    this.resetForm();
+                    this.collapseForm();  // FIX: Properly collapse form
+                } else {
+                    this.showAlert(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Error creating translation:', error);
+                this.showAlert('Failed to create translation. Please try again.', 'danger');
+            } finally {
+                // Reset button
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
+            }
+        }
+
+        async deleteTranslation(value, languageCode) {
+            const deleteBtn = document.getElementById('confirmDeleteTranslationBtn');
+
+            // Disable button and show loading
+            deleteBtn.disabled = true;
+            deleteBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+            try {
+                const formData = new FormData();
+                formData.append('value', value);
+                formData.append('ValueId', this.valueId);
+                formData.append('languageCode', languageCode);
+
+                const response = await fetch('/Values/DeleteTranslation', {  // FIX: Use absolute URL
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.showAlert(result.message, 'success');
+                    this.updateTranslations(result.translations);
+                    this.hideDeleteModal();  // FIX: Properly hide modal
+                } else {
+                    this.showAlert(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Error deleting translation:', error);
+                this.showAlert('Failed to delete translation. Please try again.', 'danger');
+            } finally {
+                // Reset button
+                deleteBtn.disabled = false;
+                deleteBtn.innerHTML = '<i class="fas fa-trash"></i> Delete Translation';
+            }
+        }
+
+        updateTranslations(newTranslations) {
+            this.translations = newTranslations;
+
+            // Update counts
+            document.getElementById('translationsCount').textContent = `${newTranslations.length} languages`;
+            document.getElementById('translationsHeaderCount').textContent = newTranslations.length;
+
+            // Re-render table
+            this.renderTranslationsTable();
+            this.updateLanguageOptions();
+            this.updateLanguageFilter();
+        }
+
+        renderTranslationsTable() {
+            const container = document.getElementById('translationsContainer');
+
+            if (this.translations.length === 0) {
+                container.innerHTML = `
+                <div class="card-body">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-language fa-2x mb-3 d-block"></i>
+                        <div class="h6">No translations available</div>
+                        <small>Add your first translation using the form above</small>
+                    </div>
+                </div>
+            `;
+                return;
+            }
+
+            const sortedTranslations = this.translations.sort((a, b) => a.languageCode.localeCompare(b.languageCode));
+
+            container.innerHTML = `
+            <div class="table-responsive">
+                <table class="table table-hover table-sm align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th width="15%">Language</th>
+                            <th width="55%">Translation</th>
+                            <th width="15%">Length</th>
+                            <th width="15%">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="translationsTableBody">
+                        ${sortedTranslations.map(translation => this.createTranslationRow(translation)).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+
+            // Re-bind delete buttons
+            this.bindDeleteButtons();
+            this.initializeTooltips();
+        }
+
+        createTranslationRow(translation) {
+            const canDelete = this.translations.length > 1;
+
+            return `
+            <tr data-language="${translation.languageCode}">
+                <td>
+                    <span class="badge bg-primary">${translation.languageCode.toUpperCase()}</span>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="translation-text small">${this.escapeHtml(translation.valueTranslation)}</span>
+                        <button class="btn btn-sm btn-outline-secondary px-2 py-1" 
+                                onclick="copyToClipboard('${this.escapeHtml(translation.valueTranslation)}')" 
+                                title="Copy Translation">
+                            <i class="fas fa-copy fa-xs"></i>
+                        </button>
+                    </div>
+                </td>
+                <td>
+                    <small class="text-muted">${translation.valueTranslation.length} chars</small>
+                </td>
+                <td>
+                    ${canDelete ? `
+                        <button type="button" class="btn btn-sm btn-outline-danger delete-translation-btn"
+                                data-language="${translation.languageCode}"
+                                data-value="${this.escapeHtml(this.valueKey)}"
+                                title="Delete Translation">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    ` : `
+                        <button class="btn btn-sm btn-outline-secondary" disabled
+                                title="Cannot delete - value must have at least one translation"
+                                data-bs-toggle="tooltip" data-bs-placement="top">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    `}
+                </td>
+            </tr>
+        `;
+        }
+
+        updateLanguageOptions() {
+            const select = document.getElementById('languageCode');
+            if (!select) return;
+
+            // Get current selection
+            const currentValue = select.value;
+
+            // Clear and rebuild options
+            select.innerHTML = '<option value="">Select Language</option>';
+
+            this.availableLanguages.forEach(lang => {
+                const isTranslated = this.translations.some(t => t.languageCode === lang.languageCode);
+                const option = document.createElement('option');
+                option.value = lang.languageCode;
+                option.textContent = `${lang.languageName} (${lang.languageCode.toUpperCase()})${isTranslated ? ' - Already translated' : ''}`;
+                option.disabled = isTranslated;
+                select.appendChild(option);
+            });
+
+            // Restore selection if still valid
+            if (currentValue && !this.translations.some(t => t.languageCode === currentValue)) {
+                select.value = currentValue;
+            }
+        }
+
+        updateLanguageFilter() {
+            const container = document.getElementById('languageFilterContainer');
+
+            if (this.translations.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            const sortedTranslations = this.translations.sort((a, b) => a.languageCode.localeCompare(b.languageCode));
+
+            container.innerHTML = `
+            <select id="languageFilter" class="form-select form-select-sm" style="width: auto;">
+                <option value="">All Languages</option>
+                ${sortedTranslations.map(t => `
+                    <option value="${t.languageCode}">${t.languageCode.toUpperCase()}</option>
+                `).join('')}
+            </select>
+        `;
+
+            // Re-bind filter event
+            const newFilter = document.getElementById('languageFilter');
+            if (newFilter) {
+                newFilter.addEventListener('change', (e) => {
+                    this.filterTranslations(e.target.value);
+                });
+            }
+        }
+
+        filterTranslations(selectedLanguage) {
             const rows = document.querySelectorAll('#translationsTableBody tr');
-            
+
             rows.forEach(row => {
                 const rowLanguage = row.getAttribute('data-language');
                 if (selectedLanguage === '' || rowLanguage === selectedLanguage) {
@@ -374,128 +666,101 @@ document.addEventListener('DOMContentLoaded', function() {
                     row.style.display = 'none';
                 }
             });
-        });
-    }
+        }
 
-    // Edit translation functionality
-    document.querySelectorAll('.edit-translation-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const language = this.getAttribute('data-language');
-            const translation = this.getAttribute('data-translation');
-            
-            document.getElementById('editLanguageCode').value = language;
-            document.getElementById('editLanguageDisplay').textContent = language.toUpperCase();
-            document.getElementById('editTranslation').value = translation;
-            updateCharCount();
-            
-            const modal = new bootstrap.Modal(document.getElementById('editTranslationModal'));
-            modal.show();
-        });
-    });
-
-    // Delete translation functionality
-    let currentDeleteForm = null;
-    document.querySelectorAll('.delete-translation-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const language = this.getAttribute('data-language');
-            currentDeleteForm = this.closest('.delete-translation-form');
-            
+        showDeleteModal(language, value) {
+            this.currentDeleteData = {language, value, languageCode: language};
             document.getElementById('deleteLanguageDisplay').textContent = language.toUpperCase();
-            
+
             const modal = new bootstrap.Modal(document.getElementById('deleteTranslationModal'));
             modal.show();
-        });
-    });
-
-    // Confirm delete translation
-    document.getElementById('confirmDeleteTranslationBtn').addEventListener('click', function() {
-        if (currentDeleteForm) {
-            currentDeleteForm.submit();
         }
-    });
 
-    // Character count for edit modal
-    const editTranslationTextarea = document.getElementById('editTranslation');
-    if (editTranslationTextarea) {
-        editTranslationTextarea.addEventListener('input', updateCharCount);
+        hideDeleteModal() {
+            const modal = bootstrap.Modal.getInstance(document.getElementById('deleteTranslationModal'));
+            if (modal) modal.hide();
+            this.currentDeleteData = null;
+        }
+
+        resetForm() {
+            document.getElementById('createTranslationForm').reset();
+        }
+
+        collapseForm() {
+            // FIX: Properly collapse the form
+            const collapseElement = document.getElementById('createTranslationSection');
+            const bsCollapse = new bootstrap.Collapse(collapseElement, {
+                hide: true
+            });
+        }
+
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        showAlert(message, type) {
+            // FIX: Clear existing alerts first
+            const existingAlerts = document.querySelectorAll('#alertContainer .alert');
+            existingAlerts.forEach(alert => {
+                if (alert.textContent.includes('Network error') || alert.textContent.includes('Translation')) {
+                    alert.remove();
+                }
+            });
+
+            const alertContainer = document.getElementById('alertContainer');
+            const alertId = 'alert-' + Date.now(); // Unique ID for each alert
+
+            const alertHtml = `
+            <div id="${alertId}" class="alert alert-${type} alert-dismissible fade show py-2">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+            alertContainer.insertAdjacentHTML('beforeend', alertHtml);
+
+            // Auto-dismiss after 3 seconds
+            setTimeout(() => {
+                const alert = document.getElementById(alertId);
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 3000);
+        }
     }
 
-    function updateCharCount() {
-        const textarea = document.getElementById('editTranslation');
-        const charCount = document.getElementById('charCount');
-        if (textarea && charCount) {
-            charCount.textContent = textarea.value.length;
+    // Copy to clipboard function
+    async function copyToClipboard(text) {
+        try {
+            await navigator.clipboard.writeText(text);
+            if (window.valueDetailsManager) {
+                valueDetailsManager.showAlert('Copied to clipboard!', 'success');
+            }
+        } catch (err) {
+            console.error('Failed to copy: ', err);
+            if (window.valueDetailsManager) {
+                valueDetailsManager.showAlert('Failed to copy to clipboard', 'danger');
+            }
         }
     }
 
-    // Form submission handling
-    document.getElementById('createTranslationForm').addEventListener('submit', function(e) {
-        const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-        
-        setTimeout(() => {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-plus"></i> Add';
-        }, 2000);
+    // Initialize when DOM is ready
+    let valueDetailsManager;
+    document.addEventListener('DOMContentLoaded', function () {
+        valueDetailsManager = new ValueDetailsManager();
+        window.valueDetailsManager = valueDetailsManager; // Make globally available
     });
-
-    document.getElementById('editTranslationForm').addEventListener('submit', function(e) {
-        const submitBtn = this.querySelector('button[type="submit"]');
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-        
-        setTimeout(() => {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-save"></i> Update Translation';
-        }, 2000);
-    });
-});
-
-// Copy to clipboard function
-async function copyToClipboard(text) {
-    try {
-        await navigator.clipboard.writeText(text);
-        showAlert('Copied to clipboard!', 'success');
-    } catch (err) {
-        console.error('Failed to copy: ', err);
-        showAlert('Failed to copy to clipboard', 'danger');
-    }
-}
-
-// Show alert function
-function showAlert(message, type) {
-    const alertContainer = document.getElementById('alertContainer');
-    const alertHtml = `
-        <div class="alert alert-${type} alert-dismissible fade show">
-            ${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    `;
-    alertContainer.insertAdjacentHTML('beforeend', alertHtml);
-
-    // Auto-dismiss after 3 seconds
-    setTimeout(() => {
-        const alert = alertContainer.querySelector('.alert:last-child');
-        if (alert) {
-            const bsAlert = new bootstrap.Alert(alert);
-            bsAlert.close();
-        }
-    }, 3000);
-}
 </script>
 
 <style>
-    .fs-5 {
-        font-size: 1.25rem;
-    }
-
-    .fs-6 {
-        font-size: 1rem;
+    .fa-xs {
+        font-size: 0.75rem;
     }
 
     .badge {
-        font-size: 0.875em;
+        font-size: 0.8rem;
     }
 
     .gap-1 {
@@ -508,40 +773,20 @@ function showAlert(message, type) {
 
     .translation-text {
         word-break: break-word;
-        max-width: 300px;
     }
 
     .table th {
         vertical-align: middle;
-        white-space: nowrap;
+        background-color: #f8f9fa;
+        font-weight: 600;
+        border-top: none;
     }
 
     .table td {
         vertical-align: middle;
     }
 
-    .card-header h5 {
-        margin-bottom: 0;
-    }
-
-    .form-select-sm {
-        padding: 0.25rem 0.5rem;
-        font-size: 0.875rem;
-    }
-
-    .alert {
-        margin-bottom: 1rem;
-    }
-
-    .modal-body .form-text {
-        margin-top: 0.25rem;
-    }
-
-    #charCount {
-        font-weight: bold;
-    }
-
-    .delete-translation-form {
-        display: inline-block;
+    .btn-sm {
+        font-size: 0.8rem;
     }
 </style>
