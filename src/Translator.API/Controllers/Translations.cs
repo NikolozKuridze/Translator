@@ -1,8 +1,7 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
-using Translator.Application.Features.Translation.Commands.CreateTranslation;
-using Translator.Application.Features.Translation.Commands.DeleteTranslation;
+using Translator.Application.Features.Translation.Commands;
 
 namespace Translator.API.Controllers;
 
@@ -17,14 +16,14 @@ public class Translations : Controller
     {
         _mediator = mediator;
     }
-    
+
 
     [HttpPost("Create")]
     public async Task<IActionResult> Create(string value, string translation, string languageCode)
     {
-        var command = new CreateTranslationCommand(value.Trim(), translation, languageCode.Trim());
+        var command = new CreateTranslation.Command(value.Trim(), translation, languageCode.Trim());
         await _mediator.Send(command);
-        
+
         TempData["SuccessMessage"] = "Translation created successfully!";
         return RedirectToAction("Index");
     }
@@ -32,9 +31,9 @@ public class Translations : Controller
     [HttpPost("Delete")]
     public async Task<IActionResult> Delete(string value, string languageCode)
     {
-        var command = new DeleteTranslationCommand(value, languageCode);
+        var command = new DeleteTranslation.Command(value, languageCode);
         await _mediator.Send(command);
-        
+
         TempData["SuccessMessage"] = "Translation deleted successfully!";
         return RedirectToAction("Index");
     }
