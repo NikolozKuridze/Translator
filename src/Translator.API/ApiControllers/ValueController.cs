@@ -15,10 +15,13 @@ public class ValueController : ControllerBase
 {
     private readonly IMediator _mediator;
 
-    public ValueController(IMediator mediator) => _mediator = mediator;
+    public ValueController(IMediator mediator)
+    {
+        _mediator = mediator;
+    }
 
     [HttpGet("get-value/")]
-    [ProducesResponseType(typeof(GetValue.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(IEnumerable<GetValue.Response>), StatusCodes.Status200OK)]
     public async Task<IResult> GetValue(
         [FromQuery] Guid valueId,
         [FromQuery] bool allTranslations,
@@ -30,11 +33,11 @@ public class ValueController : ControllerBase
     }
 
     [HttpGet("get-all-values/")]
-    [ProducesResponseType(typeof(GetAllValues.Response), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(PaginatedResponse<GetAllValues.Response>), StatusCodes.Status200OK)]
     public async Task<IResult> GetAllValues(
-        [FromQuery] int pageNumber = 1, 
+        [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10,
-        [FromQuery] string sortBy = "date", 
+        [FromQuery] string sortBy = "date",
         [FromQuery] string sortDirection = "asc")
     {
         var command = new GetAllValues.Command(
@@ -44,8 +47,8 @@ public class ValueController : ControllerBase
                 null,
                 null,
                 null,
-                sortBy: sortBy,
-                sortDirection: sortDirection));
+                sortBy,
+                sortDirection));
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
@@ -61,7 +64,7 @@ public class ValueController : ControllerBase
         var result = await _mediator.Send(command);
         return Results.Ok(result);
     }
-    
+
     [HttpPost("add-value")]
     public async Task<IResult> AddValue(
         [FromBody] CreateValueModel model)
