@@ -1,5 +1,6 @@
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
+using Translator.API.Attributes;
 using Translator.API.Models;
 using Translator.Application.Features.Template.Commands.CreateTemplate;
 using Translator.Application.Features.Template.Commands.DeleteTemplate;
@@ -10,6 +11,7 @@ using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
+[UserAuth]
 [ApiController]
 [Route("api")]
 public class TemplateController : ControllerBase
