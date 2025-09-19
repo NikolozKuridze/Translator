@@ -1,20 +1,30 @@
-@model IEnumerable<Translator.Application.Features.Template.Queries.GetAllTemplates.GetAllTemplatesResponse>
+@model IEnumerable<Translator.Application.Features.TemplatesAdmin.Queries.AdminGetAllTemplates.Response>
 
 @{
     Layout = "_Layout";
     ViewBag.Title = "Templates";
     var currentPage = ViewBag.CurrentPage ?? 1;
-    var pageSize = ViewBag.PageSize ?? 10;
+    var pageSize = ViewBag.PageSize ?? 25;
     var totalPages = ViewBag.TotalPages ?? 1;
     var totalCount = ViewBag.TotalCount ?? 0;
     var sortBy = ViewBag.SortBy as string ?? "name";
     var sortDirection = ViewBag.SortDirection as string ?? "asc";
     var searchKey = ViewBag.TemplateName as string ?? "";
+    var globalCount = ViewBag.GlobalCount ?? 0;
+    var userCount = ViewBag.UserCount ?? 0;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Templates <small class="text-muted" id="totalCountInfo">(@totalCount total)</small></h2>
-    <button class="btn btn-success" type="button" data-bs-toggle="collapse" data-bs-target="#createTemplateSection">
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div>
+        <h4><i class="fas fa-layer-group"></i> Templates 
+            <small class="text-muted" id="totalCountInfo">(@totalCount total)</small>
+        </h4>
+        <div class="small text-muted">
+            <span class="badge bg-success me-1">@globalCount Global</span>
+            <span class="badge bg-info">@userCount User</span>
+        </div>
+    </div>
+    <button class="btn btn-success btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#createTemplateSection">
         <i class="fas fa-plus"></i> Create Template
     </button>
 </div>
@@ -38,69 +48,84 @@
     }
 </div>
 
-<!-- Search Form -->
+<!-- Search & Filters -->
 <div class="card mb-3">
-    <div class="card-body">
-        <form id="searchForm" class="row g-3">
+    <div class="card-body py-2">
+        <form id="searchForm" class="row g-2 align-items-end">
             <div class="col-md-4">
-                <label class="form-label">Search by Name</label>
-                <input type="text" id="searchInput" name="templateName" 
-                       value="@searchKey" 
-                       class="form-control"
-                       placeholder="Enter template name to search..." />
+                <input type="text" id="searchInput" name="templateName"
+                       value="@searchKey"
+                       class="form-control form-control-sm"
+                       placeholder="Search templates..."/>
             </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">
+            <div class="col-md-3">
+                <select id="ownershipFilter" class="form-select form-select-sm">
+                    <option value="">All Templates</option>
+                    <option value="global">Global Only</option>
+                    <option value="user">User Only</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary btn-sm me-1">
                     <i class="fas fa-search"></i> Search
                 </button>
-                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary" style="display: @(string.IsNullOrEmpty(searchKey) ? "none" : "inline-block")">
-                    <i class="fas fa-times"></i> Clear
+                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary btn-sm"
+                        style="display: @(string.IsNullOrEmpty(searchKey) ? "none" : "inline-block")">
+                    <i class="fas fa-times"></i>
                 </button>
+            </div>
+            <div class="col-md-3 text-end">
+                <select id="pageSizeSelect" class="form-select form-select-sm d-inline-block" style="width: 80px;">
+                    <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
+                    <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
+                    <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
+                </select>
+                <span class="small text-muted ms-2">per page</span>
             </div>
         </form>
     </div>
 </div>
 
 <!-- Create Template Form -->
-<div class="collapse mb-4" id="createTemplateSection">
+<div class="collapse mb-3" id="createTemplateSection">
     <div class="card">
-        <div class="card-header">
-            <h5 class="mb-0">Create New Template</h5>
+        <div class="card-header py-2">
+            <h6 class="mb-0">Create Global Template</h6>
         </div>
-        <div class="card-body">
+        <div class="card-body p-3">
             <form id="createTemplateForm">
-                <div class="mb-3">
-                    <label for="templateName" class="form-label">Template Name</label>
-                    <input type="text" name="templateName" id="templateName" class="form-control" required>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Template Values</label>
-                    <div id="valuesContainer">
-                        <div class="mb-2 value-input-group">
-                            <div class="position-relative">
-                                <input type="text" name="values" class="form-control value-input" 
-                                       placeholder="Type to search for values..." 
-                                       autocomplete="off" 
-                                       required>
-                                <div class="autocomplete-dropdown" style="display: none;"></div>
-                            </div>
-                            <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)" disabled>
-                                <i class="fas fa-trash"></i> Remove
-                            </button>
-                        </div>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="templateName" class="form-label small">Template Name</label>
+                        <input type="text" name="templateName" id="templateName" class="form-control form-control-sm" required>
                     </div>
-                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="addValueInput()">
-                        <i class="fas fa-plus"></i> Add Value
-                    </button>
+                    <div class="col-md-8">
+                        <label class="form-label small">Template Values</label>
+                        <div id="valuesContainer">
+                            <div class="mb-2 value-input-group">
+                                <div class="position-relative">
+                                    <input type="text" name="values" class="form-control form-control-sm value-input"
+                                           placeholder="Type to search for values..."
+                                           autocomplete="off" required>
+                                    <div class="autocomplete-dropdown" style="display: none;"></div>
+                                </div>
+                                <button class="btn btn-outline-danger btn-sm mt-1" type="button" onclick="removeValueInput(this)" disabled>
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-outline-primary btn-sm" onclick="addValueInput()">
+                            <i class="fas fa-plus"></i> Add Value
+                        </button>
+                    </div>
                 </div>
-
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-success">
+                
+                <div class="d-flex gap-2 mt-3">
+                    <button type="submit" class="btn btn-success btn-sm">
                         <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
-                        Create
+                        Create Global Template
                     </button>
-                    <button type="button" class="btn btn-secondary" onclick="templateManager.clearForm()">Clear</button>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="templateManager.clearForm()">Clear</button>
                 </div>
             </form>
         </div>
@@ -109,106 +134,114 @@
 
 <!-- Templates Table -->
 <div class="card">
-    <div class="card-body" style="padding:0;">
-        <div class="table-responsive">
-            <table class="table table-hover align-middle mb-0">
-                <thead class="table-light">
-                <tr>
-                    <th>
-                        Name
-                        <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="name" title="Sort by name">
-                            <i class="fas fa-sort sort-icon-name"></i>
-                        </button>
-                    </th>
-                    <th>Value Count</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody id="templatesTableBody">
-                    @if (Model != null && Model.Any())
-                    {
-                        foreach (var template in Model)
+    <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+            <thead class="table-light">
+            <tr>
+                <th>
+                    <span>Template</span>
+                    <button class="btn btn-link btn-sm p-0 ms-1 sort-btn" data-sort="name" title="Sort by name">
+                        <i class="fas fa-sort sort-icon-name text-muted"></i>
+                    </button>
+                </th>
+                <th>Owner</th>
+                <th>
+                    <span>Values</span>
+                    <button class="btn btn-link btn-sm p-0 ms-1 sort-btn" data-sort="value" title="Sort by count">
+                        <i class="fas fa-sort sort-icon-value text-muted"></i>
+                    </button>
+                </th>
+                <th width="140">Actions</th>
+            </tr>
+            </thead>
+            <tbody id="templatesTableBody">
+            @if (Model != null && Model.Any())
+            {
+                foreach (var template in Model)
+                {
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-medium">@template.TemplateName</span>
+                                <button class="btn btn-outline-secondary btn-sm px-2 py-1"
+                                        onclick="copyTemplateId('@template.TemplateId')"
+                                        title="Copy Template ID">
+                                    <i class="fas fa-copy fa-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td>
+                            @if (template.IsGlobal)
+                            {
+                                <span class="badge bg-success">Global</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-info">@template.OwnerName</span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">@template.ValueCount</span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="@Url.Action("Details", "Templates", new
+                                         {
+                                             templateId = template.TemplateId,
+                                             templateName = template.TemplateName,
+                                             lang = "",
+                                             pageNumber = 1,
+                                             pageSize = 10
+                                         })" class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <button class="btn btn-outline-danger btn-sm"
+                                        onclick="showDeleteModal('@Html.Raw(Html.Encode(template.TemplateName))')">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr id="emptyState">
+                    <td colspan="4" class="text-center text-muted py-4">
+                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                        <div>No templates found</div>
+                        @if (!string.IsNullOrEmpty(searchKey))
                         {
-                            <tr>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-primary">@template.TemplateName</span>
-                                        <button class="btn btn-sm btn-outline-secondary" 
-                                                onclick="copyTemplateId('@template.TemplateId')" 
-                                                title="Copy Template ID">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <span class="badge bg-secondary">@template.ValueCount</span>
-                                </td>
-                                <td>
-                                    <div class="d-flex gap-1">
-                                        <a href="@Url.Action("Details", "Templates", new { 
-                                                     templateId = template.TemplateId, 
-                                                     templateName = template.TemplateName,
-                                                     lang = "",
-                                                     pageNumber = 1,
-                                                     pageSize = 10 
-                                                 })" class="btn btn-sm btn-outline-primary">
-                                            <i class="fas fa-eye"></i> View
-                                        </a>
-                                        <button class="btn btn-sm btn-outline-danger" 
-                                                onclick="showDeleteModal('@Html.Raw(Html.Encode(template.TemplateName))')">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                            </tr>
+                            <small class="text-muted">Try adjusting your search criteria</small>
                         }
-                    }
-                    else
-                    {
-                        <tr id="emptyState">
-                            <td colspan="3" class="text-center text-muted py-4">
-                                <i class="fas fa-inbox fa-3x mb-3"></i>
-                                <div>No templates found</div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
     </div>
 </div>
 
-<!-- Pagination container -->
+<!-- Pagination -->
 <div id="paginationContainer">
-    @if (Model != null && Model.Any() && (totalCount > pageSize || totalPages > 1))
+    @if (Model != null && Model.Any() && totalPages > 1)
     {
-        <nav class="mt-4">
+        <nav class="mt-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
                 <small class="text-muted" id="paginationInfo">
                     Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
                 </small>
-                <small class="text-muted" id="pageInfo">Page @currentPage of @totalPages</small>
+                <small class="text-muted">Page @currentPage of @totalPages</small>
             </div>
-            
-            <ul class="pagination justify-content-center">
+
+            <ul class="pagination pagination-sm justify-content-center">
                 @if (currentPage > 1)
                 {
                     <li class="page-item">
-                        <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
-                            <i class="fas fa-angle-double-left"></i> First
-                        </a>
+                        <a class="page-link page-link-custom" href="#" data-page="1">First</a>
                     </li>
                     <li class="page-item">
                         <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
-                    </li>
-                }
-                else
-                {
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">Previous</span>
                     </li>
                 }
 
@@ -234,18 +267,7 @@
                         <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link page-link-custom" href="#" data-page="@totalPages" title="Last page">
-                            Last <i class="fas fa-angle-double-right"></i>
-                        </a>
-                    </li>
-                }
-                else
-                {
-                    <li class="page-item disabled">
-                        <span class="page-link">Next</span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                        <a class="page-link page-link-custom" href="#" data-page="@totalPages">Last</a>
                     </li>
                 }
             </ul>
@@ -253,47 +275,30 @@
     }
     else if (Model != null && Model.Any())
     {
-        <div class="mt-4 text-center">
+        <div class="mt-3 text-center">
             <small class="text-muted">Showing all @totalCount results</small>
         </div>
     }
 </div>
-
-<!-- Page size selector container -->
-<div id="pageSizeContainer">
-    @if (Model != null && Model.Any() && totalCount > 5)
-    {
-        <div class="d-flex justify-content-end align-items-center mt-3">
-            <label class="form-label me-2 mb-0">Show:</label>
-            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-                <option value="5" @(pageSize == 5 ? "selected" : "")>5</option>
-                <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
-                <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
-                <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
-            </select>
-        </div>
-    }
-</div>
-
 
 <!-- Delete Modal -->
 <div class="modal fade" id="deleteTemplateModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Delete Template</h5>
+                <h6 class="modal-title">Delete Template</h6>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <p>Are you sure you want to delete template <strong id="templateNameToDelete"></strong>?</p>
-                <div class="alert alert-warning">
+                <div class="alert alert-warning py-2">
                     <i class="fas fa-exclamation-triangle"></i>
                     <strong>Warning:</strong> This action cannot be undone!
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteBtn">
                     <i class="fas fa-trash"></i> Delete
                 </button>
             </div>
@@ -301,939 +306,12 @@
     </div>
 </div>
 
-<script>
-class TemplateManager {
-    constructor() {
-        this.currentPage = @currentPage;
-        this.pageSize = @pageSize;
-        this.sortBy = '@sortBy';
-        this.sortDirection = '@sortDirection';
-        this.searchKey = '@Html.Raw(searchKey)';
-        this.totalCount = @totalCount;
-        this.totalPages = @totalPages;
-        this.searchTimeout = null;
-        
-        this.init();
-    }
-
-    init() {
-        console.log('🚀 Initializing TemplateManager...');
-        this.bindEvents();
-        this.updateUI();
-        this.initializeAutocomplete();
-    }
-    
-    
-    initializeAutocomplete() {
-        // Инициализируем автокомплит для всех существующих полей
-        document.querySelectorAll('.value-input').forEach(input => {
-            this.setupAutocomplete(input);
-        });
-    }
-
-    setupAutocomplete(inputElement) {
-        const dropdown = inputElement.parentElement.querySelector('.autocomplete-dropdown');
-        let currentFocus = -1;
-
-        inputElement.addEventListener('input', (e) => {
-            const value = e.target.value.trim();
-
-            // Check for duplicates in real-time
-            this.validateDuplicateValue(inputElement);
-
-            clearTimeout(this.searchTimeout);
-
-            if (value.length < 1) {
-                this.hideDropdown(dropdown);
-                return;
-            }
-
-            this.searchTimeout = setTimeout(() => {
-                this.searchValues(value, dropdown, inputElement);
-            }, 300);
-        });
-        
-        inputElement.addEventListener('keydown', (e) => {
-            const items = dropdown.querySelectorAll('.autocomplete-item');
-            
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                currentFocus++;
-                if (currentFocus >= items.length) currentFocus = 0;
-                this.setActive(items, currentFocus);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                currentFocus--;
-                if (currentFocus < 0) currentFocus = items.length - 1;
-                this.setActive(items, currentFocus);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                if (currentFocus > -1 && items[currentFocus]) {
-                    items[currentFocus].click();
-                }
-            } else if (e.key === 'Escape') {
-                this.hideDropdown(dropdown);
-            }
-        });
-        
-        inputElement.addEventListener('blur', (e) => {
-            // Задержка чтобы клик по элементу успел сработать
-            setTimeout(() => {
-                this.hideDropdown(dropdown);
-            }, 200);
-        });
-    }
-
-    validateDuplicateValue(currentInput) {
-        const currentValue = currentInput.value.trim().toLowerCase();
-        const allInputs = document.querySelectorAll('input[name="values"]');
-        let isDuplicate = false;
-
-        // Clear previous error styling
-        currentInput.classList.remove('is-invalid');
-        const existingError = currentInput.parentElement.querySelector('.duplicate-error');
-        if (existingError) {
-            existingError.remove();
-        }
-
-        if (currentValue) {
-            allInputs.forEach(input => {
-                if (input !== currentInput && input.value.trim().toLowerCase() === currentValue) {
-                    isDuplicate = true;
-                }
-            });
-
-            if (isDuplicate) {
-                currentInput.classList.add('is-invalid');
-                const errorDiv = document.createElement('div');
-                errorDiv.className = 'invalid-feedback duplicate-error';
-                errorDiv.textContent = 'This value already exists (case-insensitive)';
-                currentInput.parentElement.appendChild(errorDiv);
-            }
-        }
-
-        return !isDuplicate;
-    }
-
-
-    async searchValues(searchTerm, dropdown, inputElement) {
-        try {
-            const params = new URLSearchParams({
-                valueKey: searchTerm,
-                pageNumber: 1,
-                pageSize: 20,
-                sortBy: 'date',
-                sortDirection: 'desc'
-            });
-
-            const response = await fetch(`/Values/Search?${params}`, {
-                headers: { 'X-Requested-With': 'XMLHttpRequest' }
-            });
-
-            const data = await response.json();
-            
-            if (data.success && data.data && data.data.length > 0) {
-                this.showDropdown(dropdown, data.data, inputElement);
-            } else {
-                this.hideDropdown(dropdown);
-            }
-        } catch (error) {
-            console.error('Search error:', error);
-            this.hideDropdown(dropdown);
-        }
-    }
-    
-    showDropdown(dropdown, items, inputElement) {
-        dropdown.innerHTML = '';
-        
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'autocomplete-item';
-            div.innerHTML = `<i class="fas fa-tag text-primary me-2"></i>${this.escapeHtml(item.key)}`;
-            div.addEventListener('click', () => {
-                inputElement.value = item.key;
-                this.hideDropdown(dropdown);
-                inputElement.focus();
-            });
-            dropdown.appendChild(div);
-        });
-        
-        dropdown.style.display = 'block';
-    }
-    
-    hideDropdown(dropdown) {
-        dropdown.style.display = 'none';
-        dropdown.innerHTML = '';
-    }
-    
-    setActive(items, index) {
-        items.forEach((item, i) => {
-            item.classList.toggle('active', i === index);
-        });
-    }
-    
-    bindEvents() {
-        // Search form
-        document.getElementById('searchForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.performSearch();
-        });
-
-        const searchInput = document.getElementById('searchInput');
-        let debounceTimeout;
-
-        // Fix: Separate live search from input field updates
-        searchInput.addEventListener('input', (e) => {
-            clearTimeout(debounceTimeout);
-
-            // Update the internal search key without triggering full UI update
-            const inputValue = e.target.value.trim();
-
-            debounceTimeout = setTimeout(() => {
-                // Only update search key and perform search without updating the input field
-                this.searchKey = inputValue;
-                this.currentPage = 1;
-                this.loadDataWithoutInputUpdate();
-                this.updateSearchUI();
-            }, 300);
-        });
-
-        // Clear search
-        document.getElementById('clearSearchBtn').addEventListener('click', () => {
-            this.clearSearch();
-        });
-
-        // Create form
-        document.getElementById('createTemplateForm').addEventListener('submit', (e) => {
-            e.preventDefault();
-            this.createTemplate();
-        });
-
-        // Sort buttons
-        document.querySelectorAll('.sort-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.preventDefault();
-                const sortBy = btn.getAttribute('data-sort');
-                this.sortTemplates(sortBy);
-            });
-        });
-
-        // Page size selector
-        const pageSizeSelect = document.getElementById('pageSizeSelect');
-        if (pageSizeSelect) {
-            pageSizeSelect.addEventListener('change', (e) => {
-                this.pageSize = parseInt(e.target.value);
-                this.currentPage = 1;
-                this.loadData();
-            });
-        }
-
-        // Delete confirmation
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-            const templateName = document.getElementById('templateNameToDelete').textContent;
-            this.deleteTemplate(templateName);
-        });
-
-        // Bind pagination and table events
-        this.bindPaginationEvents();
-        
-        // Закрытие дропдаунов при клике вне
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest('.value-input-group')) {
-                document.querySelectorAll('.autocomplete-dropdown').forEach(dropdown => {
-                    this.hideDropdown(dropdown);
-                });
-            }
-        });
-    }
-
-    async performSearch() {
-        const searchInput = document.getElementById('searchInput');
-        const submitBtn = document.querySelector('#searchForm button[type="submit"]');
-        
-        this.searchKey = searchInput.value.trim();
-        this.currentPage = 1;
-        
-        submitBtn.disabled = true;
-        
-        try {
-            await this.loadData();
-            this.updateSearchUI();
-        } finally {
-            submitBtn.disabled = false;
-        }
-    }
-
-    clearSearch() {
-        document.getElementById('searchInput').value = '';
-        this.searchKey = '';
-        this.currentPage = 1;
-        this.loadData();
-        this.updateSearchUI();
-    }
-
-    updateSearchUI() {
-        const clearBtn = document.getElementById('clearSearchBtn');
-        clearBtn.style.display = this.searchKey ? 'inline-block' : 'none';
-    }
-
-    async createTemplate() {
-        const form = document.getElementById('createTemplateForm');
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const spinner = submitBtn.querySelector('.spinner-border');
-
-        const templateName = document.getElementById('templateName').value.trim();
-        const valueInputs = document.querySelectorAll('input[name="values"]');
-        const values = [];
-        const seenValues = new Set(); // Track case-insensitive values
-        let hasDuplicates = false;
-        let duplicateValue = '';
-
-        valueInputs.forEach(input => {
-            const val = input.value.trim();
-            if (val) {
-                const lowerVal = val.toLowerCase();
-                if (seenValues.has(lowerVal)) {
-                    hasDuplicates = true;
-                    duplicateValue = val;
-                    return;
-                }
-                seenValues.add(lowerVal);
-                values.push(val);
-            }
-        });
-
-        if (!templateName || values.length === 0) {
-            this.showError('Template name and at least one value are required');
-            return;
-        }
-
-        if (hasDuplicates) {
-            this.showError(`Duplicate value detected: "${duplicateValue}". Values are case-insensitive and must be unique.`);
-            return;
-        }
-
-        submitBtn.disabled = true;
-        if (spinner) spinner.classList.remove('d-none');
-        
-        try {
-            const formData = new FormData();
-            formData.append('templateName', templateName);
-            values.forEach(value => formData.append('values', value));
-
-            const response = await fetch('/Templates/Create', {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
-            });
-
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showSuccess(result.message);
-                this.clearForm();
-                this.hideCreateForm();
-                this.loadData();
-            } else {
-                this.showError(result.message);
-            }
-        } catch (error) {
-            console.error('Error creating template:', error);
-            this.showError('Failed to create template');
-        } finally {
-            submitBtn.disabled = false;
-            if (spinner) spinner.classList.add('d-none');
-        }
-    }
-
-    async deleteTemplate(templateName) {
-        const deleteBtn = document.getElementById('confirmDeleteBtn');
-        
-        deleteBtn.disabled = true;
-
-        try {
-            const formData = new FormData();
-            formData.append('templateName', templateName);
-
-            const response = await fetch('/Templates/Delete', {
-                method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
-            });
-
-            const result = await response.json();
-            
-            if (result.success) {
-                this.showSuccess(result.message);
-                const modal = document.getElementById('deleteTemplateModal');
-                if (window.bootstrap) {
-                    const bsModal = bootstrap.Modal.getInstance(modal);
-                    if (bsModal) bsModal.hide();
-                }
-                this.loadData();
-            } else {
-                this.showError(result.message);
-            }
-        } catch (error) {
-            console.error('Error deleting template:', error);
-            this.showError('Failed to delete template');
-        } finally {
-            deleteBtn.disabled = false;
-        }
-    }
-
-    sortTemplates(sortBy) {
-        if (this.sortBy === sortBy) {
-            this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
-        } else {
-            this.sortBy = sortBy;
-            this.sortDirection = 'asc';
-        }
-        this.currentPage = 1;
-        this.loadData();
-    }
-
-    async loadData() {
-        console.log('🔄 Loading data...');
-        this.updateSortIcons();
-        
-        try {
-            const params = new URLSearchParams({
-                pageNumber: this.currentPage,
-                pageSize: this.pageSize,
-                sortBy: this.sortBy,
-                sortDirection: this.sortDirection
-            });
-
-            if (this.searchKey) {
-                params.append('templateName', this.searchKey);
-            }
-
-            const endpoint = this.searchKey ? '/Templates/Search' : '/Templates/';
-            const response = await fetch(`${endpoint}?${params}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            console.log('✅ Response data:', result);
-
-            if (result.success) {
-                this.updatePageData(result);
-                this.renderTemplates(result.data || []);
-                this.renderPagination(result);
-                this.renderPageSizeSelector(result);
-                this.updateUI();
-            } else {
-                this.showError('Failed to load templates: ' + (result.message || 'Unknown error'));
-                this.renderEmptyState();
-            }
-        } catch (error) {
-            console.error('💥 Error loading data:', error);
-            this.showError('Network error: ' + error.message);
-            this.renderEmptyState();
-        }
-    }
-
-    updatePageData(data) {
-        this.currentPage = data.currentPage || 1;
-        this.totalPages = data.totalPages || 1;
-        this.totalCount = data.totalCount || 0;
-        this.pageSize = data.pageSize || 10;
-        this.sortBy = data.sortBy || this.sortBy;
-        this.sortDirection = data.sortDirection || this.sortDirection;
-        if (data.searchKey !== undefined) {
-            this.searchKey = data.searchKey;
-        }
-    }
-
-    async loadDataWithoutInputUpdate() {
-        console.log('🔄 Loading data...');
-        this.updateSortIcons();
-
-        try {
-            const params = new URLSearchParams({
-                pageNumber: this.currentPage,
-                pageSize: this.pageSize,
-                sortBy: this.sortBy,
-                sortDirection: this.sortDirection
-            });
-
-            if (this.searchKey) {
-                params.append('templateName', this.searchKey);
-            }
-
-            const endpoint = this.searchKey ? '/Templates/Search' : '/Templates/';
-            const response = await fetch(`${endpoint}?${params}`, {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-
-            const result = await response.json();
-            console.log('✅ Response data:', result);
-
-            if (result.success) {
-                this.updatePageData(result);
-                this.renderTemplates(result.data || []);
-                this.renderPagination(result);
-                this.renderPageSizeSelector(result);
-                // Don't call this.updateUI() here as it updates the search input
-                document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
-            } else {
-                this.showError('Failed to load templates: ' + (result.message || 'Unknown error'));
-                this.renderEmptyState();
-            }
-        } catch (error) {
-            console.error('💥 Error loading data:', error);
-            this.showError('Network error: ' + error.message);
-            this.renderEmptyState();
-        }
-    }
-
-    updateUI() {
-        // Update total count
-        document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
-
-        // Only update search input if it's not currently focused (user is not typing)
-        const searchInput = document.getElementById('searchInput');
-        if (document.activeElement !== searchInput) {
-            searchInput.value = this.searchKey;
-        }
-
-        this.updateSearchUI();
-    }
-
-    renderTemplates(templates) {
-        const tbody = document.getElementById('templatesTableBody');
-        
-        // Remove existing rows except empty state
-        const existingRows = tbody.querySelectorAll('tr:not(#emptyState)');
-        existingRows.forEach(row => row.remove());
-
-        // Remove empty state if it exists
-        const emptyState = document.getElementById('emptyState');
-        if (emptyState) emptyState.remove();
-
-        if (templates && templates.length > 0) {
-            templates.forEach(template => {
-                const row = this.createTemplateRow(template);
-                tbody.insertAdjacentHTML('beforeend', row);
-            });
-            this.bindTableEvents();
-        } else {
-            this.renderEmptyState();
-        }
-    }
-
-    createTemplateRow(template) {
-        return `
-        <tr>
-            <td>
-                <div class="d-flex align-items-center gap-2">
-                    <span class="badge bg-primary">${this.escapeHtml(template.templateName)}</span>
-                    <button class="btn btn-sm btn-outline-secondary copy-template-btn" 
-                            data-id="${template.templateId}" 
-                            title="Copy Template ID">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                </div>
-            </td>
-            <td>
-                <span class="badge bg-secondary">${template.valueCount}</span>
-            </td>
-            <td>
-                <div class="d-flex gap-1">
-                    <a href="/Templates/Details?templateId=${template.templateId}&templateName=${encodeURIComponent(template.templateName)}&lang=&pageNumber=1&pageSize=10" 
-                       class="btn btn-sm btn-outline-primary">
-                        <i class="fas fa-eye"></i> View
-                    </a>
-                    <button class="btn btn-sm btn-outline-danger delete-template-btn" 
-                            data-template="${this.escapeHtml(template.templateName)}">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `;
-    }
-
-
-    bindTableEvents() {
-        // Copy buttons
-        document.querySelectorAll('.copy-template-btn').forEach(btn => {
-            btn.addEventListener('click', async (e) => {
-                const templateId = btn.getAttribute('data-id');
-                await copyTemplateId(templateId);
-            });
-        });
-
-        // Delete buttons
-        document.querySelectorAll('.delete-template-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                const templateName = btn.getAttribute('data-template');
-                showDeleteModal(templateName);
-            });
-        });
-    }
-
-    renderEmptyState() {
-        const tbody = document.getElementById('templatesTableBody');
-        tbody.insertAdjacentHTML('beforeend', `
-            <tr id="emptyState">
-                <td colspan="3" class="text-center text-muted py-4">
-                    <i class="fas fa-inbox fa-3x mb-3"></i>
-                    <div>No templates found</div>
-                </td>
-            </tr>
-        `);
-    }
-
-    renderPagination(responseData) {
-        const { currentPage, totalPages, totalCount } = responseData;
-        const container = document.getElementById('paginationContainer');
-
-        // Hide pagination if total count is less than or equal to page size
-        // OR if there's only one page
-        if (totalCount <= this.pageSize || totalPages <= 1) {
-            // Show simple results count without pagination controls when there are results
-            if (totalCount > 0) {
-                container.innerHTML = `
-                <div class="mt-4 text-center">
-                    <small class="text-muted">Showing all ${totalCount} results</small>
-                </div>
-            `;
-            } else {
-                container.innerHTML = '';
-            }
-            return;
-        }
-
-        const showingStart = (currentPage - 1) * this.pageSize + 1;
-        const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
-
-        let html = `
-        <nav class="mt-4">
-            <div class="d-flex justify-content-between align-items-center mb-2">
-                <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} results</small>
-                <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
-            </div>
-            <ul class="pagination justify-content-center">
-    `;
-
-        // First & Previous
-        if (currentPage > 1) {
-            html += `
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="1">
-                    <i class="fas fa-angle-double-left"></i> First
-                </a>
-            </li>
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
-            </li>
-        `;
-        } else {
-            html += `
-            <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
-            <li class="page-item disabled"><span class="page-link">Previous</span></li>
-        `;
-        }
-
-        // Page numbers
-        const startPage = Math.max(1, currentPage - 2);
-        const endPage = Math.min(totalPages, currentPage + 2);
-
-        for (let i = startPage; i <= endPage; i++) {
-            if (i === currentPage) {
-                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
-            } else {
-                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
-            }
-        }
-
-        // Next & Last
-        if (currentPage < totalPages) {
-            html += `
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
-                    Last <i class="fas fa-angle-double-right"></i>
-                </a>
-            </li>
-        `;
-        } else {
-            html += `
-            <li class="page-item disabled"><span class="page-link">Next</span></li>
-            <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
-        `;
-        }
-
-        html += '</ul></nav>';
-        container.innerHTML = html;
-
-        // Rebind pagination events
-        this.bindPaginationEvents();
-    }
-
-    renderPageSizeSelector(responseData) {
-        const container = document.getElementById('pageSizeContainer');
-
-        // Hide page size selector if no data OR total count is less than minimum page size
-        if (!responseData.data || responseData.data.length === 0 || responseData.totalCount <= 5) {
-            container.innerHTML = '';
-            return;
-        }
-
-        const html = `
-        <div class="d-flex justify-content-end align-items-center mt-3">
-            <label class="form-label me-2 mb-0">Show:</label>
-            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-                <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
-                <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
-                <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
-                <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
-            </select>
-        </div>
-    `;
-        container.innerHTML = html;
-
-        // Rebind page size change event
-        const select = document.getElementById('pageSizeSelect');
-        if (select) {
-            select.addEventListener('change', (e) => {
-                this.pageSize = parseInt(e.target.value);
-                this.currentPage = 1;
-                this.loadData();
-            });
-        }
-    }
-
-
-    bindPaginationEvents() {
-        document.querySelectorAll('.page-link-custom').forEach(link => {
-            link.addEventListener('click', (e) => {
-                e.preventDefault();
-                const page = parseInt(link.getAttribute('data-page'));
-                if (page && page !== this.currentPage) {
-                    this.currentPage = page;
-                    this.loadData();
-                }
-            });
-        });
-    }
-
-    updateSortIcons() {
-        // Reset all icons
-        document.querySelectorAll('.sort-icon-name').forEach(icon => {
-            icon.className = 'fas fa-sort';
-        });
-        
-        // Set correct icon for current sort
-        const iconClass = this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
-        const currentIcon = document.querySelector(`.sort-icon-${this.sortBy}`);
-        if (currentIcon) {
-            currentIcon.className = `fas ${iconClass}`;
-        }
-    }
-
-    clearForm() {
-        document.getElementById('createTemplateForm').reset();
-        
-        // Сбрасываем контейнер к исходному состоянию
-        document.getElementById('valuesContainer').innerHTML = `
-            <div class="mb-2 value-input-group">
-                <div class="position-relative">
-                    <input type="text" name="values" class="form-control value-input" 
-                           placeholder="Type to search for values..." required>
-                    <div class="autocomplete-dropdown" style="display: none;"></div>
-                </div>
-                <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)" disabled>
-                    <i class="fas fa-trash"></i> Remove
-                </button>
-            </div>
-        `;
-        
-        // Переинициализируем автокомплит
-        this.initializeAutocomplete();
-        updateRemoveButtons();
-    }
-
-    hideCreateForm() {
-        const section = document.getElementById('createTemplateSection');
-        if (window.bootstrap) {
-            const collapse = bootstrap.Collapse.getInstance(section);
-            if (collapse) collapse.hide();
-        }
-    }
-
-    showSuccess(message) { this.showAlert(message, 'success'); }
-    showError(message) { this.showAlert(message, 'danger'); }
-
-    showAlert(message, type) {
-        const container = document.getElementById('alertContainer');
-        container.innerHTML = `
-            <div class="alert alert-${type} alert-dismissible fade show">
-                ${this.escapeHtml(message)}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-        setTimeout(() => {
-            const alert = container.querySelector('.alert');
-            if (alert) alert.remove();
-        }, 5000);
-    }
-
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-}
-
-// Global functions
-function showDeleteModal(templateName) {
-    document.getElementById('templateNameToDelete').textContent = templateName;
-    const modal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
-    modal.show();
-}
-
-async function copyTemplateId(templateId) {
-    try {
-        await navigator.clipboard.writeText(templateId);
-        showToast('📋 Template ID copied to clipboard!', 'success');
-    } catch (error) {
-        console.error('Failed to copy:', error);
-        showToast('Failed to copy to clipboard', 'error');
-    }
-}
-
-function showToast(message, type = 'success') {
-    const toast = document.createElement('div');
-    toast.className = 'position-fixed top-0 end-0 p-3';
-    toast.style.zIndex = '9999';
-    
-    const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-    
-    toast.innerHTML = `
-        <div class="toast show ${bgClass} text-white" role="alert">
-            <div class="toast-header ${bgClass} text-white border-0">
-                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
-                <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
-                <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
-            </div>
-            <div class="toast-body">${message}</div>
-        </div>
-    `;
-    
-    document.body.appendChild(toast);
-    
-    setTimeout(() => {
-        if (toast.parentNode) {
-            toast.remove();
-        }
-    }, 3000);
-}
-
-function addValueInput() {
-    const container = document.getElementById('valuesContainer');
-    const div = document.createElement('div');
-    div.className = 'mb-2 value-input-group';
-    div.innerHTML = `
-        <div class="position-relative">
-            <input type="text" name="values" class="form-control value-input" 
-                   placeholder="Type to search for values..." 
-                   autocomplete="off" 
-                   required>
-            <div class="autocomplete-dropdown" style="display: none;"></div>
-        </div>
-        <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)">
-            <i class="fas fa-trash"></i> Remove
-        </button>
-    `;
-    container.appendChild(div);
-
-    const newInput = div.querySelector('.value-input');
-
-    if (templateManager && newInput) {
-        console.log('Setting up autocomplete for new input');
-        templateManager.setupAutocomplete(newInput);
-
-        // Add validation event listener for existing inputs when new one is added
-        document.querySelectorAll('input[name="values"]').forEach(input => {
-            input.addEventListener('blur', () => {
-                templateManager.validateDuplicateValue(input);
-            });
-        });
-    } else {
-        console.error('templateManager not available or newInput not found');
-    }
-
-    updateRemoveButtons();
-}
-
-
-function removeValueInput(button) {
-    button.closest('.value-input-group').remove();
-    updateRemoveButtons();
-}
-
-function updateRemoveButtons() {
-    const groups = document.querySelectorAll('.value-input-group');
-    groups.forEach(group => {
-        const removeBtn = group.querySelector('.btn-outline-danger');
-        removeBtn.disabled = groups.length === 1;
-    });
-}
-
-function clearForm() {
-    if (window.templateManager) {
-        templateManager.clearForm();
-    }
-}
-
-// Initialize
-let templateManager;
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('🎉 DOM loaded, initializing TemplateManager...');
-    templateManager = new TemplateManager();
-
-    // Auto-hide TempData alerts
-    const successAlert = document.querySelector('.alert-success');
-    if (successAlert) {
-        setTimeout(() => new bootstrap.Alert(successAlert).close(), 5000);
-    }
-
-    const errorAlert = document.querySelector('.alert-danger');
-    if (errorAlert) {
-        setTimeout(() => new bootstrap.Alert(errorAlert).close(), 5000);
-    }
-});
-</script>
-
 <style>
-    /* Autocomplete styles */
     .value-input-group {
         border: 1px solid #e9ecef;
-        border-radius: 0.375rem;
-        padding: 15px;
+        border-radius: 6px;
+        padding: 10px;
         background-color: #f8f9fa;
-        position: relative;
     }
 
     .autocomplete-dropdown {
@@ -1243,8 +321,7 @@ document.addEventListener('DOMContentLoaded', function() {
         right: 0;
         background: white;
         border: 1px solid #ced4da;
-        border-top: none;
-        border-radius: 0 0 0.375rem 0.375rem;
+        border-radius: 0 0 6px 6px;
         max-height: 200px;
         overflow-y: auto;
         z-index: 1000;
@@ -1252,7 +329,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     .autocomplete-item {
-        padding: 12px 15px;
+        padding: 8px 12px;
         cursor: pointer;
         border-bottom: 1px solid #f8f9fa;
         transition: background-color 0.2s;
@@ -1263,40 +340,23 @@ document.addEventListener('DOMContentLoaded', function() {
         background-color: #e9ecef;
     }
 
-    .autocomplete-item:last-child {
-        border-bottom: none;
+    .table th {
+        border-top: none;
+        font-weight: 600;
+        background-color: #f8f9fa;
     }
 
-    .is-invalid {
-        border-color: #dc3545;
+    .btn-sm {
+        font-size: 0.8rem;
     }
 
-    .invalid-feedback {
-        display: block;
-        width: 100%;
-        margin-top: 0.25rem;
-        font-size: 0.875em;
-        color: #dc3545;
+    .fa-xs {
+        font-size: 0.75rem;
     }
 
-    .duplicate-error {
-        background-color: #f8d7da;
-        border: 1px solid #f5c6cb;
-        border-radius: 0.25rem;
-        padding: 0.375rem 0.75rem;
-        margin-top: 0.5rem;
-    }
-
-
-    .badge {
-        font-size: 0.875em;
-    }
-
-    .gap-1 {
-        gap: 0.25rem;
-    }
-
-    .gap-2 {
-        gap: 0.5rem;
+    .fw-medium {
+        font-weight: 500;
     }
 </style>
+
+<script src="~/js/templates.js"></script>

@@ -1,12 +1,13 @@
-@model Translator.Application.Features.Dashboard.Queries.GetDashboardRequestResponse
+@model Translator.Application.Features.Dashboard.Queries.GetDashboardStatistics.Response
 
 @{
     ViewData["Title"] = "Dashboard";
     Layout = "_Layout";
 }
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="fas fa-tachometer-alt"></i> Dashboard Overview</h2>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h4>
+    <div class="badge bg-success">System Admin</div>
 </div>
 
 @if (ViewBag.Error != null)
@@ -18,83 +19,138 @@
     </div>
 }
 
-<div class="row mb-4">
+<!-- Main Statistics Cards -->
+<div class="row mb-3">
     <div class="col-md-3">
-        <div class="card text-white bg-primary mb-3 shadow-sm stats-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
+        <div class="card stats-card bg-primary text-white">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between">
                     <div>
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-layer-group"></i> Templates
-                        </h5>
-                        <h2 class="fw-bold mt-2">@Model.TemplatesCount</h2>
-                        <p class="card-text small mb-0">Active templates</p>
+                        <h6 class="mb-1"><i class="fas fa-layer-group"></i> Templates</h6>
+                        <h4 class="mb-1">@Model.TemplatesCount</h4>
+                        <small><span class="badge bg-light text-primary">@Model.GlobalTemplatesCount</span> Global <span class="badge bg-light text-primary">@Model.UserTemplatesCount</span> User</small>
                     </div>
-                    <div class="stats-icon">
-                        <i class="fas fa-layer-group fa-2x opacity-50"></i>
-                    </div>
+                    <i class="fas fa-layer-group fa-2x opacity-25"></i>
                 </div>
-                @Html.ActionLink("Manage Templates", "Index", "Templates", null, new { @class = "btn btn-light btn-sm mt-2 w-100" })
             </div>
         </div>
     </div>
 
     <div class="col-md-3">
-        <div class="card text-white bg-success mb-3 shadow-sm stats-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
+        <div class="card stats-card bg-success text-white">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between">
                     <div>
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-font"></i> Values
-                        </h5>
-                        <h2 class="fw-bold mt-2">@Model.ValuesCount</h2>
-                        <p class="card-text small mb-0">Dictionary values</p>
+                        <h6 class="mb-1"><i class="fas fa-font"></i> Values</h6>
+                        <h4 class="mb-1">@Model.ValuesCount</h4>
+                        <small><span class="badge bg-light text-success">@Model.GlobalValuesCount</span> Global <span class="badge bg-light text-success">@Model.UserValuesCount</span> User</small>
                     </div>
-                    <div class="stats-icon">
-                        <i class="fas fa-font fa-2x opacity-50"></i>
-                    </div>
+                    <i class="fas fa-font fa-2x opacity-25"></i>
                 </div>
-                @Html.ActionLink("Manage Values", "Index", "Values", null, new { @class = "btn btn-light btn-sm mt-2 w-100" })
             </div>
         </div>
     </div>
 
     <div class="col-md-3">
-        <div class="card text-white bg-info mb-3 shadow-sm stats-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
+        <div class="card stats-card bg-info text-white">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between">
                     <div>
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-language"></i> Translations
-                        </h5>
-                        <h2 class="fw-bold mt-2">@Model.TranslationsCount</h2>
-                        <p class="card-text small mb-0">Active translations</p>
+                        <h6 class="mb-1"><i class="fas fa-language"></i> Translations</h6>
+                        <h4 class="mb-1">@Model.TranslationsCount</h4>
+                        <small>Active translations</small>
                     </div>
-                    <div class="stats-icon">
-                        <i class="fas fa-language fa-2x opacity-50"></i>
-                    </div>
+                    <i class="fas fa-language fa-2x opacity-25"></i>
                 </div>
-                @Html.ActionLink("Manage Translations", "Index", "Values", null, new { @class = "btn btn-light btn-sm mt-2 w-100" })
             </div>
         </div>
     </div>
 
     <div class="col-md-3">
-        <div class="card text-white bg-warning mb-3 shadow-sm stats-card">
-            <div class="card-body">
-                <div class="d-flex justify-content-between align-items-center">
+        <div class="card stats-card bg-warning text-white">
+            <div class="card-body p-3">
+                <div class="d-flex justify-content-between">
                     <div>
-                        <h5 class="card-title mb-0">
-                            <i class="fas fa-globe"></i> Languages
-                        </h5>
-                        <h2 class="fw-bold mt-2">@Model.LanguagesCount</h2>
-                        <p class="card-text small mb-0">Available languages</p>
+                        <h6 class="mb-1"><i class="fas fa-users"></i> Users</h6>
+                        <h4 class="mb-1">@Model.UsersCount</h4>
+                        <small>Registered users</small>
                     </div>
-                    <div class="stats-icon">
-                        <i class="fas fa-globe fa-2x opacity-50"></i>
+                    <i class="fas fa-users fa-2x opacity-25"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-3">
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header py-2">
+                <h6 class="mb-0"><i class="fas fa-chart-pie"></i> Template Distribution</h6>
+            </div>
+            <div class="card-body p-3 d-flex flex-column">
+                @{
+                    var templateGlobalPercent = Model.TemplatesCount > 0 ? (double)Model.GlobalTemplatesCount / Model.TemplatesCount * 100 : 0;
+                    var templateUserPercent = 100 - templateGlobalPercent;
+                }
+                <div class="flex-grow-1 d-flex flex-column justify-content-center">
+                    <div class="progress mb-2" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: @templateGlobalPercent%"></div>
+                        <div class="progress-bar bg-info" style="width: @templateUserPercent%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span><i class="fas fa-circle text-success"></i> Global: @Math.Round(templateGlobalPercent, 1)%</span>
+                        <span><i class="fas fa-circle text-info"></i> User: @Math.Round(templateUserPercent, 1)%</span>
                     </div>
                 </div>
-                @Html.ActionLink("Manage Languages", "Index", "Languages", null, new { @class = "btn btn-light btn-sm mt-2 w-100" })
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header py-2">
+                <h6 class="mb-0"><i class="fas fa-chart-bar"></i> Values Distribution</h6>
+            </div>
+            <div class="card-body p-3 d-flex flex-column">
+                @{
+                    var valueGlobalPercent = Model.ValuesCount > 0 ? (double)Model.GlobalValuesCount / Model.ValuesCount * 100 : 0;
+                    var valueUserPercent = 100 - valueGlobalPercent;
+                }
+                <div class="flex-grow-1 d-flex flex-column justify-content-center">
+                    <div class="progress mb-2" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: @valueGlobalPercent%"></div>
+                        <div class="progress-bar bg-info" style="width: @valueUserPercent%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between small">
+                        <span><i class="fas fa-circle text-success"></i> Global: @Math.Round(valueGlobalPercent, 1)%</span>
+                        <span><i class="fas fa-circle text-info"></i> User: @Math.Round(valueUserPercent, 1)%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header py-2">
+                <h6 class="mb-0"><i class="fas fa-globe"></i> Active Languages</h6>
+            </div>
+            <div class="card-body p-3 d-flex flex-column">
+                <div class="flex-grow-1 d-flex flex-column justify-content-center text-center">
+                    <h3 class="text-primary mb-1">@Model.LanguagesCount</h3>
+                    <p class="mb-2 small text-muted">Languages available</p>
+                    @{
+                        var avgTranslations = Model.LanguagesCount > 0 ? Math.Round((double)Model.TranslationsCount / Model.LanguagesCount, 0) : 0;
+                    }
+                    <div class="small mb-3">
+                        <span class="badge bg-light text-dark">~@avgTranslations translations per language</span>
+                    </div>
+                </div>
+                <div class="mt-auto">
+                    @Html.ActionLink("Manage Languages", "Index", "Languages", null, new { @class = "btn btn-outline-primary btn-sm w-100" })
+                </div>
             </div>
         </div>
     </div>
@@ -104,24 +160,22 @@
 <div class="row">
     <div class="col-md-12">
         <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-bolt"></i> Quick Actions</h5>
+            <div class="card-header py-2">
+                <h6 class="mb-0"><i class="fas fa-tools"></i> Quick Actions</h6>
             </div>
-            <div class="card-body">
+            <div class="card-body p-3">
                 <div class="row">
                     <div class="col-md-3">
-                        @Html.ActionLink("Create Template", "Index", "Templates", null, new { @class = "btn btn-outline-primary w-100 mb-2" })
+                        @Html.ActionLink("Templates", "Index", "Templates", null, new { @class = "btn btn-outline-primary btn-sm w-100" })
                     </div>
                     <div class="col-md-3">
-                        @Html.ActionLink("Add Language", "Index", "Languages", null, new { @class = "btn btn-outline-warning w-100 mb-2" })
+                        @Html.ActionLink("Values", "Index", "Values", null, new { @class = "btn btn-outline-success btn-sm w-100" })
                     </div>
                     <div class="col-md-3">
-                        @Html.ActionLink("Browse All Templates", "Index", "Templates", null, new { @class = "btn btn-outline-info w-100 mb-2" })
+                        @Html.ActionLink("Languages", "Index", "Languages", null, new { @class = "btn btn-outline-warning btn-sm w-100" })
                     </div>
                     <div class="col-md-3">
-                        <button class="btn btn-outline-secondary w-100 mb-2" onclick="location.reload()">
-                            <i class="fas fa-sync-alt"></i> Refresh Stats
-                        </button>
+                        @Html.ActionLink("Categories", "Index", "Categories", null, new { @class = "btn btn-outline-info btn-sm w-100" })
                     </div>
                 </div>
             </div>
@@ -131,13 +185,14 @@
 
 @if (ViewBag.Error == null)
 {
-    <div class="row mt-4">
+    <div class="row mt-3">
         <div class="col-md-12">
-            <div class="alert alert-success d-flex align-items-center" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                <div>
-                    <strong>System Status:</strong> All services are operational. Dashboard loaded successfully.
-                </div>
+            <div class="alert alert-success py-2" role="alert">
+                <small>
+                    <i class="fas fa-check-circle"></i>
+                    <strong>System Status:</strong> All services operational. 
+                    Total: @(Model.TemplatesCount + Model.ValuesCount) items across @Model.LanguagesCount languages.
+                </small>
             </div>
         </div>
     </div>
@@ -145,7 +200,8 @@
 
 <style>
     .stats-card {
-        transition: transform 0.2s ease-in-out;
+        transition: transform 0.2s ease;
+        border: none;
         cursor: pointer;
     }
 
@@ -153,38 +209,52 @@
         transform: translateY(-2px);
     }
 
-    .stats-icon {
-        position: relative;
+    .opacity-25 {
+        opacity: 0.25;
     }
 
-    .opacity-50 {
-        opacity: 0.5;
+    .progress {
+        border-radius: 8px;
+        overflow: hidden;
     }
 
-    .fw-bold {
-        font-weight: 700;
+    .progress-bar {
+        font-size: 0.75rem;
     }
 
-    .gap-3 {
-        gap: 1rem;
+    .card {
+        border: none;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .btn-sm {
+        font-size: 0.8rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .badge {
+        font-size: 0.65rem;
+    }
+
+    h4, h6 {
+        font-weight: 600;
+    }
+
+    .small {
+        font-size: 0.8rem;
     }
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
         const cards = document.querySelectorAll('.stats-card');
         
         cards.forEach(card => {
-            card.addEventListener('click', function() {
-                const link = this.querySelector('a');
-                if (link) {
-                    window.location.href = link.href;
-                }
+            card.addEventListener('click', function () {
+                // You can add click behavior here if needed
             });
         });
-
-        setTimeout(() => {
-            location.reload();
-        }, 300000); // 5 minutes
     });
 </script>
+ 
