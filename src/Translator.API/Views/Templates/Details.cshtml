@@ -1,63 +1,72 @@
-@using Translator.Application.Features.Language.Queries.GetLanguages
 @model IEnumerable<Translator.Application.Features.TemplatesAdmin.Queries.AdminGetTemplate.Response>
 
 @{
     Layout = "_Layout";
-    ViewBag.Title = "Template Details";
+    ViewBag.Title = "Template details";
     var templateId = ViewBag.TemplateId as Guid? ?? Guid.Empty;
     var templateName = ViewBag.TemplateName as string ?? "";
     var currentLanguage = ViewBag.CurrentLanguage as string ?? "";
-    var availableLanguages = ViewBag.AvailableLanguages as IEnumerable<GetLanguagesResponse> ?? new List<GetLanguagesResponse>();
+    var availableLanguages = ViewBag.AvailableLanguages as IEnumerable<Translator.Application.Features.Language.Queries.GetLanguages.GetLanguagesResponse> ?? new List<Translator.Application.Features.Language.Queries.GetLanguages.GetLanguagesResponse>();
     var currentPage = ViewBag.CurrentPage ?? 1;
-    var pageSize = ViewBag.PageSize ?? 50;
+    var pageSize = ViewBag.PageSize ?? 10;
     var totalPages = ViewBag.TotalPages ?? 1;
     var totalCount = ViewBag.TotalCount ?? 0;
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        <h4><i class="fas fa-layer-group"></i> Template: 
-            <span class="badge bg-primary">@templateName</span>
-        </h4>
-        <div class="small text-muted">
-            <span>ID: </span><code class="bg-light px-2 py-1 rounded">@templateId</code>
-            <button class="btn btn-sm btn-outline-secondary ms-1" onclick="copyTemplateId('@templateId')" title="Copy">
+        <h2>Template: <span class="badge bg-primary fs-6" id="templateNameBadge">@templateName</span></h2>
+        <div class="d-flex align-items-center gap-2 mt-2">
+            <small class="text-muted">Template ID:</small>
+            <code class="bg-light p-1 rounded">@templateId</code>
+            <button class="btn btn-sm btn-outline-secondary" 
+                    onclick="copyTemplateId('@templateId')" 
+                    title="Copy Template ID">
                 <i class="fas fa-copy"></i>
             </button>
+        </div>
+        <div id="currentLanguageInfo">
             @if (!string.IsNullOrEmpty(currentLanguage))
             {
-                <span class="ms-3">Language: <span class="badge bg-secondary">@currentLanguage.ToUpper()</span></span>
+                <small class="text-muted">Language: <span class="badge bg-secondary">@currentLanguage.ToUpper()</span></small>
             }
         </div>
-        <small class="text-muted">@totalCount values total</small>
+        <br><small class="text-muted" id="totalCountInfo">@totalCount values total</small>
     </div>
-    
     <div class="d-flex gap-2 align-items-center">
-        <button class="btn btn-warning btn-sm" onclick="cacheTemplate('@templateId')" title="Cache Template">
-            <i class="fas fa-database"></i> Cache
+        
+        <button class="btn btn-warning" onclick="cacheTemplate('@templateId')" title="Cache Template">
+            <i class="fas fa-database me-1"></i>Cache
         </button>
         
+        <!-- Language Selector -->
         @if (availableLanguages.Any())
         {
             <div class="dropdown">
-                <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" 
-                        data-bs-toggle="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" 
+                        type="button" 
+                        id="languageDropdown" 
+                        data-bs-toggle="dropdown" 
+                        aria-expanded="false">
                     <i class="fas fa-language"></i>
-                    @(string.IsNullOrEmpty(currentLanguage) ? "All Languages" : currentLanguage.ToUpper())
+                    <span id="languageButtonText">@(string.IsNullOrEmpty(currentLanguage) ? "Select Language" : currentLanguage.ToUpper())</span>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end">
+                <ul class="dropdown-menu" aria-labelledby="languageDropdown">
                     <li>
-                        <a class="dropdown-item @(string.IsNullOrEmpty(currentLanguage) ? "active" : "")" 
-                           href="@Url.Action("Details", new { templateId, lang = "", templateName, pageNumber = 1, pageSize })">
-                            <i class="fas fa-globe me-2"></i>All Languages
-                        </a>
+                        <div class="dropdown-item language-link @(string.IsNullOrEmpty(currentLanguage) ? "active" : "")"
+                           data-lang="">
+                            <i class="fas fa-globe" style="margin-right: 10px"></i>Languages
+                        </div>
                     </li>
-                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <hr class="dropdown-divider">
+                    </li>
                     @foreach (var language in availableLanguages)
                     {
                         <li>
-                            <a class="dropdown-item @(currentLanguage == language.LanguageCode ? "active" : "")"
-                               href="@Url.Action("Details", new { templateId, lang = language.LanguageCode, templateName, pageNumber = 1, pageSize })">
+                            <a class="dropdown-item language-link @(currentLanguage == language.LanguageCode ? "active" : "")"
+                               href="@Url.Action("Details", new { templateId = templateId, lang = language.LanguageCode, templateName, pageNumber = currentPage, pageSize })"
+                               data-lang="@language.LanguageCode">
                                 <span class="badge bg-primary me-2">@language.LanguageCode.ToUpper()</span>
                                 @(string.IsNullOrEmpty(language.LanguageName) ? "N/A" : language.LanguageName)
                             </a>
@@ -66,10 +75,7 @@
                 </ul>
             </div>
         }
-        
-        <a href="/Templates" class="btn btn-outline-secondary btn-sm">
-            <i class="fas fa-arrow-left"></i> Back
-        </a>
+        <a href="/Templates" class="btn btn-outline-secondary">Back to list</a>
     </div>
 </div>
 
@@ -77,217 +83,240 @@
 <div id="alertContainer">
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show py-2">
+        <div class="alert alert-success alert-dismissible fade show">
             @TempData["SuccessMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
+
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show py-2">
+        <div class="alert alert-danger alert-dismissible fade show">
             @TempData["ErrorMessage"]
             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     }
 </div>
 
-<!-- Template Content Card -->
 <div class="card">
-    <div class="card-header py-2 d-flex justify-content-between align-items-center">
-        <h6 class="mb-0">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">
             <i class="fas fa-list"></i> Template Content
-            @if (!string.IsNullOrEmpty(currentLanguage))
-            {
-                <small class="text-muted">(@currentLanguage.ToUpper())</small>
-            }
-        </h6>
-        <div class="d-flex gap-2 align-items-center">
-            <span class="badge bg-info">@(Model?.Count() ?? 0) of @totalCount items</span>
-            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
-                <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
-                <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
-                <option value="100" @(pageSize == 100 ? "selected" : "")>100</option>
-            </select>
-        </div>
-    </div>
-    
-    <div class="table-responsive">
-        <table class="table table-hover table-sm align-middle mb-0">
-            <thead class="table-light">
-                <tr>
-                    <th width="25%">Value Key</th>
-                    <th width="10%">Language</th>
-                    <th width="15%">Owner</th>
-                    <th width="40%">Translation</th>
-                    <th width="10%">Actions</th>
-                </tr>
-            </thead>
-            <tbody id="valuesTableBody">
-                <tr id="tableLoader" style="display: none;">
-                    <td colspan="5" class="text-center py-3">
-                        <div class="spinner-border spinner-border-sm" role="status"></div>
-                        <span class="ms-2">Loading...</span>
-                    </td>
-                </tr>
-                
-                @if (Model != null && Model.Any())
+            <small class="text-muted" id="languageHeaderInfo">
+                @if (!string.IsNullOrEmpty(currentLanguage))
                 {
-                    foreach (var item in Model)
+                    <text>(@currentLanguage.ToUpper())</text>
+                }
+            </small>
+        </h5>
+        <span class="badge bg-info" id="elementsCount">@(Model?.Count() ?? 0) of @totalCount Elements</span>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th width="25%">Key</th>
+                        <th width="15%">Language</th>
+                        <th width="40%">Value</th>
+                        <th width="20%">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="valuesTableBody">
+                    <tr id="tableLoader" style="display: none;">
+                        <td colspan="4" class="text-center py-4">
+                            <div class="spinner-border" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </td>
+                    </tr>
+                    @if (Model != null && Model.Any())
                     {
-                        <tr>
-                            <td>
-                                <div class="d-flex align-items-center gap-2">
-                                    <code class="text-primary small">@item.Key</code>
-                                    <button class="btn btn-sm btn-outline-secondary px-2 py-1" 
-                                            onclick="copyValueId('@item.ValueId')" title="Copy ID">
-                                        <i class="fas fa-copy fa-xs"></i>
-                                    </button>
-                                </div>
-                            </td>
-                            <td>
-                                @if (!string.IsNullOrEmpty(item.LanguageCode))
-                                {
-                                    <span class="badge bg-info">@item.LanguageCode.ToUpper()</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-secondary">N/A</span>
-                                }
-                            </td>
-                            <td>
-                                @if (item.ValueOwnerId == null)
-                                {
-                                    <span class="badge bg-success">Global</span>
-                                }
-                                else
-                                {
-                                    <span class="badge bg-info">@item.ValueOwnerName</span>
-                                }
-                            </td>
-                            <td class="small text-break">
-                                @item.Value
-                            </td>
-                            <td>
-                                <div class="d-flex gap-1">
-                                    <a href="@Url.Action("Details", "Values", new { valueId = item.ValueId })"
-                                       class="btn btn-sm btn-outline-info" title="View Details">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
-                                    @if (totalCount > 1)
-                                    {
-                                        <button class="btn btn-sm btn-outline-danger"
-                                                onclick="showDeleteValueModal('@Html.Raw(Html.Encode(item.Key))')"
-                                                title="Remove from Template">
-                                            <i class="fas fa-trash"></i>
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <code class="text-primary">@item.Key</code>
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                onclick="copyValueId('@item.ValueId')" 
+                                                title="Copy Value ID">
+                                            <i class="fas fa-copy"></i>
                                         </button>
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.LanguageCode))
+                                    {
+                                        <span class="badge bg-info">@item.LanguageCode.ToUpper()</span>
                                     }
                                     else
                                     {
-                                        <button class="btn btn-sm btn-outline-secondary" disabled
-                                                title="Cannot remove - template needs at least one value">
+                                        <span class="badge bg-secondary">N/A</span>
+                                    }
+                                </td>
+                                <td class="text-break">
+                                    @item.Value
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a href="@Url.Action("Details", "Values", new { valueId = item.ValueId })"
+                                           class="btn btn-sm btn-outline-info" title="View Details">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                                onclick="showDeleteValueModal('@Html.Raw(Html.Encode(item.Key))')"
+                                                title="Delete Value">
                                             <i class="fas fa-trash"></i>
                                         </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr id="emptyState">
+                            <td colspan="4" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-4x mb-3"></i>
+                                <h5 class="text-muted">Empty Template</h5>
+                                <p class="text-muted">
+                                    @if (!string.IsNullOrEmpty(currentLanguage))
+                                    {
+                                        <span>This template has no translations for language <strong>@currentLanguage.ToUpper()</strong></span>
                                     }
-                                </div>
+                                    else
+                                    {
+                                        <span>This template is empty</span>
+                                    }
+                                </p>
                             </td>
                         </tr>
                     }
-                }
-                else
-                {
-                    <tr id="emptyState">
-                        <td colspan="5" class="text-center text-muted py-4">
-                            <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
-                            <div>No values found</div>
-                            @if (!string.IsNullOrEmpty(currentLanguage))
-                            {
-                                <small class="text-muted">No translations for language @currentLanguage.ToUpper()</small>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
+                </tbody>
+            </table>
+        </div>
     </div>
 </div>
 
-<!-- Pagination -->
-@if (Model != null && Model.Any() && totalPages > 1)
-{
-    <nav class="mt-3">
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <small class="text-muted">
-                Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount results
-            </small>
-            <small class="text-muted">Page @currentPage of @totalPages</small>
-        </div>
+<!-- Pagination container -->
+<div id="paginationContainer">
+    @if (Model != null && Model.Any())
+    {
+        <nav class="mt-4">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <small class="text-muted" id="paginationInfo">
+                    Showing @((currentPage - 1) * pageSize + 1) to @Math.Min(currentPage * pageSize, totalCount) of @totalCount values
+                </small>
+                <small class="text-muted" id="pageInfo">Page @currentPage of @totalPages</small>
+            </div>
 
-        <ul class="pagination pagination-sm justify-content-center">
-            @if (currentPage > 1)
-            {
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="1">First</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
-                </li>
-            }
-
-            @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
-            {
-                if (i == currentPage)
+            <ul class="pagination justify-content-center">
+                @if (currentPage > 1)
                 {
-                    <li class="page-item active">
-                        <span class="page-link">@i</span>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="1" title="First page">
+                            <i class="fas fa-angle-double-left"></i> First
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage - 1)">Previous</a>
                     </li>
                 }
                 else
                 {
-                    <li class="page-item">
-                        <a class="page-link page-link-custom" href="#" data-page="@i">@i</a>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-left"></i> First</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Previous</span>
                     </li>
                 }
-            }
 
-            @if (currentPage < totalPages)
-            {
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
-                </li>
-                <li class="page-item">
-                    <a class="page-link page-link-custom" href="#" data-page="@totalPages">Last</a>
-                </li>
-            }
-        </ul>
-    </nav>
-}
+                @for (int i = Math.Max(1, currentPage - 2); i <= Math.Min(totalPages, currentPage + 2); i++)
+                {
+                    if (i == currentPage)
+                    {
+                        <li class="page-item active">
+                            <span class="page-link">@i</span>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="page-item">
+                            <a class="page-link page-link-custom" href="#" data-page="@i">@i</a>
+                        </li>
+                    }
+                }
 
-<!-- Action Buttons -->
-<div class="mt-3 d-flex gap-2">
-    <button class="btn btn-danger btn-sm" onclick="showDeleteTemplateModal('@Html.Raw(Html.Encode(templateName))')">
-        <i class="fas fa-trash"></i> Delete Template
-    </button>
+                @if (currentPage < totalPages)
+                {
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@(currentPage + 1)">Next</a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link page-link-custom" href="#" data-page="@totalPages" title="Last page">
+                            Last <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                }
+                else
+                {
+                    <li class="page-item disabled">
+                        <span class="page-link">Next</span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link">Last <i class="fas fa-angle-double-right"></i></span>
+                    </li>
+                }
+            </ul>
+        </nav>
+    }
+</div>
+
+<!-- Page size selector container -->
+<div id="pageSizeContainer">
+    @if (Model != null && Model.Any())
+    {
+        <div class="d-flex justify-content-end align-items-center mt-3">
+            <label class="form-label me-2 mb-0">Show:</label>
+            <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                <option value="5" @(pageSize == 5 ? "selected" : "")>5</option>
+                <option value="10" @(pageSize == 10 ? "selected" : "")>10</option>
+                <option value="25" @(pageSize == 25 ? "selected" : "")>25</option>
+                <option value="50" @(pageSize == 50 ? "selected" : "")>50</option>
+            </select>
+        </div>
+    }
+</div>
+
+<div class="mt-4">
+    <div class="d-flex gap-2">
+        <button class="btn btn-danger" onclick="showDeleteModal('@Html.Raw(Html.Encode(templateName))')">
+            <i class="fas fa-trash"></i> Delete Template
+        </button>
+    </div>
 </div>
 
 <!-- Delete Template Modal -->
 <div class="modal fade" id="deleteTemplateModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header py-2">
-                <h6 class="modal-title">Delete Template</h6>
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Template</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Are you sure you want to delete template <strong id="templateNameToDelete">@templateName</strong>?</p>
-                <div class="alert alert-warning py-2">
+                <p>Are you sure to delete Template? <strong id="templateNameToDelete">@templateName</strong>?</p>
+                <div class="alert alert-warning">
                     <i class="fas fa-exclamation-triangle"></i>
                     <strong>Warning:</strong> This action cannot be undone!
                 </div>
             </div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteTemplateBtn">
-                    <span class="spinner-border spinner-border-sm d-none me-1" role="status"></span>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteTemplateBtn">
+                    <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
                     <i class="fas fa-trash"></i> Delete
                 </button>
             </div>
@@ -299,58 +328,32 @@
 <div class="modal fade" id="deleteValueModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header py-2">
-                <h6 class="modal-title">Remove Value</h6>
+            <div class="modal-header">
+                <h5 class="modal-title">Delete Value</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <p class="mb-2">Remove value <strong id="valueNameToDelete"></strong> from this template?</p>
-                <div class="alert alert-info py-2">
-                    <i class="fas fa-info-circle"></i>
-                    This will only remove the value from this template, not delete the value entirely.
+                <p>Are you sure you want to delete value <strong id="valueNameToDelete"></strong>?</p>
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> This will delete the value and all its translations!
                 </div>
             </div>
-            <div class="modal-footer py-2">
-                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger btn-sm" id="confirmDeleteValueBtn">
-                    <span class="spinner-border spinner-border-sm d-none me-1" role="status"></span>
-                    <i class="fas fa-trash"></i> Remove
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteValueBtn">
+                    <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
+                    <i class="fas fa-trash"></i> Delete Value
                 </button>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    .fa-xs {
-        font-size: 0.75rem;
-    }
-    
-    .table th {
-        font-weight: 600;
-        background-color: #f8f9fa;
-        border-top: none;
-    }
-    
-    .btn-sm {
-        font-size: 0.8rem;
-    }
-    
-    .text-break {
-        word-break: break-word;
-    }
-    
-    .gap-1 {
-        gap: 0.25rem;
-    }
-    
-    .gap-2 {
-        gap: 0.5rem;
-    }
-</style>
-
 <script>
-// Simplified JavaScript - keeping core functionality
+
+    
+    
 class TemplateDetailsManager {
     constructor() {
         this.templateId = '@templateId';
@@ -358,52 +361,371 @@ class TemplateDetailsManager {
         this.currentLanguage = '@currentLanguage';
         this.currentPage = @currentPage;
         this.pageSize = @pageSize;
+        this.totalCount = @totalCount;
+        this.totalPages = @totalPages;
+        
         this.init();
     }
 
     init() {
+        console.log('Initializing TemplateDetailsManager...');
         this.bindEvents();
     }
 
     bindEvents() {
+        console.log('📎 Binding events...');
+
         // Page size selector
         const pageSizeSelect = document.getElementById('pageSizeSelect');
         if (pageSizeSelect) {
             pageSizeSelect.addEventListener('change', (e) => {
-                const newPageSize = e.target.value;
-                const url = new URL(window.location);
-                url.searchParams.set('pageSize', newPageSize);
-                url.searchParams.set('pageNumber', '1');
-                window.location.href = url.toString();
+                this.pageSize = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadTemplateDetails();
             });
         }
 
         // Pagination links
+        this.bindPaginationEvents();
+
+        // Delete buttons
+        const deleteTemplateBtn = document.getElementById('confirmDeleteTemplateBtn');
+        if (deleteTemplateBtn) {
+            deleteTemplateBtn.addEventListener('click', () => {
+                this.deleteTemplate();
+            });
+        }
+
+        document.getElementById('confirmDeleteValueBtn').addEventListener('click', () => {
+                const valueName = document.getElementById('valueNameToDelete').textContent;
+                this.deleteValue(valueName);
+        });
+    }
+
+    changeLanguage(language) {
+        console.log('Changing language to:', language || 'all');
+        this.currentLanguage = language || '';
+        this.currentPage = 1;
+        this.loadTemplateDetails();
+    }
+
+    async loadTemplateDetails() {
+        console.log('Loading template details via AJAX...');
+        this.showTableLoader();
+        
+        try {
+            const params = new URLSearchParams({
+                lang: this.currentLanguage,
+                pageNumber: this.currentPage,
+                pageSize: this.pageSize
+            });
+
+            const response = await fetch(`/Templates/Details?templateId=${this.templateId}&lang=${this.currentLanguage}&page=${this.currentPage}&pageSize${this.pageSize}`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+            console.log('Response data:', result);
+
+            if (result.success) {
+                this.updatePageData(result);
+                this.updateUI(result);
+                this.renderValues(result.data || []);
+                this.renderPagination(result);
+                this.renderPageSizeSelector(result);
+                this.updateLanguageDropdown();
+            } else {
+                this.showError('Failed to load template details: ' + (result.message || 'Unknown error'));
+                this.renderEmptyState();
+            }
+        } catch (error) {
+            console.error('Error loading template details:', error);
+            this.showError('Network error: ' + error.message);
+            this.renderEmptyState();
+        } finally {
+            this.hideTableLoader();
+        }
+    }
+
+    updatePageData(data) {
+        this.templateName = data.templateName || this.templateName;
+        this.totalCount = data.totalCount || 0;
+        this.totalPages = data.totalPages || 1;
+        this.currentPage = data.currentPage || 1;
+    }
+
+    updateUI(data) {
+        // Update template name badge
+        document.getElementById('templateNameBadge').textContent = data.templateName || this.templateName;
+        document.getElementById('templateNameToDelete').textContent = data.templateName || this.templateName;
+        
+        // Update language info in header
+        const currentLangInfo = document.getElementById('currentLanguageInfo');
+        if (data.currentLanguage) {
+            currentLangInfo.innerHTML = `<small class="text-muted">Language: <span class="badge bg-secondary">${data.currentLanguage.toUpperCase()}</span></small>`;
+        } else {
+            currentLangInfo.innerHTML = '';
+        }
+        
+        // Update language header info in card
+        const langHeaderInfo = document.getElementById('languageHeaderInfo');
+        langHeaderInfo.textContent = data.currentLanguage ? `(${data.currentLanguage.toUpperCase()})` : '';
+        
+        // Update total count
+        document.getElementById('totalCountInfo').textContent = `${data.totalCount || 0} values total`;
+        
+        // Update elements count badge
+        document.getElementById('elementsCount').textContent = `${(data.data || []).length} of ${data.totalCount || 0} Elements`;
+        
+        // Update language button text
+        document.getElementById('languageButtonText').textContent = data.currentLanguage ? data.currentLanguage.toUpperCase() : 'Select Language';
+    }
+
+    renderValues(values) {
+        const tbody = document.getElementById('valuesTableBody');
+
+        const existingRows = tbody.querySelectorAll('tr:not(#tableLoader):not(#emptyState)');
+        existingRows.forEach(row => row.remove());
+
+        const existingEmpty = document.getElementById('emptyState');
+        if (existingEmpty) existingEmpty.remove();
+
+        if (values && values.length > 0) {
+            values.forEach(value => {
+                const row = this.createValueRow(value);
+                tbody.insertAdjacentHTML('beforeend', row);
+            });
+            this.bindTableEvents();
+        } else {
+            this.renderEmptyState();
+        }
+    }
+
+
+    createValueRow(value) {
+        return `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <code class="text-primary">${this.escapeHtml(value.key)}</code>
+                        <button class="btn btn-sm btn-outline-secondary copy-value-btn" 
+                                data-id="${value.valueId}" 
+                                title="Copy Value ID">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </td>
+                <td>
+                    ${value.languageCode ? 
+                        `<span class="badge bg-info">${value.languageCode.toUpperCase()}</span>` : 
+                        `<span class="badge bg-secondary">N/A</span>`
+                    }
+                </td>
+                <td class="text-break">
+                    ${this.escapeHtml(value.value)}
+                </td>
+                <td>
+                    <div class="d-flex gap-1">
+                        <a href="/Values/Details/${value.valueId}" 
+                           class="btn btn-sm btn-outline-info" title="View Details">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        <button class="btn btn-sm btn-outline-danger delete-value-btn"
+                                data-key="${this.escapeHtml(value.key)}"
+                                title="Delete Value">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }
+
+    bindTableEvents() {
+        // Copy value ID buttons
+        document.querySelectorAll('.copy-value-btn').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const valueId = btn.getAttribute('data-id');
+                await copyValueId(valueId);
+            })
+            
+        });
+
+        // Delete value buttons
+        document.querySelectorAll('.delete-value-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const valueKey = btn.getAttribute('data-key');
+                showDeleteValueModal(valueKey);
+            });
+        });
+    }
+
+    renderEmptyState() {
+        const tbody = document.getElementById('valuesTableBody');
+        
+        const emptyMessage = this.currentLanguage ? 
+            `This template has no translations for language <strong>${this.currentLanguage.toUpperCase()}</strong>` :
+            'This template is empty';
+            
+        tbody.insertAdjacentHTML('beforeend', `
+            <tr id="emptyState">
+                <td colspan="4" class="text-center text-muted py-4">
+                    <i class="fas fa-inbox fa-4x mb-3"></i>
+                    <h5 class="text-muted">Empty Template</h5>
+                    <p class="text-muted">${emptyMessage}</p>
+                </td>
+            </tr>
+        `);
+    }
+
+    renderPagination(responseData) {
+        const { currentPage, totalPages, totalCount } = responseData;
+        const container = document.getElementById('paginationContainer');
+        
+        if (totalPages <= 1) {
+            container.innerHTML = '';
+            return;
+        }
+
+        const showingStart = (currentPage - 1) * this.pageSize + 1;
+        const showingEnd = Math.min(currentPage * this.pageSize, totalCount);
+        
+        let html = `
+            <nav class="mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <small class="text-muted">Showing ${showingStart} to ${showingEnd} of ${totalCount} values</small>
+                    <small class="text-muted">Page ${currentPage} of ${totalPages}</small>
+                </div>
+                <ul class="pagination justify-content-center">
+        `;
+        
+        // First & Previous
+        if (currentPage > 1) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="1">
+                        <i class="fas fa-angle-double-left"></i> First
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${currentPage - 1}">Previous</a>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item disabled"><span class="page-link"><i class="fas fa-angle-double-left"></i> First</span></li>
+                <li class="page-item disabled"><span class="page-link">Previous</span></li>
+            `;
+        }
+
+        // Page numbers
+        const startPage = Math.max(1, currentPage - 2);
+        const endPage = Math.min(totalPages, currentPage + 2);
+        
+        for (let i = startPage; i <= endPage; i++) {
+            if (i === currentPage) {
+                html += `<li class="page-item active"><span class="page-link">${i}</span></li>`;
+            } else {
+                html += `<li class="page-item"><a class="page-link page-link-custom" href="#" data-page="${i}">${i}</a></li>`;
+            }
+        }
+
+        // Next & Last
+        if (currentPage < totalPages) {
+            html += `
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${currentPage + 1}">Next</a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link page-link-custom" href="#" data-page="${totalPages}">
+                        Last <i class="fas fa-angle-double-right"></i>
+                    </a>
+                </li>
+            `;
+        } else {
+            html += `
+                <li class="page-item disabled"><span class="page-link">Next</span></li>
+                <li class="page-item disabled"><span class="page-link">Last <i class="fas fa-angle-double-right"></i></span></li>
+            `;
+        }
+
+        html += '</ul></nav>';
+        container.innerHTML = html;
+        
+        // Rebind pagination events
+        this.bindPaginationEvents();
+    }
+
+    renderPageSizeSelector(responseData) {
+        const container = document.getElementById('pageSizeContainer');
+        
+        if (!responseData.data || responseData.data.length === 0) {
+            container.innerHTML = '';
+            return;
+        }
+        
+        const html = `
+            <div class="d-flex justify-content-end align-items-center mt-3">
+                <label class="form-label me-2 mb-0">Show:</label>
+                <select id="pageSizeSelect" class="form-select form-select-sm" style="width: 80px;">
+                    <option value="5" ${this.pageSize == 5 ? 'selected' : ''}>5</option>
+                    <option value="10" ${this.pageSize == 10 ? 'selected' : ''}>10</option>
+                    <option value="25" ${this.pageSize == 25 ? 'selected' : ''}>25</option>
+                    <option value="50" ${this.pageSize == 50 ? 'selected' : ''}>50</option>
+                </select>
+            </div>
+        `;
+        container.innerHTML = html;
+        
+        // Rebind page size change event
+        const select = document.getElementById('pageSizeSelect');
+        if (select) {
+            select.addEventListener('change', (e) => {
+                this.pageSize = parseInt(e.target.value);
+                this.currentPage = 1;
+                this.loadTemplateDetails();
+            });
+        }
+    }
+    
+    updateLanguageDropdown() {
+        document.querySelectorAll('.language-link').forEach(link => {
+            const linkLang = link.getAttribute('data-lang');
+            if (linkLang === this.currentLanguage) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    }
+
+    bindPaginationEvents() {
         document.querySelectorAll('.page-link-custom').forEach(link => {
             link.addEventListener('click', (e) => {
                 e.preventDefault();
-                const page = link.getAttribute('data-page');
-                const url = new URL(window.location);
-                url.searchParams.set('pageNumber', page);
-                window.location.href = url.toString();
+                const page = parseInt(link.getAttribute('data-page'));
+                if (page && page !== this.currentPage) {
+                    this.currentPage = page;
+                    this.loadTemplateDetails();
+                }
             });
-        });
-
-        // Delete buttons
-        document.getElementById('confirmDeleteTemplateBtn').addEventListener('click', () => {
-            this.deleteTemplate();
-        });
-
-        document.getElementById('confirmDeleteValueBtn').addEventListener('click', () => {
-            const valueName = document.getElementById('valueNameToDelete').textContent;
-            this.deleteValue(valueName);
         });
     }
 
     async deleteTemplate() {
+        console.log('🗑️ Deleting template:', this.templateName);
+        
         const deleteBtn = document.getElementById('confirmDeleteTemplateBtn');
         const spinner = deleteBtn.querySelector('.spinner-border');
-
+        
         deleteBtn.disabled = true;
         if (spinner) spinner.classList.remove('d-none');
 
@@ -413,19 +735,20 @@ class TemplateDetailsManager {
 
             const response = await fetch('/Templates/Delete', {
                 method: 'POST',
-                headers: {'X-Requested-With': 'XMLHttpRequest'},
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
                 body: formData
             });
 
             const result = await response.json();
-
+            
             if (result.success) {
                 showToast(result.message, 'success');
-                setTimeout(() => window.location.href = '/Templates', 800);
+                setTimeout(() => window.location.href = '/Templates', 1500);
             } else {
                 showToast(result.message, 'error');
             }
         } catch (error) {
+            console.error('Error deleting template:', error);
             showToast('Failed to delete template', 'error');
         } finally {
             deleteBtn.disabled = false;
@@ -434,44 +757,138 @@ class TemplateDetailsManager {
     }
 
     async deleteValue(valueName) {
+        console.log('🗑️ Deleting value:', valueName);
         const deleteBtn = document.getElementById('confirmDeleteValueBtn');
         const spinner = deleteBtn.querySelector('.spinner-border');
         deleteBtn.disabled = true;
         if (spinner) spinner.classList.remove('d-none');
 
         try {
+            // Create FormData instead of JSON
+            const formData = new FormData();
+            formData.append('valueName', valueName);
+            formData.append('templateId', this.templateId);
+
             const response = await fetch('/Templates/DeleteValueFromTemplate', {
                 method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({
-                    valueName: valueName,
-                    templateId: this.templateId
-                })
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                    // Remove Content-Type header to let browser set it for FormData
+                },
+                body: formData  // Use FormData instead of JSON
             });
 
             const result = await response.json();
+
             if (result.success) {
+                // Clear any existing error alerts first
+                this.clearErrorMessages();
+
                 showToast(result.message, 'success');
+
+                // Hide modal
                 const modal = document.getElementById('deleteValueModal');
                 if (window.bootstrap) {
                     const bsModal = bootstrap.Modal.getInstance(modal);
                     if (bsModal) bsModal.hide();
                 }
-                setTimeout(() => window.location.reload(), 500);
+
+                // Instead of reloading, manually remove the row and update counts
+                this.removeValueFromUI(valueName);
+
             } else {
                 showToast(result.message, 'error');
             }
         } catch (error) {
-            showToast('Failed to remove value', 'error');
+            console.error('Error deleting value:', error);
+            showToast('Failed to delete value', 'error');
         } finally {
             deleteBtn.disabled = false;
             if (spinner) spinner.classList.add('d-none');
         }
     }
+
+// Add this new function to your TemplateDetailsManager class
+    removeValueFromUI(valueName) {
+        // Find and remove the row
+        const tbody = document.getElementById('valuesTableBody');
+        const rows = tbody.querySelectorAll('tr');
+        let rowToRemove = null;
+
+        rows.forEach(row => {
+            const codeElement = row.querySelector('code');
+            if (codeElement && codeElement.textContent.trim() === valueName) {
+                rowToRemove = row;
+            }
+        });
+
+        if (rowToRemove) {
+            rowToRemove.remove();
+
+            // Update counts
+            this.totalCount = Math.max(0, this.totalCount - 1);
+
+            // Update UI elements
+            document.getElementById('totalCountInfo').textContent = `${this.totalCount} values total`;
+
+            const remainingRows = tbody.querySelectorAll('tr:not(#tableLoader):not(#emptyState)');
+            document.getElementById('elementsCount').textContent = `${remainingRows.length} of ${this.totalCount} Elements`;
+
+            // Check if we need to show empty state
+            if (remainingRows.length === 0) {
+                this.renderEmptyState();
+            }
+
+            // Update pagination if needed
+            if (remainingRows.length === 0 && this.currentPage > 1) {
+                this.currentPage = Math.max(1, this.currentPage - 1);
+                this.loadTemplateDetails();
+            }
+        }
+    }
+
+    clearErrorMessages() {
+        const alertContainer = document.getElementById('alertContainer');
+        if (alertContainer) {
+            const errorAlerts = alertContainer.querySelectorAll('.alert-danger');
+            errorAlerts.forEach(alert => alert.remove());
+        }
+    }
+
+
+    showTableLoader() {
+        const loader = document.getElementById('tableLoader');
+        if (loader) loader.style.display = 'table-row';
+    }
+
+    hideTableLoader() {
+        const loader = document.getElementById('tableLoader');
+        if (loader) loader.style.display = 'none';
+    }
+
+    showError(message) {
+        const container = document.getElementById('alertContainer');
+        container.innerHTML = `
+            <div class="alert alert-danger alert-dismissible fade show">
+                ${this.escapeHtml(message)}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        setTimeout(() => {
+            const alert = container.querySelector('.alert');
+            if (alert) alert.remove();
+        }, 5000);
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
 }
 
-// Global functions
-function showDeleteTemplateModal(templateName) {
+// Global functions for backward compatibility
+function showDeleteModal(templateName) {
     const modal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
     modal.show();
 }
@@ -485,18 +902,20 @@ function showDeleteValueModal(valueName) {
 async function copyTemplateId(templateId) {
     try {
         await navigator.clipboard.writeText(templateId);
-        showToast('Template ID copied!', 'success');
+        showToast('Template ID copied to clipboard!', 'success');
     } catch (error) {
-        showToast('Failed to copy', 'error');
+        console.error('Failed to copy:', error);
+        showToast('Failed to copy to clipboard', 'error');
     }
 }
 
 async function copyValueId(valueId) {
     try {
         await navigator.clipboard.writeText(valueId);
-        showToast('Value ID copied!', 'success');
+        showToast('Value ID copied to clipboard!', 'success');
     } catch (error) {
-        showToast('Failed to copy', 'error');
+        console.error('Failed to copy:', error);
+        showToast('Failed to copy to clipboard', 'error');
     }
 }
 
@@ -504,17 +923,27 @@ function showToast(message, type = 'success') {
     const toast = document.createElement('div');
     toast.className = 'position-fixed top-0 end-0 p-3';
     toast.style.zIndex = '9999';
-
+    
     const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
-
+    
     toast.innerHTML = `
         <div class="toast show ${bgClass} text-white" role="alert">
+            <div class="toast-header ${bgClass} text-white border-0">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
+            </div>
             <div class="toast-body">${message}</div>
         </div>
     `;
-
+    
     document.body.appendChild(toast);
-    setTimeout(() => toast.remove(), 3000);
+    
+    setTimeout(() => {
+        if (toast.parentNode) {
+            toast.remove();
+        }
+    }, 3000);
 }
 
 async function cacheTemplate(templateId) {
@@ -522,18 +951,18 @@ async function cacheTemplate(templateId) {
     const originalText = btn.innerHTML;
 
     btn.disabled = true;
-    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Caching...';
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Caching...';
 
     try {
         const response = await fetch(`/Cache/CacheTemplate/${templateId}`, {
             method: 'POST',
-            headers: {'Content-Type': 'application/json'}
+            headers: { 'Content-Type': 'application/json' }
         });
 
         const result = await response.json();
         showToast(result.success ? result.message : result.message, result.success ? 'success' : 'error');
     } catch (error) {
-        showToast('Network error', 'error');
+        showToast(`Network error: ${error.message}`, 'error');
     } finally {
         btn.disabled = false;
         btn.innerHTML = originalText;
@@ -541,7 +970,38 @@ async function cacheTemplate(templateId) {
 }
 
 // Initialize
+let detailsManager;
 document.addEventListener('DOMContentLoaded', function () {
-    new TemplateDetailsManager();
+    console.log('DOM loaded, initializing TemplateDetailsManager...');
+    detailsManager = new TemplateDetailsManager();
+
+    // Auto-hide TempData alerts
+    const successAlert = document.querySelector('.alert-success');
+    if (successAlert) {
+        setTimeout(() => new bootstrap.Alert(successAlert).close(), 5000);
+    }
+
+    const errorAlert = document.querySelector('.alert-danger');
+    if (errorAlert) {
+        setTimeout(() => new bootstrap.Alert(errorAlert).close(), 5000);
+    }
 });
 </script>
+
+<style>
+    .badge.fs-6 {
+        font-size: 1rem !important;
+    }
+
+    .text-break {
+        word-break: break-word;
+    }
+
+    .gap-1 {
+        gap: 0.25rem;
+    }
+
+    .gap-2 {
+        gap: 0.5rem;
+    }
+</style>
