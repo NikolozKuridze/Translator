@@ -46,8 +46,6 @@ public static class ApiDependencies
 
         builder.Services.AddScoped<MvcExceptionFilter>();
 
-        // builder.Services.AddScoped<SecretKeyAuthenticationMiddleware>();
-
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
 
