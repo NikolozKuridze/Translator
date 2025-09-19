@@ -8,12 +8,12 @@ using LanguageEntity = Translator.Domain.Entities.Language;
 using TranslationEntity = Translator.Domain.Entities.Translation;
 using TemplateEntity = Translator.Domain.Entities.Template;
 
-namespace Translator.Application.Features.Values.Commands;
+namespace Translator.Application.Features.ValuesAdmin.Commands;
 
 public abstract class AdminCreateValue
 {
     public record Command(
-        string Key, 
+        string Key,
         string Value
     ) : IRequest;
 
@@ -51,12 +51,12 @@ public abstract class AdminCreateValue
             var detectedLanguages = LanguageDetector.DetectLanguages(request.Value, languages);
 
             if (!detectedLanguages.Any())
-                throw new UknownLanguageException($"No compatible language found for value: {request.Value}");
+                throw new UnkownLanguageException($"No compatible language found for value: {request.Value}");
 
             var selectedLanguage =
                 detectedLanguages.FirstOrDefault(l => l.Code.Equals("en", StringComparison.OrdinalIgnoreCase));
 
-            var value = new Value(request.Key, null);
+            var value = new Value(request.Key);
 
             var translation = new TranslationEntity(value.Id, request.Value)
             {
