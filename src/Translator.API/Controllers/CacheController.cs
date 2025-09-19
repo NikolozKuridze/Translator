@@ -7,7 +7,7 @@ using Translator.Application.Features.Caching.Commands.DeleteTemplateCache;
 using Translator.Application.Features.Caching.Commands.DeleteValueCache;
 using Translator.Application.Features.Caching.Queries.Template;
 using Translator.Application.Features.Caching.Queries.Value;
-using Translator.Application.Features.Template.Queries.GetTemplate;
+using Translator.Application.Features.Template.Queries;
 using Translator.Application.Features.Values.Queries;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Redis.CacheServices;
@@ -76,19 +76,17 @@ public class CacheController : Controller
                 .ToList();
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new
                 {
                     success = true,
                     data = pagedItems,
                     currentPage = pageNumber,
-                    totalPages = totalPages,
+                    totalPages,
                     totalCount = totalItems,
-                    pageSize = pageSize,
+                    pageSize,
                     templatesCount = templates.Items.Count(),
                     valuesCount = values.Items.Count()
                 });
-            }
 
             ViewBag.CurrentPage = pageNumber;
             ViewBag.PageSize = pageSize;
@@ -102,9 +100,7 @@ public class CacheController : Controller
         catch (Exception ex)
         {
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
-            {
                 return Json(new { success = false, message = ex.Message });
-            }
 
             TempData["ErrorMessage"] = $"Failed to load cached items: {ex.Message}";
             return View(new List<CachedItemViewModel>());
@@ -117,17 +113,14 @@ public class CacheController : Controller
     {
         try
         {
-            var templateQuery = new GetTemplateCommand(
+            var templateQuery = new GetTemplate.Command(
                 templateId,
                 null,
                 true,
                 new PaginationRequest(1, 10, null, null, null, null));
             var templateData = await _mediator.Send(templateQuery);
 
-            if (!templateData.Items.Any())
-            {
-                return Json(new { success = false, message = "Template not found" });
-            }
+            if (!templateData.Items.Any()) return Json(new { success = false, message = "Template not found" });
 
             var templateName = templateData.Items.First().Key;
 
@@ -157,10 +150,7 @@ public class CacheController : Controller
             var cached = await _mediator.Send(verifyQuery);
             var isCached = cached.Items.Any(t => t.TemplateId == templateId);
 
-            if (!isCached)
-            {
-                return Json(new { success = false, message = "Template cached but verification failed" });
-            }
+            if (!isCached) return Json(new { success = false, message = "Template cached but verification failed" });
 
             return Json(new { success = true, message = $"Template '{templateName}' cached successfully!" });
         }
@@ -178,10 +168,7 @@ public class CacheController : Controller
             var valueQuery = new GetValue.Command(valueId, null, true);
             var valueData = (await _mediator.Send(valueQuery)).ToList();
 
-            if (!valueData.Any())
-            {
-                return Json(new { success = false, message = "Value not found" });
-            }
+            if (!valueData.Any()) return Json(new { success = false, message = "Value not found" });
 
             var valueKey = valueData.First().ValueKey;
             var translations = valueData.Select(v => new TranslationDto(
