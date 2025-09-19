@@ -8,7 +8,6 @@ using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
-[UserAuth]
 [ApiController]
 [Route("api")]
 public class ValueController : ControllerBase
