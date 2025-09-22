@@ -8,6 +8,7 @@ using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
+[UserAuth]
 [ApiController]
 [Route("api")]
 public class TemplateController : ControllerBase
@@ -20,14 +21,15 @@ public class TemplateController : ControllerBase
     }
 
     [HttpPost("create-template")]
+    [ProducesResponseType(typeof(CreateTemplate.Response), StatusCodes.Status201Created)]
     public async Task<IResult> AddTemplate(
         [FromBody] CreateTemplateModel model)
     {
         var command = new CreateTemplate.Command(
             model.TemplateName.Trim(), model.Values);
-        await _mediator.Send(command);
+        var result = await _mediator.Send(command);
 
-        return Results.Ok();
+        return Results.Created("template", result);
     }
 
     [HttpGet("search-templates")]

@@ -14,7 +14,11 @@ public abstract class CreateTemplate
 {
     public sealed record Command(
         string TemplateName,
-        IEnumerable<string> Values) : IRequest;
+        IEnumerable<string> Values) : IRequest<Response>;
+    
+    public sealed record Response(
+        Guid Id,
+        string TemplateName);
 
     public class Validator : AbstractValidator<Command>
     {
@@ -41,7 +45,7 @@ public abstract class CreateTemplate
         }
     }
 
-    public class Handler : IRequestHandler<Command>
+    public class Handler : IRequestHandler<Command, Response>
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IRepository<TemplateEntity> _templateRepository;
@@ -63,7 +67,7 @@ public abstract class CreateTemplate
             _validator = validator;
         }
 
-        public async Task Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Command request, CancellationToken cancellationToken)
         {
             await _validator.ValidateAndThrowAsync(request, cancellationToken);
 
@@ -127,6 +131,8 @@ public abstract class CreateTemplate
 
             await _templateRepository.AddAsync(newTemplate, cancellationToken);
             await _templateRepository.SaveChangesAsync(cancellationToken);
+            
+            return new Response(newTemplate.Id, request.TemplateName);
         }
     }
 }

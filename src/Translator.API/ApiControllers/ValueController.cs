@@ -8,6 +8,7 @@ using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
 
+[UserAuth]
 [ApiController]
 [Route("api")]
 public class ValueController : ControllerBase
@@ -65,12 +66,14 @@ public class ValueController : ControllerBase
     }
 
     [HttpPost("add-value")]
+    [ProducesResponseType(typeof(CreateValue.Response), StatusCodes.Status201Created)]
     public async Task<IResult> AddValue(
         [FromBody] CreateValueModel model)
     {
         var command = new CreateValue.Command(model.Key.Trim(), model.Value.Trim());
-        await _mediator.Send(command);
-        return Results.Ok(new { success = true, message = "Value created successfully" });
+        var result = await _mediator.Send(command);
+        
+        return Results.Created("create-value", result);
     }
 
     [HttpDelete("delete-value")]

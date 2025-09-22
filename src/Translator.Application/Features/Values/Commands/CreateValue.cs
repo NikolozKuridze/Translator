@@ -13,12 +13,15 @@ namespace Translator.Application.Features.Values.Commands;
 
 public abstract class CreateValue
 {
-    public record Command(
+    public sealed record Command(
         string Key,
         string Value
-    ) : IRequest;
+    ) : IRequest<Response>;
 
-    public class CreateValueHandler : IRequestHandler<Command>
+    public sealed record Response(
+        Guid Id);
+
+    public class CreateValueHandler : IRequestHandler<Command, Response>
     {
         private readonly ICurrentUserService _currentUserService;
         private readonly IRepository<LanguageEntity> _languageEntityRepository;
@@ -40,7 +43,7 @@ public abstract class CreateValue
             _currentUserService = currentUserService;
         }
 
-        public async Task Handle(Command request, CancellationToken cancellationToken)
+        public async Task<Response> Handle(Command request, CancellationToken cancellationToken)
         {
             var userId = _currentUserService.GetCurrentUserId();
             if (!userId.HasValue)
@@ -85,6 +88,8 @@ public abstract class CreateValue
             await _translationRepository.AddAsync(translation, cancellationToken);
 
             await _templateValueRepository.SaveChangesAsync(cancellationToken);
+            
+            return new Response(value.Id);
         }
     }
 }
