@@ -1,6 +1,6 @@
 namespace Translator.API.Models;
 
-public sealed record GetTemplatesWithIDsModel(
-    List<Guid> Ids,
+public sealed record GetTemplatesWithIdsModel(
+    List<Guid> TemplateIds,
     string? LanguageCode = null
 );

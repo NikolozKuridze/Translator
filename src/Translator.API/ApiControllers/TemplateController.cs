@@ -62,9 +62,9 @@ public class TemplateController : ControllerBase
     [HttpPost("get-templates-with-ids")]
     [ProducesResponseType(typeof(IEnumerable<GetTemplatesByIds.Response>), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
-    public async Task<IActionResult> GetTemplatesWithIds([FromBody] GetTemplatesWithIDsModel model)
+    public async Task<IActionResult> GetTemplatesWithIds([FromBody] GetTemplatesWithIdsModel model)
     {
-        var command = new GetTemplatesByIds.Command(model.Ids, model.LanguageCode);
+        var command = new GetTemplatesByIds.Command(model.TemplateIds, model.LanguageCode);
         var result = await _mediator.Send(command);
 
         return Ok(result);
@@ -88,9 +88,4 @@ public class TemplateController : ControllerBase
         await _mediator.Send(command);
         return Results.NoContent();
     }
-
-    public sealed record GetTemplatesWithIDsModel(
-        List<Guid> Ids,
-        string? LanguageCode = null // Use null instead of empty string
-    );
 }
