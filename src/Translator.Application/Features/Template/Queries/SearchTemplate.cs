@@ -56,12 +56,13 @@ public abstract class SearchTemplate
 
             if (!string.IsNullOrWhiteSpace(request.TemplateName))
             {
-                var searchTerm = request.TemplateName.Trim().ToLower();
+                var searchTerm = request.TemplateName.Trim();
                 query = query.Where(t =>
-                    t.Name.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
-                    t.Name.Equals(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
-                    (t.Owner != null && t.Owner.Username.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase)));
+                    t.Name.Contains(searchTerm) ||
+                    (t.Owner != null && t.Owner.Username.Contains(searchTerm))
+                );
             }
+
 
             var sortBy = request.PaginationRequest.SortBy?.ToLower();
             var sortDirection = request.PaginationRequest.SortDirection;
@@ -82,7 +83,7 @@ public abstract class SearchTemplate
 
                 _ => query
                     .OrderBy(t => string.IsNullOrEmpty(request.TemplateName) ? 0 :
-                        t.Name.StartsWith(request.TemplateName, StringComparison.CurrentCultureIgnoreCase) ? 0 : 1)
+                        t.Name.ToLower().StartsWith(request.TemplateName.ToLower()) ? 0 : 1)
                     .ThenBy(t => t.OwnerId == null ? 0 : 1)
                     .ThenBy(t => t.Name)
             };
