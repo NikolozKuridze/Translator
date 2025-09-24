@@ -65,7 +65,7 @@ public abstract class GetTemplate
                 .AnyAsync(cancellationToken);
 
             if (!templateExists)
-                throw new TemplateNotFoundException($"Template with ID '{request.TemplateId}' not found or access denied");
+                throw new TemplateNotFoundException($"Template with ID '{request.TemplateId}'");
 
             var pagination = request.Pagination ?? new PaginationRequest(1, 10, null, null, null, null, null);
 
