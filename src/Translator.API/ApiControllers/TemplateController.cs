@@ -59,6 +59,18 @@ public class TemplateController : ControllerBase
         return Results.Ok(result);
     }
 
+    [HttpPost("get-templates-with-ids")]
+    [ProducesResponseType(typeof(IEnumerable<GetTemplatesByIds.Response>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(ProblemDetails), StatusCodes.Status400BadRequest)]
+    public async Task<IActionResult> GetTemplatesWithIds([FromBody] GetTemplatesWithIDsModel model)
+    {
+        var command = new GetTemplatesByIds.Command(model.Ids, model.LanguageCode);
+        var result = await _mediator.Send(command);
+
+        return Ok(result);
+    }
+
+
     [HttpGet("get-templates/{pageNumber}/{pageSize}")]
     [ProducesResponseType(typeof(PaginatedResponse<GetAllTemplates.Response>), StatusCodes.Status200OK)]
     public async Task<IResult> GetTemplate(int pageNumber = 1, int pageSize = 10)
@@ -76,4 +88,9 @@ public class TemplateController : ControllerBase
         await _mediator.Send(command);
         return Results.NoContent();
     }
+
+    public sealed record GetTemplatesWithIDsModel(
+        List<Guid> Ids,
+        string? LanguageCode = null // Use null instead of empty string
+    );
 }
