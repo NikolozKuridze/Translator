@@ -17,6 +17,7 @@ public abstract class GetTemplatesByIds
     ) : IRequest<IEnumerable<Response>>;
 
     public sealed record Response(
+        string TemplateId,
         string TemplateName,
         List<TemplateValuesDto> Values);
 
@@ -89,6 +90,7 @@ public abstract class GetTemplatesByIds
                         .ToList();
 
                     allResults.Add(new Response(
+                        template.Id.ToString(),
                         template.Name,
                         cachedValues
                     ));
@@ -134,6 +136,7 @@ public abstract class GetTemplatesByIds
             var results = await query.ToListAsync(cancellationToken);
 
             return results.Select(r => new Response(
+                r.TemplateId.ToString(),
                 r.TemplateName,
                 r.Values
             ));
