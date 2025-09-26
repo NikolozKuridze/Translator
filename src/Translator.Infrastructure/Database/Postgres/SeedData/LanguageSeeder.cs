@@ -29,7 +29,7 @@ public class LanguageSeeder
         )
         {
             Id = StaticGuidGenerator.CreateGuidFromString(l.name),
-            IsActive = false
+            IsActive = l.code == "en",
         });
 
         foreach (var lang in languages)
