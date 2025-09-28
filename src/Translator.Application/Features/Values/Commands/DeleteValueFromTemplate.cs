@@ -60,8 +60,7 @@ public abstract class DeleteValueFromTemplate
                 .SingleOrDefaultAsync(cancellationToken);
 
             if (existsTemplate is null)
-                throw new TemplateNotFoundException(
-                    $"Template with ID '{request.TemplateId}' not found for current user");
+                throw new TemplateNotFoundException(request.TemplateId);
 
             if (existsTemplate.OwnerId != userId.Value)
                 throw new UnauthorizedOperationException("You can only modify your own templates");
@@ -71,7 +70,7 @@ public abstract class DeleteValueFromTemplate
                 .SingleOrDefault(x => x.Hash == valueHash);
 
             if (existsValue is null)
-                throw new ValueNotFoundException($"Value '{request.ValueName}' not found in template");
+                throw new ValueNotFoundException(request.ValueName);
 
             if (existsValue.OwnerId != userId.Value && existsValue.OwnerId != null)
                 throw new UnauthorizedOperationException("You can only remove your own values or global values");
