@@ -91,13 +91,10 @@ public class TemplateController : ControllerBase
     }
 
     [HttpPost("add-value-to-template")]
-    public async Task<IResult> AddValueToTemplate(
-        [FromBody] string valueName,
-        [FromBody] Guid templateId)
+    public async Task<IResult> AddValue([FromBody]AddValueToTemplateRequest request)
     {
-        var command = new AddValueToTemplate.Command(valueName, templateId);
+        var command = new AddValueToTemplate.Command(request.ValueName, request.TemplateId);
         await _mediator.Send(command);
-        
         return Results.NoContent();
     }
 }
