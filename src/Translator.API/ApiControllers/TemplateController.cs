@@ -4,6 +4,7 @@ using Translator.API.Attributes;
 using Translator.API.Models;
 using Translator.Application.Features.Template.Commands;
 using Translator.Application.Features.Template.Queries;
+using Translator.Application.Features.Values.Commands;
 using Translator.Domain.Pagination;
 
 namespace Translator.API.ApiControllers;
@@ -86,6 +87,17 @@ public class TemplateController : ControllerBase
     {
         var command = new DeleteTemplate.Command(templateName);
         await _mediator.Send(command);
+        return Results.NoContent();
+    }
+
+    [HttpPost("add-value-to-template")]
+    public async Task<IResult> AddValueToTemplate(
+        [FromBody] string valueName,
+        [FromBody] Guid templateId)
+    {
+        var command = new AddValueToTemplate.Command(valueName, templateId);
+        await _mediator.Send(command);
+        
         return Results.NoContent();
     }
 }
