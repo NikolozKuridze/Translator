@@ -312,7 +312,6 @@ public class TemplatesController : Controller
         }
     }
 
-    // UPDATED: Use AdminDeleteValueFromTemplate for unrestricted access
     [HttpPost("DeleteValueFromTemplate")]
     public async Task<IActionResult> DeleteValueFromTemplate(string valueName, Guid templateId)
     {
