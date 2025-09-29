@@ -90,11 +90,12 @@ public class TemplateController : ControllerBase
         return Results.NoContent();
     }
 
-    [HttpPost("add-value-to-template")]
-    public async Task<IResult> AddValue([FromBody]AddValueToTemplateRequest request)
+    [HttpPost("DeleteValueFromTemplate")]
+    public async Task<IResult> DeleteValueFromTemplate(string valueName, Guid templateId)
     {
-        var command = new AddValueToTemplate.Command(request.ValueName, request.TemplateId);
+        var command = new DeleteValueFromTemplate.Command(valueName.Trim(), templateId);
         await _mediator.Send(command);
+
         return Results.NoContent();
     }
 }
