@@ -4,6 +4,6 @@ public partial class DatabaseConstants
 {
     public class Translation
     {
-        public const int VALUE_MAX_LENGTH = 128;
+        public const int VALUE_MAX_LENGTH = 2500;
     }
 }
