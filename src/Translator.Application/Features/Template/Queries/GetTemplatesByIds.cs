@@ -108,7 +108,7 @@ public abstract class GetTemplatesByIds
                 allResults.AddRange(databaseResults);
             }
 
-            return allResults.OrderBy(r => r.TemplateName);
+            return allResults;
         }
 
         private async Task<IEnumerable<Response>> HandleDatabaseQuery(
