@@ -38,36 +38,4 @@ public class MigrationsController : Controller
             return Results.BadRequest(new { success = false, message = ex.Message });
         }
     }
-    
-    [HttpPost]
-    public async Task<IResult> SeedFakeData()
-    {
-        try
-        {
-            var command = new SeedFakeDataCommand();
-            await _mediator.Send(command);
-            
-            return Results.Ok(new { success = true, message = "Fake data seeded successfully!" });
-        }
-        catch (Exception ex)
-        {
-            return Results.BadRequest(new { success = false, message = ex.Message });
-        }
-    }
-
-    [HttpPost]
-    public async Task<IResult> DatabaseDrop()
-    {
-        try
-        {
-            var command = new DropDatabaseCommand();
-            await _mediator.Send(command);
-
-            return Results.Ok(new { success = true, message = "Database dropped successfully!" });
-        }
-        catch (Exception ex)
-        {
-            return Results.BadRequest(new { success = false, message = ex.Message });
-        }
-    }
 }
