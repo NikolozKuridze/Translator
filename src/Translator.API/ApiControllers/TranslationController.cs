@@ -33,4 +33,13 @@ public class TranslationController : ControllerBase
         await _mediator.Send(command);
         return Results.NoContent();
     }
+
+    [HttpPatch("update-translation")]
+    public async Task<IResult> UpdateTranslation(
+        [FromBody] UpdateTranslation.Command model)
+    {
+        var command = new UpdateTranslation.Command(model.ValueKey, model.LanguageCode,  model.TranslationValue);
+        await _mediator.Send(command);
+        return Results.NoContent();
+    }
 }

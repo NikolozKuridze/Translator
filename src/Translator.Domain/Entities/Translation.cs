@@ -4,7 +4,7 @@ public class Translation : BaseEntity
 {
     public Guid TemplateValueId { get; init; }
     public Guid LanguageId { get; set; }
-    public string TranslationValue { get; init; }
+    public string TranslationValue { get; set; }
     public DateTimeOffset Created { get; private set; }
     public Language Language { get; set; } = null!;
     public Value Value { get; set; } = null!;
