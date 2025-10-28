@@ -1,5 +1,5 @@
 using System.Security.Claims;
-using Translator.Application.Contracts.Infrastructure;
+using Translator.Application.Contracts;
 
 namespace Translator.API.Services;
 

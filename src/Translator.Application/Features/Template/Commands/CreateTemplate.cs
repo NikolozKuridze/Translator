@@ -1,7 +1,7 @@
 using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Translator.Application.Contracts.Infrastructure;
+using Translator.Application.Contracts;
 using Translator.Application.Exceptions;
 using Translator.Domain.Entities;
 using Translator.Infrastructure.Database.Postgres.Configurations.Constants;

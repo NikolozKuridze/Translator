@@ -1,11 +1,9 @@
-using FluentValidation;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Translator.Application.Contracts.Infrastructure;
+using Translator.Application.Contracts;
 using Translator.Application.Exceptions;
 using Translator.Application.Helpers;
 using Translator.Domain.Entities;
-using Translator.Infrastructure.Database.Postgres.Configurations.Constants;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using Translator.Infrastructure.Database.Redis.CacheServices;
 using TranslationEntity = Translator.Domain.Entities.Translation;
@@ -93,10 +91,8 @@ public abstract class UpdateTranslation
             if (detectedLanguages.Count == 0)
                 throw new UnkownLanguageException($"No compatible language found for value: {request.TranslationValue}");
 
-            // Directly update the property (requires get; set;)
             updatedTranslation.TranslationValue = request.TranslationValue;
     
-            // Update cache if exists
             if (await _valueCacheService.IsValueCached(value.Id))
             {
                 await _valueCacheService.DeleteValueTranslationsAsync(value.Id);

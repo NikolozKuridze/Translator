@@ -1,6 +1,6 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
-using Translator.Application.Contracts.Infrastructure;
+using Translator.Application.Contracts;
 using Translator.Application.Exceptions;
 using Translator.Application.Helpers;
 using Translator.Domain.Entities;

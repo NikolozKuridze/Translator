@@ -1,4 +1,4 @@
-namespace Translator.Application.Contracts.Infrastructure;
+namespace Translator.Application.Contracts;
 
 public interface ICurrentUserService
 {
