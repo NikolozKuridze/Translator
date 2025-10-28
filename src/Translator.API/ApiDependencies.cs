@@ -7,7 +7,7 @@ using Translator.API.Attributes;
 using Translator.API.Middlewares;
 using Translator.API.Models;
 using Translator.API.Services;
-using Translator.Application.Contracts.Infrastructure;
+using Translator.Application.Contracts;
 using Translator.Infrastructure.Database.Postgres;
 
 namespace Translator.API;
