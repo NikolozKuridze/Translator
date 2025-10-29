@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Models;
 using Translator.Application.Features.Translation.Commands;
+using Translator.Application.Features.Values.Commands;
 
 namespace Translator.API.ApiControllers;
 
@@ -41,5 +42,14 @@ public class TranslationController : ControllerBase
         var command = new UpdateTranslation.Command(model.ValueKey, model.LanguageCode,  model.TranslationValue);
         await _mediator.Send(command);
         return Results.NoContent();
+    }
+
+    [HttpPost("generate-translations-for-values/{languageCode}")]
+    public async Task<IResult> GenerateTranslationsForValues(string languageCode)
+    {
+        var command = new AddTranslationsToAllValues.Command(languageCode);
+        var result = await _mediator.Send(command);
+        
+        return Results.Ok(result);
     }
 }

@@ -1,4 +1,4 @@
-using Google.Cloud.Translation.V2;
+using DeepL;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +10,7 @@ using Translator.Infrastructure.Database.Postgres;
 using Translator.Infrastructure.Database.Postgres.Repository;
 using Translator.Infrastructure.Database.Redis.CacheServices;
 using Translator.Infrastructure.Database.Redis.Rudiment;
+using Translator.Infrastructure.External.DeepL;
 
 namespace Translator.Infrastructure;
 
@@ -47,11 +48,22 @@ public static class InfrastructureDependencies
 
     private static void AddSingletonDependencies(this IServiceCollection services)
     {
+        services.AddSingleton<DeepLClient>(sp =>
+        {
+            var config = sp.GetRequiredService<IConfiguration>();
+            var key = config["DeepL:ApiKey"];
+            var options = new DeepLClientOptions
+            {
+                sendPlatformInfo = false,
+                ServerUrl = "https://api-free.deepl.com" 
+                // "https://api.deepl.com" for pro
+            };
+            return new DeepLClient(key, options);
+        });
+        
         services.AddSingleton<IRedisService, RedisService>();
         services.AddSingleton<TemplateCacheService>();
         services.AddSingleton<ValueCacheService>();
-        services.AddSingleton<TranslationClient>(sp
-            => TranslationClient.Create());
     }
 
     private static void AddScopedServices(this IServiceCollection services, IConfiguration configuration)
@@ -69,6 +81,9 @@ public static class InfrastructureDependencies
             {
                 cfg.UseNpgsql(configuration.GetConnectionString(nameof(LogEntry)));
             });
+        
+
+        services.AddScoped<ITranslationService, DeepLTranslationService>();
 
         services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
     }
