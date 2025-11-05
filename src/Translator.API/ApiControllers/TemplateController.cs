@@ -98,4 +98,13 @@ public class TemplateController : ControllerBase
 
         return Results.NoContent();
     }
+
+    [HttpPost("AddValueToTemplate")]
+    public async Task<IResult> AddValueToTemplate(string valueName, Guid templateId)
+    {
+        var command = new AddValueToTemplate.Command(valueName, templateId);
+        await _mediator.Send(command);
+        
+        return Results.NoContent();
+    }
 }
