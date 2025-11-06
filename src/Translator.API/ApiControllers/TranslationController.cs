@@ -40,8 +40,8 @@ public class TranslationController : ControllerBase
         [FromBody] UpdateTranslation.Command model)
     {
         var command = new UpdateTranslation.Command(model.ValueKey, model.LanguageCode,  model.TranslationValue);
-        await _mediator.Send(command);
-        return Results.NoContent();
+        var result = await _mediator.Send(command);
+        return Results.Ok(result);
     }
 
     [HttpPost("generate-translations-for-values/{languageCode}")]
