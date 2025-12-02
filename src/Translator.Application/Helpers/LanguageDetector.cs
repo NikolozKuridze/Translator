@@ -22,7 +22,11 @@ public static class LanguageDetector
         var significantChars = input.Where(c => !IsNeutralCharacter(c)).ToList();
 
         if (significantChars.Count == 0)
-            return new List<Language>();
+        {
+            var englishLang = activeLanguages.FirstOrDefault(l => 
+                l.Code.Equals("en", StringComparison.OrdinalIgnoreCase));
+            return englishLang != null ? new List<Language> { englishLang } : new List<Language>();
+        }
 
         var candidateLanguages = new List<Language>();
 

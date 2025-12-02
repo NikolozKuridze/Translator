@@ -83,4 +83,16 @@ public class ValueController : ControllerBase
         await _mediator.Send(command);
         return Results.Ok(new { success = true, message = "Value deleted successfully" });
     }
+
+    [HttpGet("landing-company-info")]
+    public async Task<IResult> GetLandingCompanyInfo()
+    {
+        var command = new GetLandingValues.Query();
+        var result = await _mediator.Send(command);
+        return Results.Ok( new {
+            data = result,
+            success = true,
+            timestamp = DateTimeOffset.UtcNow,
+        });
+    }
 }
