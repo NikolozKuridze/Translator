@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
@@ -149,4 +151,39 @@ public class UserController : Controller
             return Json(new { success = false, message = ex.Message });
         }
     }
+    
+    [HttpGet("ExportJson")]
+    public async Task<IActionResult> ExportJson()
+    {
+        try
+        {
+            var query = new GetUsers.Query();
+            var allUsers = await _mediator.Send(query);
+
+            var exportData = allUsers.Select(u => new
+            {
+                u.UserId,
+                u.UserName,
+                SecretKey = u.SecretKey // Keep secret key for export
+            }).ToList();
+
+            var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+
+            var fileName = $"users-export-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json";
+        
+            Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+            Response.ContentType = "application/json";
+
+            return File(Encoding.UTF8.GetBytes(json), "application/json", fileName);
+        }
+        catch (Exception ex)
+        {
+            TempData["ErrorMessage"] = $"Error exporting users: {ex.Message}";
+            return RedirectToAction("Index");
+        }
+    }
+
 }

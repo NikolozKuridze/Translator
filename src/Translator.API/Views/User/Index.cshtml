@@ -17,11 +17,19 @@ Layout = "_Layout";
             </button>
         </div>
 
+        <!-- NEW: Download JSON Button -->
+        <a href="/Users/ExportJson" class="btn btn-outline-success me-2" 
+           title="Download all users data as JSON file (includes secret keys)">
+            <i class="fas fa-download"></i> Export JSON
+        </a>
+
+        <!-- Create User Button -->
         <button type="button" class="btn btn-primary" onclick="showCreateModal()">
             <i class="fas fa-plus"></i> Create User
         </button>
     </div>
 </div>
+
 
 <!-- Alert container -->
 <div id="alertContainer">
@@ -814,4 +822,16 @@ Layout = "_Layout";
         cursor: not-allowed !important;
         opacity: 0.65;
     }
+
+    .btn-outline-success {
+        border-color: #28a745;
+        color: #28a745;
+    }
+
+    .btn-outline-success:hover {
+        background-color: #28a745;
+        border-color: #28a745;
+        color: white;
+    }
+
 </style>
