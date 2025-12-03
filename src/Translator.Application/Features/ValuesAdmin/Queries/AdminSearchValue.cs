@@ -9,10 +9,11 @@ namespace Translator.Application.Features.ValuesAdmin.Queries;
 public abstract class AdminSearchValue
 {
     public sealed record Command(
-        string ValueKey,
+        string? ValueKey,
+        string? UserName,
         PaginationRequest PaginationRequest) : IRequest<PaginatedResponse<AdminGetAllValues.Response>>;
     
-    public class AdminSearchValueHandler : IRequestHandler<AdminSearchValue.Command, PaginatedResponse<AdminGetAllValues.Response>>
+    public class AdminSearchValueHandler : IRequestHandler<Command, PaginatedResponse<AdminGetAllValues.Response>>
     {
         private readonly IRepository<Value> _valueRepository;
 
@@ -34,16 +35,27 @@ public abstract class AdminSearchValue
                 var searchTerm = request.ValueKey.Trim().ToLower();
                 query = query.Where(v =>
                     v.Key.ToLower().Contains(searchTerm) ||
-                    v.Key.ToLower() == searchTerm ||
-                    (v.Owner != null && v.Owner.Username.ToLower().Contains(searchTerm)));
+                    v.Key.ToLower() == searchTerm);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.UserName))
+            {
+                var usernameSearchTerm = request.UserName.Trim().ToLower();
+                query = query.Where(v =>
+                    v.Owner != null && 
+                    v.Owner.Username.ToLower().Contains(usernameSearchTerm));
             }
 
             var totalItems = await query.CountAsync(cancellationToken);
 
+            var searchKey = request.ValueKey?.Trim().ToLower() ?? "";
+            var searchUser = request.UserName?.Trim().ToLower() ?? "";
+            
             query = query
-                .OrderBy(v => v.Key.ToLower().StartsWith(request.ValueKey.ToLower() ?? "") ? 0 : 1)
-                .ThenBy(v => v.OwnerId == null ? 0 : 1) 
-                .ThenByDescending(v => v.CreatedAt); 
+                .OrderBy(v => v.Key.ToLower().StartsWith(searchKey) ? 0 : 1)
+                .ThenBy(v => v.Owner != null && v.Owner.Username.ToLower().StartsWith(searchUser) ? 0 : 1)
+                .ThenBy(v => v.OwnerId == null ? 0 : 1)
+                .ThenByDescending(v => v.CreatedAt);
 
             var values = await query
                 .Skip((request.PaginationRequest.Page - 1) * request.PaginationRequest.PageSize)

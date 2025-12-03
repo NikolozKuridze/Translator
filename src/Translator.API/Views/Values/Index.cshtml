@@ -10,6 +10,7 @@
     var sortBy = ViewBag.SortBy as string ?? "date";
     var sortDirection = ViewBag.SortDirection as string ?? "asc";
     var searchKey = ViewBag.ValueKey as string ?? "";
+    var searchUserName = ViewBag.UserName as string ?? "";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -40,27 +41,42 @@
 
 <!-- Search Form -->
 <div class="card mb-3">
-    <div class="card-body">
-        <form id="searchForm" class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Search by Key</label>
-                <input type="text" id="searchInput" name="valueKey" 
-                       value="@searchKey" 
-                       class="form-control"
-                       placeholder="Enter key to search..." />
-            </div>
-            <div class="col-md-2 d-flex align-items-end">
-                <button type="submit" class="btn btn-primary me-2">
-                    <i class="fas fa-search"></i> Search
-                </button>
-                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary" style="display: @(string.IsNullOrEmpty(searchKey) ? "none" : "inline-block")">
-                    <i class="fas fa-times"></i> Clear
-                </button>
+    <div class="card-body p-3">
+        <form id="searchForm">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label mb-1" style="font-size: 0.875rem;">Search by Key</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="searchInput" name="valueKey" 
+                               value="@searchKey" 
+                               class="form-control form-control-sm"
+                               placeholder="Enter key..." />
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-1" style="font-size: 0.875rem;">Filter by Username</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" id="userNameInput" name="userName" 
+                               value="@searchUserName" 
+                               class="form-control form-control-sm"
+                               placeholder="Enter username..." />
+                    </div>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-search me-1"></i> Search
+                        </button>
+                        <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary btn-sm" 
+                                style="display: @(string.IsNullOrEmpty(searchKey) && string.IsNullOrEmpty(searchUserName) ? "none" : "inline-block")">
+                            <i class="fas fa-times me-1"></i> Clear
+                        </button>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
 </div>
-
 <!-- Create Value Form -->
 <div class="collapse mb-4" id="createValueSection">
     <div class="card">
@@ -100,6 +116,12 @@
                                 <i class="fas fa-sort sort-icon-key"></i>
                             </button>
                         </th>
+                        <th>
+                            Owner
+                            <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="owner" title="Sort by owner">
+                                <i class="fas fa-sort sort-icon-owner"></i>
+                            </button>
+                        </th>
                         <th>Translations Count</th>
                         <th>
                             Created Date
@@ -118,7 +140,7 @@
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
-                                        <span class="badge bg-primary">@value.Key</span>
+                                        <span class="badge bg-primary value-key-badge">@value.Key</span>
                                         <button class="btn btn-sm btn-outline-secondary" 
                                                 onclick="copyValueId('@value.ValueId')" 
                                                 title="Copy Value ID">
@@ -127,10 +149,20 @@
                                     </div>
                                 </td>
                                 <td>
-                                    <span class="badge bg-info">@value.TranslationsCount</span>
+                                    @if (value.OwnerId.HasValue)
+                                    {
+                                        <span class="badge bg-success owner-badge" title="User Value">@value.OwnerName</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary owner-badge" title="Global Value">Global</span>
+                                    }
                                 </td>
                                 <td>
-                                    <small class="text-muted">@value.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
+                                    <span class="badge bg-info translation-badge">@value.TranslationsCount</span>
+                                </td>
+                                <td>
+                                    <small class="text-muted date-text">@value.CreatedAt.ToString("dd/MM/yyyy HH:mm")</small>
                                 </td>
                                 <td>
                                     <div class="d-flex gap-1">
@@ -150,7 +182,7 @@
                     else
                     {
                         <tr id="emptyState">
-                            <td colspan="4" class="text-center text-muted py-4">
+                            <td colspan="5" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-3x mb-3"></i>
                                 <div>No values found</div>
                             </td>
@@ -287,6 +319,7 @@ class ValuesManager {
         this.sortBy = '@sortBy';
         this.sortDirection = '@sortDirection';
         this.searchKey = '@Html.Raw(searchKey)';
+        this.searchUserName = '@Html.Raw(searchUserName)';
         this.totalCount = @totalCount;
         this.totalPages = @totalPages;
         
@@ -306,28 +339,32 @@ class ValuesManager {
         });
 
         const searchInput = document.getElementById('searchInput');
+        const userNameInput = document.getElementById('userNameInput');
         let debounceTimeout;
 
-        // Fix: Separate the live search from form submission
-        searchInput.addEventListener('input', (e) => {
+        // Handle live search for both inputs
+        const handleLiveSearch = () => {
             clearTimeout(debounceTimeout);
-
-            // Update the internal search key without triggering full search
-            const inputValue = e.target.value.trim();
+            const inputValue = searchInput.value.trim();
+            const userNameValue = userNameInput.value.trim();
 
             debounceTimeout = setTimeout(() => {
-                // Only update search key and perform search without updating the input field
                 this.searchKey = inputValue;
+                this.searchUserName = userNameValue;
                 this.currentPage = 1;
                 this.loadDataWithoutInputUpdate();
                 this.updateSearchUI();
             }, 300);
-        });
+        };
+
+        searchInput.addEventListener('input', handleLiveSearch);
+        userNameInput.addEventListener('input', handleLiveSearch);
 
         // Clear search
         document.getElementById('clearSearchBtn').addEventListener('click', () => {
             this.clearSearch();
         });
+        
         // Create form
         document.getElementById('createValueForm').addEventListener('submit', (e) => {
             e.preventDefault();
@@ -365,9 +402,11 @@ class ValuesManager {
 
     async performSearch() {
         const searchInput = document.getElementById('searchInput');
+        const userNameInput = document.getElementById('userNameInput');
         const submitBtn = document.querySelector('#searchForm button[type="submit"]');
 
         this.searchKey = searchInput.value.trim();
+        this.searchUserName = userNameInput.value.trim();
         this.currentPage = 1;
 
         submitBtn.disabled = true;
@@ -382,7 +421,9 @@ class ValuesManager {
 
     clearSearch() {
         document.getElementById('searchInput').value = '';
+        document.getElementById('userNameInput').value = '';
         this.searchKey = '';
+        this.searchUserName = '';
         this.currentPage = 1;
         this.loadData();
         this.updateSearchUI();
@@ -390,7 +431,8 @@ class ValuesManager {
 
     updateSearchUI() {
         const clearBtn = document.getElementById('clearSearchBtn');
-        clearBtn.style.display = this.searchKey ? 'inline-block' : 'none';
+        const hasSearch = this.searchKey || this.searchUserName;
+        clearBtn.style.display = hasSearch ? 'inline-block' : 'none';
     }
 
     async createValue() {
@@ -488,8 +530,14 @@ class ValuesManager {
             if (this.searchKey) {
                 params.append('valueKey', this.searchKey);
             }
+            
+            if (this.searchUserName) {
+                params.append('userName', this.searchUserName);
+            }
 
-            const endpoint = this.searchKey ? '/Values/Search' : '/Values/';
+            const hasFilters = this.searchKey || this.searchUserName;
+            const endpoint = hasFilters ? '/Values/Search' : '/Values/';
+            
             const response = await fetch(`${endpoint}?${params}`, {
                 method: 'GET',
                 headers: {
@@ -532,6 +580,9 @@ class ValuesManager {
         if (data.searchKey !== undefined) {
             this.searchKey = data.searchKey;
         }
+        if (data.searchUserName !== undefined) {
+            this.searchUserName = data.searchUserName;
+        }
     }
 
     async loadDataWithoutInputUpdate() {
@@ -549,8 +600,14 @@ class ValuesManager {
             if (this.searchKey) {
                 params.append('valueKey', this.searchKey);
             }
+            
+            if (this.searchUserName) {
+                params.append('userName', this.searchUserName);
+            }
 
-            const endpoint = this.searchKey ? '/Values/Search' : '/Values/';
+            const hasFilters = this.searchKey || this.searchUserName;
+            const endpoint = hasFilters ? '/Values/Search' : '/Values/';
+            
             const response = await fetch(`${endpoint}?${params}`, {
                 method: 'GET',
                 headers: {
@@ -571,7 +628,7 @@ class ValuesManager {
                 this.renderValues(result.data || []);
                 this.renderPagination(result);
                 this.renderPageSizeSelector(result);
-                // Don't call this.updateUI() here as it updates the search input
+                // Don't call this.updateUI() here as it updates the input fields
                 document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
             } else {
                 this.showError('Failed to load values: ' + (result.message || 'Unknown error'));
@@ -588,10 +645,16 @@ class ValuesManager {
         // Update total count
         document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
 
-        // Only update search input if it's not currently focused (user is not typing)
+        // Only update search inputs if they're not currently focused
         const searchInput = document.getElementById('searchInput');
+        const userNameInput = document.getElementById('userNameInput');
+        
         if (document.activeElement !== searchInput) {
             searchInput.value = this.searchKey;
+        }
+        
+        if (document.activeElement !== userNameInput) {
+            userNameInput.value = this.searchUserName;
         }
 
         this.updateSearchUI();
@@ -622,46 +685,52 @@ class ValuesManager {
     createValueRow(value) {
         const createdDate = new Date(value.createdAt).toLocaleDateString('en-GB', {
             day: '2-digit',
-            month: '2-digit', 
+            month: '2-digit',
             year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
 
-        return `
-            <tr>
-                <td>
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="badge bg-primary">${this.escapeHtml(value.key)}</span>
-                        <button class="btn btn-sm btn-outline-secondary copy-value-btn" 
-                                data-id="${value.valueId}" 
-                                title="Copy Value ID">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </td>
-                <td>
-                    <span class="badge bg-info">${value.translationsCount}</span>
-                </td>
-                <td>
-                    <small class="text-muted">${createdDate}</small>
-                </td>
-                <td>
-                    <div class="d-flex gap-1">
-                        <a href="/Values/Details/${value.valueId}" 
-                           class="btn btn-sm btn-outline-primary">
-                            <i class="fas fa-eye"></i> Details
-                        </a>
-                        <button class="btn btn-sm btn-outline-danger delete-value-btn" 
-                                data-key="${this.escapeHtml(value.key)}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                </td>
-            </tr>
-        `;
-    }
+        const ownerBadge = value.ownerId
+            ? `<span class="badge bg-success owner-badge" title="User Value">${this.escapeHtml(value.ownerName)}</span>`
+            : `<span class="badge bg-secondary owner-badge" title="Global Value">Global</span>`;
 
+        return `
+        <tr>
+            <td>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-primary value-key-badge">${this.escapeHtml(value.key)}</span>
+                    <button class="btn btn-sm btn-outline-secondary copy-value-btn" 
+                            data-id="${value.valueId}" 
+                            title="Copy Value ID">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </td>
+            <td>
+                ${ownerBadge}
+            </td>
+            <td>
+                <span class="badge bg-info translation-badge">${value.translationsCount}</span>
+            </td>
+            <td>
+                <small class="text-muted date-text">${createdDate}</small>
+            </td>
+            <td class="action-buttons">
+                <div class="d-flex gap-1">
+                    <a href="/Values/Details/${value.valueId}" 
+                       class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-eye"></i> Details
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger delete-value-btn" 
+                            data-key="${this.escapeHtml(value.key)}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    `;
+    }
     bindTableEvents() {
         // Copy buttons
         document.querySelectorAll('.copy-value-btn').forEach(btn => {
@@ -684,7 +753,7 @@ class ValuesManager {
         const tbody = document.getElementById('valuesTableBody');
         tbody.insertAdjacentHTML('beforeend', `
             <tr id="emptyState">
-                <td colspan="4" class="text-center text-muted py-4">
+                <td colspan="5" class="text-center text-muted py-4">
                     <i class="fas fa-inbox fa-3x mb-3"></i>
                     <div>No values found</div>
                 </td>
@@ -819,7 +888,6 @@ class ValuesManager {
         }
     }
 
-
     bindPaginationEvents() {
         document.querySelectorAll('.page-link-custom').forEach(link => {
             link.addEventListener('click', (e) => {
@@ -835,7 +903,7 @@ class ValuesManager {
 
     updateSortIcons() {
         // Reset all icons
-        document.querySelectorAll('.sort-icon-key, .sort-icon-date').forEach(icon => {
+        document.querySelectorAll('.sort-icon-key, .sort-icon-owner, .sort-icon-date').forEach(icon => {
             icon.className = 'fas fa-sort';
         });
         
@@ -943,6 +1011,125 @@ document.addEventListener('DOMContentLoaded', function() {
 </script>
 
 <style>
+
+    /* Search form specific styles */
+    #searchForm .input-group-sm {
+        height: 32px !important;
+    }
+
+    #searchForm .form-control-sm {
+        height: 32px !important;
+        font-size: 0.875rem !important;
+        padding: 0.25rem 0.5rem !important;
+    }
+
+    #searchForm .btn-sm {
+        height: 32px !important;
+        padding: 0.25rem 0.75rem !important;
+        font-size: 0.875rem !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    #searchForm .form-label {
+        font-size: 0.875rem !important;
+        font-weight: 500 !important;
+        margin-bottom: 0.25rem !important;
+        color: #495057 !important;
+    }
+
+    #searchForm .card-body {
+        padding: 1rem !important;
+    }
+
+    #searchForm .row.g-2 {
+        --bs-gutter-x: 0.75rem;
+        --bs-gutter-y: 0.5rem;
+    }
+
+    /* Input focus states */
+    #searchForm .form-control:focus {
+        border-color: #86b7fe !important;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25) !important;
+    }
+
+    /* Button hover effects */
+    #searchForm .btn-primary:hover {
+        background-color: #0b5ed7 !important;
+        border-color: #0a58ca !important;
+    }
+
+    #searchForm .btn-outline-secondary:hover {
+        background-color: #6c757d !important;
+        color: white !important;
+    }
+
+    /* Responsive adjustments for search form */
+    @@media (max-width: 768px) {
+    #searchForm .col-md-3 {
+        margin-bottom: 0.5rem !important;
+    }
+
+    #searchForm .d-flex.gap-2 {
+        width: 100% !important;
+        justify-content: flex-start !important;
+    }
+
+    #searchForm .btn {
+        flex: 1 !important;
+    }
+    }
+
+    /* For extra small screens */
+    @@media (max-width: 576px) {
+    #searchForm .card-body {
+        padding: 0.75rem !important;
+    }
+
+    #searchForm .row.g-2 {
+        --bs-gutter-x: 0.5rem;
+        --bs-gutter-y: 0.5rem;
+    }
+
+    #searchForm .btn-sm {
+        font-size: 0.8rem !important;
+        padding: 0.2rem 0.5rem !important;
+    }
+
+    #searchForm .form-control-sm {
+        font-size: 0.8rem !important;
+    }
+    }
+
+    /* Fix input placeholder color */
+    #searchForm .form-control::placeholder {
+        color: #6c757d !important;
+        opacity: 0.8 !important;
+    }
+
+    /* Ensure labels are properly aligned */
+    #searchForm label {
+        display: block !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    /* Add some spacing between form groups */
+    #searchForm .col-md-3:not(:last-child) {
+        border-right: 1px solid #dee2e6 !important;
+        padding-right: 1rem !important;
+    }
+
+    /* Remove border on last item */
+    #searchForm .col-md-3:last-child {
+        border-right: none !important;
+    }
+
+    /* Improve button icons */
+    #searchForm .btn i {
+        font-size: 0.8rem !important;
+        margin-right: 0.25rem !important;
+    }
     .text-truncate {
         white-space: nowrap;
         overflow: hidden;
@@ -950,7 +1137,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     .badge {
-        font-size: 0.875em;
+        font-size: 0.75rem !important;
+        padding: 0.25rem 0.5rem !important;
+        line-height: 1.2 !important;
+        font-weight: 500 !important;
     }
 
     .gap-1 {
@@ -959,5 +1149,200 @@ document.addEventListener('DOMContentLoaded', function() {
 
     .gap-2 {
         gap: 0.5rem;
+    }
+
+    /* Compact badges for specific use cases */
+    .badge.bg-primary {
+        max-width: 120px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: inline-block !important;
+    }
+
+    .badge.bg-success,
+    .badge.bg-secondary,
+    .badge.bg-info {
+        max-width: 100px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: inline-block !important;
+    }
+
+    /* Compact table styles */
+    table.table-hover td {
+        padding: 0.5rem 0.75rem !important;
+        vertical-align: middle !important;
+    }
+
+    table.table-hover th {
+        padding: 0.75rem !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* Compact button styles */
+    .btn-sm {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.75rem !important;
+        line-height: 1.2 !important;
+    }
+
+    /* Compact pagination */
+    .pagination .page-link {
+        padding: 0.375rem 0.75rem !important;
+        font-size: 0.875rem !important;
+    }
+
+    .pagination .page-item.disabled .page-link {
+        padding: 0.375rem 0.75rem !important;
+    }
+
+    /* Compact form controls */
+    .form-control-sm {
+        padding: 0.25rem 0.5rem !important;
+        font-size: 0.875rem !important;
+        line-height: 1.5 !important;
+    }
+
+    .form-select-sm {
+        padding: 0.25rem 2.25rem 0.25rem 0.5rem !important;
+        font-size: 0.875rem !important;
+        line-height: 1.5 !important;
+    }
+
+    /* Compact card headers */
+    .card-header {
+        padding: 0.75rem 1.25rem !important;
+    }
+
+    .card-body {
+        padding: 1rem !important;
+    }
+
+    /* Compact alerts */
+    .alert {
+        padding: 0.75rem 1rem !important;
+        margin-bottom: 1rem !important;
+        font-size: 0.875rem !important;
+    }
+
+    /* Compact modal */
+    .modal-body {
+        padding: 1rem !important;
+    }
+
+    .modal-footer {
+        padding: 0.75rem !important;
+    }
+
+    /* Compact toast */
+    .toast {
+        font-size: 0.875rem !important;
+        max-width: 350px !important;
+    }
+
+    .toast-body {
+        padding: 0.75rem !important;
+    }
+
+    /* Compact grid gaps */
+    .row.g-3 {
+        --bs-gutter-x: 0.75rem;
+        --bs-gutter-y: 0.75rem;
+    }
+
+    /* Value key badges - specifically compact */
+    .value-key-badge {
+        font-size: 0.7rem !important;
+        padding: 0.15rem 0.4rem !important;
+        max-width: 150px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+    }
+
+    /* Owner badges - specifically compact */
+    .owner-badge {
+        font-size: 0.7rem !important;
+        padding: 0.15rem 0.4rem !important;
+        max-width: 100px !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        display: inline-block !important;
+        vertical-align: middle !important;
+    }
+
+    /* Translation count badges */
+    .translation-badge {
+        font-size: 0.7rem !important;
+        padding: 0.15rem 0.4rem !important;
+        min-width: 2rem !important;
+        text-align: center !important;
+        display: inline-block !important;
+    }
+
+    /* Date text */
+    .date-text {
+        font-size: 0.8rem !important;
+        color: #6c757d !important;
+        white-space: nowrap !important;
+    }
+
+    /* Action buttons container */
+    .action-buttons {
+        min-width: 120px !important;
+    }
+
+    /* Search form compact */
+    #searchForm .form-label {
+        font-size: 0.875rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    /* Create value form compact */
+    #createValueForm .form-label {
+        font-size: 0.875rem !important;
+        margin-bottom: 0.25rem !important;
+    }
+
+    /* Table responsive adjustments */
+    @@media (max-width: 768px) {
+        .table-responsive {
+            font-size: 0.875rem !important;
+        }
+        
+        .badge {
+            font-size: 0.7rem !important;
+            padding: 0.15rem 0.35rem !important;
+        }
+        
+        .btn-sm {
+            padding: 0.2rem 0.4rem !important;
+            font-size: 0.7rem !important;
+        }
+        
+        .date-text {
+            font-size: 0.75rem !important;
+        }
+    }
+
+    /* Extra small screens */
+    @@media (max-width: 576px) {
+        .badge {
+            font-size: 0.65rem !important;
+            padding: 0.1rem 0.3rem !important;
+        }
+        
+        .value-key-badge {
+            max-width: 100px !important;
+        }
+        
+        .owner-badge {
+            max-width: 80px !important;
+        }
     }
 </style>

@@ -26,14 +26,15 @@ public class ValuesController : Controller
         string sortBy = "date",
         string sortDirection = "desc",
         int pageNumber = 1,
-        int pageSize = 10)
+        int pageSize = 10,
+        string userName = "")
     {
         try
         {
             var paginationRequest =
                 new PaginationRequest(pageNumber, pageSize, null, null, null, sortBy, sortDirection);
 
-            var command = new AdminGetAllValues.Command(paginationRequest);
+            var command = new AdminSearchValue.Command(null, userName, paginationRequest);
             var result = await _mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -47,7 +48,8 @@ public class ValuesController : Controller
                     pageSize = result.PageSize,
                     sortBy,
                     sortDirection,
-                    searchKey = ""
+                    searchKey = "",
+                    searchUserName = userName
                 });
 
             ViewBag.CurrentPage = result.Page;
@@ -58,6 +60,7 @@ public class ValuesController : Controller
             ViewBag.HasPreviousPage = result.HasPreviousPage;
             ViewBag.SortBy = sortBy;
             ViewBag.SortDirection = sortDirection;
+            ViewBag.UserName = userName;
 
             ViewBag.GlobalCount = result.Items.Count(x => x.OwnershipType == "Global");
             ViewBag.UserCount = result.Items.Count(x => x.OwnershipType == "User");
@@ -112,6 +115,7 @@ public class ValuesController : Controller
     [HttpGet("Search")]
     public async Task<IActionResult> Search(
         string valueKey = "",
+        string userName = "",
         string sortBy = "date",
         string sortDirection = "desc",
         int pageNumber = 1,
@@ -122,7 +126,8 @@ public class ValuesController : Controller
             var paginationRequest =
                 new PaginationRequest(pageNumber, pageSize, null, null, null, sortBy, sortDirection);
 
-            var command = new AdminSearchValue.Command(valueKey, paginationRequest);
+            // Update to include userName
+            var command = new AdminSearchValue.Command(valueKey, userName, paginationRequest);
             var result = await _mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -136,7 +141,8 @@ public class ValuesController : Controller
                     pageSize = result.PageSize,
                     sortBy,
                     sortDirection,
-                    searchKey = valueKey
+                    searchKey = valueKey,
+                    searchUserName = userName // Add this
                 });
 
             ViewBag.CurrentPage = result.Page;
@@ -146,6 +152,7 @@ public class ValuesController : Controller
             ViewBag.HasNextPage = result.HasNextPage;
             ViewBag.HasPreviousPage = result.HasPreviousPage;
             ViewBag.ValueKey = valueKey;
+            ViewBag.UserName = userName; // Add this
             ViewBag.SortBy = sortBy;
             ViewBag.SortDirection = sortDirection;
 
