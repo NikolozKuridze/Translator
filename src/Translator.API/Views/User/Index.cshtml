@@ -1,33 +1,44 @@
 @model IEnumerable<Translator.Application.Features.Users.Queries.GetUsers.Response>
 
 @{
-    ViewBag.Title = "Users";
-    Layout = "_Layout";
+ViewBag.Title = "Users";
+Layout = "_Layout";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Users <small class="text-muted" id="totalCountInfo">(@(Model?.Count() ?? 0) total)</small></h2>
-    <button type="button" class="btn btn-primary" onclick="showCreateModal()">
-        <i class="fas fa-plus"></i> Create User
-    </button>
+    <div class="d-flex align-items-center">
+        <!-- Search Box -->
+        <div class="input-group me-3" style="width: 300px;">
+            <input type="text" class="form-control" id="userSearch" placeholder="Search by username..."
+                   aria-label="Search users">
+            <button class="btn btn-outline-secondary" type="button" id="clearSearch" style="display: none;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <button type="button" class="btn btn-primary" onclick="showCreateModal()">
+            <i class="fas fa-plus"></i> Create User
+        </button>
+    </div>
 </div>
 
 <!-- Alert container -->
 <div id="alertContainer">
     @if (TempData["SuccessMessage"] != null)
     {
-        <div class="alert alert-success alert-dismissible fade show">
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     }
 
     @if (TempData["ErrorMessage"] != null)
     {
-        <div class="alert alert-danger alert-dismissible fade show">
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
+    <div class="alert alert-danger alert-dismissible fade show">
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
     }
 </div>
 
@@ -37,60 +48,72 @@
         <div class="table-responsive">
             <table class="table table-hover align-middle mb-0">
                 <thead class="table-light">
-                    <tr>
-                        <th scope="col">Username</th>
-                        <th scope="col">User ID</th>
-                        <th scope="col">Secret Key</th>
-                        <th scope="col">Actions</th>
-                    </tr>
+                <tr>
+                    <th scope="col">Username</th>
+                    <th scope="col">User ID</th>
+                    <th scope="col">Secret Key</th>
+                    <th scope="col">Actions</th>
+                </tr>
                 </thead>
                 <tbody id="usersTableBody">
-                    @if (Model != null && Model.Any())
-                    {
-                        foreach (var user in Model)
-                        {
-                            <tr>
-                                <td>
-                                    <span class="fw-bold">@user.UserName</span>
-                                </td>
-                                <td>
-                                    <code class="text-muted">@user.UserId</code>
-                                </td>
-                                <td>
-                                    <div class="d-flex align-items-center">
-                                        <code class="me-2 secret-key" data-key="@user.SecretKey">••••••••••••••••</code>
-                                        <button class="btn btn-sm btn-outline-secondary toggle-secret" 
-                                                onclick="toggleSecretKey(this, '@Html.Raw(Html.Encode(user.SecretKey))')"
-                                                title="Show/Hide Secret Key">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                        <button class="btn btn-sm btn-outline-primary ms-1 copy-secret" 
-                                                onclick="copySecretKey('@Html.Raw(Html.Encode(user.SecretKey))')"
-                                                title="Copy Secret Key">
-                                            <i class="fas fa-copy"></i>
-                                        </button>
-                                    </div>
-                                </td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-danger" 
-                                            onclick="showDeleteModal('@Html.Raw(Html.Encode(user.UserName))')">
-                                        <i class="fas fa-trash"></i> Delete
-                                    </button>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr id="emptyState">
-                            <td colspan="4" class="text-center text-muted py-4">
-                                <i class="fas fa-users fa-3x mb-3"></i>
-                                <div>No users found</div>
-                            </td>
-                        </tr>
-                    }
+                @if (Model != null && Model.Any())
+                {
+                foreach (var user in Model)
+                {
+                <tr>
+                    <td>
+                        <span class="fw-bold">@user.UserName</span>
+                    </td>
+                    <td>
+                        <code class="text-muted">@user.UserId</code>
+                    </td>
+                    <td>
+                        <div class="d-flex align-items-center">
+                            <code class="me-2 secret-key" data-key="@user.SecretKey">••••••••••••••••</code>
+                            <button class="btn btn-sm btn-outline-secondary toggle-secret"
+                                    onclick="toggleSecretKey(this, '@Html.Raw(Html.Encode(user.SecretKey))')"
+                                    title="Show/Hide Secret Key">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-primary ms-1 copy-secret"
+                                    onclick="copySecretKey('@Html.Raw(Html.Encode(user.SecretKey))')"
+                                    title="Copy Secret Key">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-danger"
+                                onclick="showDeleteModal('@Html.Raw(Html.Encode(user.UserName))')">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </td>
+                </tr>
+                }
+                }
+                else
+                {
+                <tr id="emptyState">
+                    <td colspan="4" class="text-center text-muted py-4">
+                        <i class="fas fa-users fa-3x mb-3"></i>
+                        <div>No users found</div>
+                    </td>
+                </tr>
+                }
                 </tbody>
             </table>
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer" class="d-flex justify-content-between align-items-center p-3 border-top">
+            <div class="text-muted" id="pageInfo">
+                Showing 0 of 0 users
+            </div>
+            <nav>
+                <ul class="pagination mb-0" id="paginationControls">
+                    <!-- Pagination will be dynamically generated -->
+                </ul>
+            </nav>
         </div>
     </div>
 </div>
@@ -110,7 +133,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="createUsername" class="form-label">Username</label>
-                    <input type="text" class="form-control" id="createUsername" 
+                    <input type="text" class="form-control" id="createUsername"
                            placeholder="Enter username" maxlength="50">
                     <div class="invalid-feedback"></div>
                 </div>
@@ -187,379 +210,608 @@
     </div>
 </div>
 
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
 <script>
-class UsersManager {
-    constructor() {
-        this.init();
-    }
+    // Global variables
+    let currentPage = 1;
+    let currentPageSize = 10;
+    let currentSearchTerm = '';
+    let searchTimeout = null;
 
-    init() {
-        console.log('Initializing UsersManager...');
-        this.bindEvents();
-    }
+    // Initialize when DOM is ready
+    $(document).ready(function() {
+        // Bind events for modals
+        bindModalEvents();
 
-    bindEvents() {
+        // Initialize search functionality
+        initSearch();
+
+        // Load initial data
+        loadUsers();
+
+        // Auto-hide TempData alerts
+        autoHideAlerts();
+    });
+
+    function bindModalEvents() {
         // Create modal button
-        document.getElementById('confirmCreateBtn').addEventListener('click', () => {
-            const username = document.getElementById('createUsername').value.trim();
-            this.createUser(username);
+        $('#confirmCreateBtn').on('click', function() {
+            const username = $('#createUsername').val().trim();
+            createUser(username);
         });
 
         // Delete modal button
-        document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
-            const username = document.getElementById('usernameToDelete').textContent;
-            this.deleteUser(username);
+        $('#confirmDeleteBtn').on('click', function() {
+            const username = $('#usernameToDelete').text();
+            deleteUser(username);
         });
 
         // Enter key in create username field
-        document.getElementById('createUsername').addEventListener('keypress', (e) => {
+        $('#createUsername').on('keypress', function(e) {
             if (e.key === 'Enter') {
-                const username = e.target.value.trim();
-                this.createUser(username);
+                e.preventDefault();
+                const username = $(this).val().trim();
+                createUser(username);
             }
         });
     }
 
-    async loadData() {
-        console.log('Loading users...');
-        try {
-            const response = await fetch('/Users', {
-                method: 'GET',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
+    function initSearch() {
+        // Search with debounce
+        $('#userSearch').on('input', function() {
+            currentSearchTerm = $(this).val().trim();
+
+            // Show/hide clear button
+            $('#clearSearch').toggle(currentSearchTerm.length > 0);
+
+            // Clear previous timeout
+            if (searchTimeout) {
+                clearTimeout(searchTimeout);
+            }
+
+            // Set new timeout for debounce (1000ms = 1 second)
+            searchTimeout = setTimeout(function() {
+                currentPage = 1; // Reset to first page when searching
+                loadUsers();
+            }, 1000);
+        });
+
+        // Clear search
+        $('#clearSearch').on('click', function() {
+            $('#userSearch').val('');
+            currentSearchTerm = '';
+            $(this).hide();
+            currentPage = 1;
+            loadUsers();
+        });
+
+        // Handle Enter key in search
+        $('#userSearch').on('keypress', function(e) {
+            if (e.which === 13) { // Enter key
+                e.preventDefault();
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
                 }
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                currentPage = 1;
+                loadUsers();
             }
+        });
+    }
 
-            const result = await response.json();
-            console.log('Response data:', result);
+    function autoHideAlerts() {
+        const successAlert = $('.alert-success');
+        if (successAlert.length) {
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(successAlert[0]);
+                alert.close();
+            }, 5000);
+        }
 
-            if (result.success) {
-                this.renderUsers(result.data);
-                this.updateTotalCount(result.data.length);
-            } else {
-                this.showError('Failed to load users: ' + (result.message || 'Unknown error'));
-                this.renderEmptyState();
-            }
-        } catch (error) {
-            console.error('Error loading users:', error);
-            this.showError('Network error: ' + error.message);
-            this.renderEmptyState();
+        const errorAlert = $('.alert-danger');
+        if (errorAlert.length) {
+            setTimeout(() => {
+                const alert = new bootstrap.Alert(errorAlert[0]);
+                alert.close();
+            }, 5000);
         }
     }
 
-    async createUser(username) {
-        if (!username) {
-            this.showValidationError('createUsername', 'Username is required');
+    function loadUsers() {
+        console.log('Loading users... Page:', currentPage, 'Search:', currentSearchTerm);
+
+        // Show loading state
+        $('#usersTableBody').html(`
+        <tr id="loadingState">
+            <td colspan="4" class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <div class="mt-2">Loading users...</div>
+            </td>
+        </tr>
+    `);
+
+        // Prepare request data
+        const requestData = {
+            userName: currentSearchTerm || null,
+            pageNumber: currentPage,
+            pageSize: currentPageSize
+        };
+
+        // AJAX call using jQuery
+        $.ajax({
+            url: '/Users/Search',
+            type: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify(requestData),
+            success: function(response) {
+                console.log('Response received:', response);
+
+                if (response.success) {
+                    renderUsers(response.data);
+                    renderPagination(response);
+                    updatePageInfo(response);
+                } else {
+                    showError(response.message || 'Failed to load users');
+                    renderEmptyState();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading users:', error);
+                showError('Network error: ' + error);
+                renderEmptyState();
+            }
+        });
+    }
+
+    function renderUsers(users) {
+        const tbody = $('#usersTableBody');
+        tbody.empty();
+
+        if (users && users.length > 0) {
+            users.forEach(function(user) {
+                const row = createUserRow(user);
+                tbody.append(row);
+            });
+        } else {
+            renderEmptyState();
+        }
+    }
+
+    function createUserRow(user) {
+        const username = escapeHtml(user.userName);
+        const normalizedUsername = user.userName.toLowerCase().trim();
+        const userId = escapeHtml(user.userId);
+        const secretKey = escapeHtml(user.secretKey);
+        const isCompanyWebsiteUser = normalizedUsername === "company website";
+
+        let deleteButton = '';
+        if (!isCompanyWebsiteUser) {
+            deleteButton = `
+            <button class="btn btn-sm btn-outline-danger"
+                    onclick="showDeleteModal('${username}')"
+                    title="Delete user">
+                <i class="fas fa-trash"></i> Delete
+            </button>
+        `;
+        } else {
+            deleteButton = `
+            <button class="btn btn-sm btn-secondary disabled"
+                    title="Company Website user cannot be deleted">
+                <i class="fas fa-lock"></i> Protected
+            </button>
+        `;
+        }
+
+        return `
+    <tr>
+        <td>
+            <span class="fw-bold">${username}</span>
+            ${isCompanyWebsiteUser ? '<span class="badge bg-warning text-dark ms-2">Protected</span>' : ''}
+        </td>
+        <td>
+            <code class="text-muted">${userId}</code>
+        </td>
+        <td>
+            <div class="d-flex align-items-center">
+                <code class="me-2 secret-key" data-key="${secretKey}">••••••••••••••••</code>
+                <button class="btn btn-sm btn-outline-secondary toggle-secret"
+                        onclick="toggleSecretKey(this, '${secretKey}')"
+                        title="Show/Hide Secret Key">
+                    <i class="fas fa-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary ms-1 copy-secret"
+                        onclick="copySecretKey('${secretKey}')"
+                        title="Copy Secret Key">
+                    <i class="fas fa-copy"></i>
+                </button>
+            </div>
+        </td>
+        <td>
+            ${deleteButton}
+        </td>
+    </tr>
+`;
+    }
+
+    function renderPagination(response) {
+        const pagination = $('#paginationControls');
+        pagination.empty();
+
+        if (!response || response.totalPages <= 1) {
+            $('#paginationContainer').hide();
             return;
         }
 
-        const btn = document.getElementById('confirmCreateBtn');
-        btn.disabled = true;
+        $('#paginationContainer').show();
+
+        // Previous button
+        const prevDisabled = !response.hasPreviousPage ? 'disabled' : '';
+        pagination.append(`
+        <li class="page-item ${prevDisabled}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1})" ${prevDisabled}>
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `);
+
+        // Page numbers
+        const totalPages = response.totalPages;
+        const maxVisiblePages = 5;
+        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+
+        // Adjust start if we're near the end
+        if (endPage - startPage + 1 < maxVisiblePages) {
+            startPage = Math.max(1, endPage - maxVisiblePages + 1);
+        }
+
+        // First page
+        if (startPage > 1) {
+            pagination.append(`
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(1)">1</a>
+            </li>
+            ${startPage > 2 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+        `);
+        }
+
+        // Page numbers
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === currentPage ? 'active' : '';
+            pagination.append(`
+            <li class="page-item ${activeClass}">
+                <a class="page-link" href="#" onclick="changePage(${i})">${i}</a>
+            </li>
+        `);
+        }
+
+        // Last page
+        if (endPage < totalPages) {
+            pagination.append(`
+            ${endPage < totalPages - 1 ? '<li class="page-item disabled"><span class="page-link">...</span></li>' : ''}
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(${totalPages})">${totalPages}</a>
+            </li>
+        `);
+        }
+
+        // Next button
+        const nextDisabled = !response.hasNextPage ? 'disabled' : '';
+        pagination.append(`
+        <li class="page-item ${nextDisabled}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1})" ${nextDisabled}>
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `);
+    }
+
+    function updatePageInfo(response) {
+        if (!response) return;
+
+        const startItem = (response.page - 1) * response.pageSize + 1;
+        const endItem = Math.min(response.page * response.pageSize, response.totalItems);
+
+        $('#pageInfo').html(`
+        Showing <strong>${startItem}-${endItem}</strong> of <strong>${response.totalItems}</strong> users
+        ${currentSearchTerm ? `for "<strong>${escapeHtml(currentSearchTerm)}</strong>"` : ''}
+    `);
+
+        // Update total count in header
+        $('#totalCountInfo').text(`(${response.totalItems} total)`);
+    }
+
+    function changePage(page) {
+        if (page !== currentPage && page >= 1) {
+            currentPage = page;
+            loadUsers();
+        }
+    }
+
+    function renderEmptyState() {
+        const tbody = $('#usersTableBody');
+        const message = currentSearchTerm
+            ? `No users found for "${escapeHtml(currentSearchTerm)}"`
+            : 'No users found';
+
+        tbody.html(`
+        <tr id="emptyState">
+            <td colspan="4" class="text-center text-muted py-4">
+                <i class="fas fa-users fa-3x mb-3"></i>
+                <div>${message}</div>
+                ${currentSearchTerm ? '<div class="mt-2"><button class="btn btn-sm btn-outline-secondary" onclick="clearSearch()">Clear search</button></div>' : ''}
+            </td>
+        </tr>
+    `);
+
+        // Hide pagination when empty
+        $('#paginationContainer').hide();
+    }
+
+    function clearSearch() {
+        $('#userSearch').val('');
+        currentSearchTerm = '';
+        $('#clearSearch').hide();
+        currentPage = 1;
+        loadUsers();
+    }
+
+    // Modal Functions
+    function showCreateModal() {
+        const modal = new bootstrap.Modal($('#createUserModal')[0]);
+        modal.show();
+        $('#createUsername').focus();
+    }
+
+    function showDeleteModal(username) {
+        $('#usernameToDelete').text(username);
+        const modal = new bootstrap.Modal($('#deleteUserModal')[0]);
+        modal.show();
+    }
+
+    // User CRUD Operations
+    async function createUser(username) {
+        if (!username) {
+            showValidationError('createUsername', 'Username is required');
+            return;
+        }
+
+        const btn = $('#confirmCreateBtn');
+        btn.prop('disabled', true);
 
         try {
-            const response = await fetch('/Users/Create', {
-                method: 'POST',
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ userName: username })
+            const response = await $.ajax({
+                url: '/Users/Create',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ userName: username })
             });
 
-            const result = await response.json();
-
-            if (result.success) {
+            if (response.success) {
                 // Close create modal
-                const createModal = document.getElementById('createUserModal');
-                if (window.bootstrap) {
-                    const bsModal = bootstrap.Modal.getInstance(createModal);
-                    if (bsModal) bsModal.hide();
-                }
+                const createModal = $('#createUserModal');
+                const bsModal = bootstrap.Modal.getInstance(createModal[0]);
+                if (bsModal) bsModal.hide();
 
                 // Show secret key modal
-                document.getElementById('newUserSecretKey').value = result.secretKey;
-                const secretKeyModal = new bootstrap.Modal(document.getElementById('secretKeyModal'));
+                $('#newUserSecretKey').val(response.secretKey);
+                const secretKeyModal = new bootstrap.Modal($('#secretKeyModal')[0]);
                 secretKeyModal.show();
 
                 // Clear form
-                document.getElementById('createUsername').value = '';
-                this.clearValidationError('createUsername');
+                $('#createUsername').val('');
+                clearValidationError('createUsername');
 
-                // Reload data
-                this.loadData();
+                // Reload data with current search/filters
+                loadUsers();
+
+                // Show success message
+                showSuccess(response.message || 'User created successfully');
             } else {
-                this.showError(result.message);
+                showError(response.message);
             }
         } catch (error) {
             console.error('Error creating user:', error);
-            this.showError('Failed to create user');
+            showError('Failed to create user: ' + error.responseJSON?.message || error.statusText);
         } finally {
-            btn.disabled = false;
+            btn.prop('disabled', false);
         }
     }
 
-    async deleteUser(username) {
-        const btn = document.getElementById('confirmDeleteBtn');
-        btn.disabled = true;
+    async function deleteUser(username) {
+        const btn = $('#confirmDeleteBtn');
+        btn.prop('disabled', true);
 
         try {
-            const formData = new FormData();
-            formData.append('username', username);
-
-            const response = await fetch('/Users/Delete', {
-                method: 'POST',
+            const response = await $.ajax({
+                url: '/Users/Delete',
+                type: 'POST',
+                data: { username: username },
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: formData
+                }
             });
 
-            const result = await response.json();
+            if (response.success) {
+                showSuccess(response.message);
 
-            if (result.success) {
-                this.showSuccess(result.message);
-                
-                const modal = document.getElementById('deleteUserModal');
-                if (window.bootstrap) {
-                    const bsModal = bootstrap.Modal.getInstance(modal);
-                    if (bsModal) bsModal.hide();
-                }
+                const modal = $('#deleteUserModal');
+                const bsModal = bootstrap.Modal.getInstance(modal[0]);
+                if (bsModal) bsModal.hide();
 
-                this.loadData();
+                loadUsers();
             } else {
-                this.showError(result.message);
+                showError(response.message);
             }
         } catch (error) {
             console.error('Error deleting user:', error);
-            this.showError('Failed to delete user');
+            showError('Failed to delete user: ' + error.responseJSON?.message || error.statusText);
         } finally {
-            btn.disabled = false;
+            btn.prop('disabled', false);
         }
     }
 
-    renderUsers(users) {
-        const tbody = document.getElementById('usersTableBody');
-        
-        // Remove existing rows except empty state
-        const existingRows = tbody.querySelectorAll('tr:not(#emptyState)');
-        existingRows.forEach(row => row.remove());
-        
-        // Remove empty state if it exists
-        const emptyState = document.getElementById('emptyState');
-        if (emptyState) emptyState.remove();
+    // Secret Key Functions
+    function toggleSecretKey(button, secretKey) {
+        const codeElement = $(button).parent().find('.secret-key');
+        const icon = $(button).find('i');
 
-        if (users && users.length > 0) {
-            users.forEach(user => {
-                const row = this.createUserRow(user);
-                tbody.insertAdjacentHTML('beforeend', row);
-            });
+        if (codeElement.text() === '••••••••••••••••') {
+            codeElement.text(secretKey);
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+            button.title = 'Hide Secret Key';
         } else {
-            this.renderEmptyState();
+            codeElement.text('••••••••••••••••');
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+            button.title = 'Show Secret Key';
         }
     }
 
-    createUserRow(user) {
-        const username = this.escapeHtml(user.userName);
-        const userId = this.escapeHtml(user.userId);
-        const secretKey = this.escapeHtml(user.secretKey);
+    function copySecretKey(secretKey) {
+        navigator.clipboard.writeText(secretKey).then(() => {
+            const button = $(event.target).closest('button');
+            const originalHtml = button.html();
+            button.html('<i class="fas fa-check"></i>');
+            button.removeClass('btn-outline-primary').addClass('btn-success');
 
-        return `
-            <tr>
-                <td>
-                    <span class="fw-bold">${username}</span>
-                </td>
-                <td>
-                    <code class="text-muted">${userId}</code>
-                </td>
-                <td>
-                    <div class="d-flex align-items-center">
-                        <code class="me-2 secret-key" data-key="${secretKey}">••••••••••••••••</code>
-                        <button class="btn btn-sm btn-outline-secondary toggle-secret" 
-                                onclick="toggleSecretKey(this, '${secretKey}')"
-                                title="Show/Hide Secret Key">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-outline-primary ms-1 copy-secret" 
-                                onclick="copySecretKey('${secretKey}')"
-                                title="Copy Secret Key">
-                            <i class="fas fa-copy"></i>
-                        </button>
-                    </div>
-                </td>
-                <td>
-                    <button class="btn btn-sm btn-outline-danger" 
-                            onclick="showDeleteModal('${username}')">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                </td>
-            </tr>
-        `;
+            setTimeout(() => {
+                button.html(originalHtml);
+                button.removeClass('btn-success').addClass('btn-outline-primary');
+            }, 1000);
+        });
     }
 
-    renderEmptyState() {
-        const tbody = document.getElementById('usersTableBody');
-        tbody.innerHTML = `
-            <tr id="emptyState">
-                <td colspan="4" class="text-center text-muted py-4">
-                    <i class="fas fa-users fa-3x mb-3"></i>
-                    <div>No users found</div>
-                </td>
-            </tr>
-        `;
+    function copyText(elementId) {
+        const element = $('#' + elementId);
+        navigator.clipboard.writeText(element.val()).then(() => {
+            const button = $(event.target).closest('button');
+            const originalHtml = button.html();
+            button.html('<i class="fas fa-check"></i> Copied!');
+            button.addClass('btn-success');
+
+            setTimeout(() => {
+                button.html(originalHtml);
+                button.removeClass('btn-success');
+            }, 1000);
+        });
     }
 
-    updateTotalCount(count) {
-        document.getElementById('totalCountInfo').textContent = `(${count} total)`;
+    // Utility Functions
+    function showValidationError(fieldId, message) {
+        const field = $('#' + fieldId);
+        const feedback = field.parent().find('.invalid-feedback');
+        field.addClass('is-invalid');
+        feedback.text(message);
     }
 
-    showValidationError(fieldId, message) {
-        const field = document.getElementById(fieldId);
-        const feedback = field.parentNode.querySelector('.invalid-feedback');
-        field.classList.add('is-invalid');
-        feedback.textContent = message;
+    function clearValidationError(fieldId) {
+        const field = $('#' + fieldId);
+        const feedback = field.parent().find('.invalid-feedback');
+        field.removeClass('is-invalid');
+        feedback.text('');
     }
 
-    clearValidationError(fieldId) {
-        const field = document.getElementById(fieldId);
-        const feedback = field.parentNode.querySelector('.invalid-feedback');
-        field.classList.remove('is-invalid');
-        feedback.textContent = '';
-    }
+    function showAlert(message, type) {
+        const container = $('#alertContainer');
+        container.html(`
+        <div class="alert alert-${type} alert-dismissible fade show">
+            ${escapeHtml(message)}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `);
 
-    showSuccess(message) {
-        this.showAlert(message, 'success');
-    }
-
-    showError(message) {
-        this.showAlert(message, 'danger');
-    }
-
-    showAlert(message, type) {
-        const container = document.getElementById('alertContainer');
-        container.innerHTML = `
-            <div class="alert alert-${type} alert-dismissible fade show">
-                ${this.escapeHtml(message)}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        `;
-
+        // Auto-hide after 5 seconds
         setTimeout(() => {
-            const alert = container.querySelector('.alert');
-            if (alert) alert.remove();
+            container.find('.alert').alert('close');
         }, 5000);
     }
 
-    escapeHtml(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-}
-
-// Global functions for modal compatibility
-function showCreateModal() {
-    const modal = new bootstrap.Modal(document.getElementById('createUserModal'));
-    modal.show();
-}
-
-function showDeleteModal(username) {
-    document.getElementById('usernameToDelete').textContent = username;
-    const modal = new bootstrap.Modal(document.getElementById('deleteUserModal'));
-    modal.show();
-}
-
-function toggleSecretKey(button, secretKey) {
-    const codeElement = button.parentNode.querySelector('.secret-key');
-    const icon = button.querySelector('i');
-    
-    if (codeElement.textContent === '••••••••••••••••') {
-        codeElement.textContent = secretKey;
-        icon.className = 'fas fa-eye-slash';
-        button.title = 'Hide Secret Key';
-    } else {
-        codeElement.textContent = '••••••••••••••••';
-        icon.className = 'fas fa-eye';
-        button.title = 'Show Secret Key';
-    }
-}
-
-function copySecretKey(secretKey) {
-    navigator.clipboard.writeText(secretKey).then(() => {
-        // Show temporary success message
-        const button = event.target.closest('button');
-        const originalHtml = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i>';
-        button.classList.remove('btn-outline-primary');
-        button.classList.add('btn-success');
-        
-        setTimeout(() => {
-            button.innerHTML = originalHtml;
-            button.classList.remove('btn-success');
-            button.classList.add('btn-outline-primary');
-        }, 1000);
-    });
-}
-
-function copyText(elementId) {
-    const element = document.getElementById(elementId);
-    navigator.clipboard.writeText(element.value).then(() => {
-        const button = event.target;
-        const originalHtml = button.innerHTML;
-        button.innerHTML = '<i class="fas fa-check"></i> Copied!';
-        button.classList.add('btn-success');
-        
-        setTimeout(() => {
-            button.innerHTML = originalHtml;
-            button.classList.remove('btn-success');
-        }, 1000);
-    });
-}
-
-// Initialize
-let usersManager;
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM loaded, initializing UsersManager...');
-    usersManager = new UsersManager();
-
-    // Auto-hide TempData alerts
-    const successAlert = document.querySelector('.alert-success');
-    if (successAlert) {
-        setTimeout(() => new bootstrap.Alert(successAlert).close(), 5000);
+    function showSuccess(message) {
+        showAlert(message, 'success');
     }
 
-    const errorAlert = document.querySelector('.alert-danger');
-    if (errorAlert) {
-        setTimeout(() => new bootstrap.Alert(errorAlert).close(), 5000);
+    function showError(message) {
+        showAlert(message, 'danger');
     }
-});
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = $('<div></div>').text(text);
+        return div.html();
+    }
 </script>
 
 <style>
-.user-info {
-    background-color: #f8f9fa;
-    padding: 15px;
-    border-radius: 5px;
-    border-left: 4px solid #007bff;
-}
+    .user-info {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        border-left: 4px solid #007bff;
+    }
 
-.secret-key {
-    font-family: 'Courier New', monospace;
-    font-size: 0.875em;
-    background-color: #f8f9fa;
-    padding: 2px 4px;
-    border-radius: 3px;
-}
+    .secret-key {
+        font-family: 'Courier New', monospace;
+        font-size: 0.875em;
+        background-color: #f8f9fa;
+        padding: 2px 4px;
+        border-radius: 3px;
+        cursor: default;
+    }
 
-.toggle-secret, .copy-secret {
-    transition: all 0.2s ease;
-}
+    .toggle-secret, .copy-secret {
+        transition: all 0.2s ease;
+    }
 
-.toggle-secret:hover, .copy-secret:hover {
-    transform: scale(1.1);
-}
+    .toggle-secret:hover, .copy-secret:hover {
+        transform: scale(1.05);
+    }
+
+    #paginationContainer {
+        background-color: #f8f9fa;
+    }
+
+    .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .page-link {
+        color: #007bff;
+        cursor: pointer;
+    }
+
+    .page-link:hover {
+        color: #0056b3;
+        background-color: #e9ecef;
+    }
+
+    .page-item.disabled .page-link {
+        color: #6c757d;
+        cursor: not-allowed;
+    }
+
+    #userSearch:focus {
+        border-color: #86b7fe;
+        box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    }
+
+    #clearSearch:hover {
+        background-color: #e9ecef;
+    }
+
+    #loadingState .spinner-border {
+        width: 3rem;
+        height: 3rem;
+    }
+    .badge {
+        font-size: 0.75em;
+    }
+
+    .disabled {
+        cursor: not-allowed !important;
+        opacity: 0.65;
+    }
 </style>
