@@ -49,7 +49,7 @@ public abstract class GetLandingValues
             var query = valueRepository
                 .AsQueryable()
                 .Include(v => v.Translations)
-                .Where(v => v.OwnerId == userId.Value || v.OwnerId == null)
+                .Where(v => v.OwnerId == userId.Value)
                 .AsNoTracking();
 
             var values = await query.ToArrayAsync(cancellationToken);
