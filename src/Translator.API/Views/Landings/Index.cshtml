@@ -1,0 +1,352 @@
+@{
+    ViewData["Title"] = "Create Landing";
+    Layout = "_Layout";
+}
+
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h1 class="h3 mb-2">Create Landing</h1>
+            <p class="text-muted">Create a new user and add their contact information values.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="fas fa-plus-circle me-2"></i>Create New Landing</h5>
+                </div>
+                <div class="card-body">
+                    <form id="createLandingForm">
+                        <div class="row">
+                            <!-- User Information -->
+                            <div class="col-12">
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="fas fa-user me-2"></i>User Information</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="mb-3">
+                                            <label for="userName" class="form-label">Username *</label>
+                                            <input type="text" 
+                                                   class="form-control" 
+                                                   id="userName" 
+                                                   name="userName" 
+                                                   required
+                                                   placeholder="Enter username for the new user">
+                                            <div class="form-text">This username will be used to associate values with the user.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Static Values -->
+                            <div class="col-12">
+                                <div class="card mb-4">
+                                    <div class="card-header bg-light">
+                                        <h6 class="mb-0"><i class="fas fa-address-card me-2"></i>Contact Information Values</h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6 mb-3">
+                                                <label for="nameValue" class="form-label">Name *</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light fw-bold">Name</span>
+                                                    <input type="text" 
+                                                           class="form-control" 
+                                                           id="nameValue" 
+                                                           name="nameValue"
+                                                           required
+                                                           placeholder="Enter name value">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label for="phoneValue" class="form-label">Phone Number *</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light fw-bold">PhoneNumber</span>
+                                                    <input type="text" 
+                                                           class="form-control" 
+                                                           id="phoneValue" 
+                                                           name="phoneValue"
+                                                           required
+                                                           placeholder="Enter phone number">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 mb-3">
+                                                <label for="emailValue" class="form-label">Email *</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light fw-bold">Email</span>
+                                                    <input type="email" 
+                                                           class="form-control" 
+                                                           id="emailValue" 
+                                                           name="emailValue"
+                                                           required
+                                                           placeholder="Enter email address">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 mb-3">
+                                                <label for="streetValue" class="form-label">Street</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light fw-bold">Street</span>
+                                                    <input type="text" 
+                                                           class="form-control" 
+                                                           id="streetValue" 
+                                                           name="streetValue"
+                                                           placeholder="Enter street address">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label for="cityValue" class="form-label">City</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light fw-bold">City</span>
+                                                    <input type="text" 
+                                                           class="form-control" 
+                                                           id="cityValue" 
+                                                           name="cityValue"
+                                                           placeholder="Enter city">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-md-6 mb-3">
+                                                <label for="postalCodeValue" class="form-label">Postal Code</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light fw-bold">PostalCode</span>
+                                                    <input type="text" 
+                                                           class="form-control" 
+                                                           id="postalCodeValue" 
+                                                           name="postalCodeValue"
+                                                           placeholder="Enter postal code">
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12 mb-3">
+                                                <label for="countryValue" class="form-label">Country</label>
+                                                <div class="input-group">
+                                                    <span class="input-group-text bg-light fw-bold">Country</span>
+                                                    <input type="text" 
+                                                           class="form-control" 
+                                                           id="countryValue" 
+                                                           name="countryValue"
+                                                           placeholder="Enter country">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2">
+                            <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                                <i class="fas fa-redo me-1"></i>Reset
+                            </button>
+                            <button type="submit" class="btn btn-primary" id="submitBtn">
+                                <i class="fas fa-plus-circle me-1"></i>Create Landing
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Information</h5>
+                </div>
+                <div class="card-body">
+                    <h6>How it works:</h6>
+                    <ol class="mb-3">
+                        <li>Enter a username for the new user</li>
+                        <li>Fill in the contact information values</li>
+                        <li>The system will:
+                            <ul>
+                                <li>Create a new user with the specified username</li>
+                                <li>Generate a secret key for the user</li>
+                                <li>Create values for all contact fields</li>
+                                <li>Associate all values with the created user</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> All values will be created with the specified static keys (Name, PhoneNumber, Email, etc.) and associated with the new user.
+                    </div>
+                    
+                    <div class="mt-4">
+                        <h6>Static Keys:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            <span class="badge bg-secondary">Name</span>
+                            <span class="badge bg-secondary">PhoneNumber</span>
+                            <span class="badge bg-secondary">Email</span>
+                            <span class="badge bg-secondary">Street</span>
+                            <span class="badge bg-secondary">City</span>
+                            <span class="badge bg-secondary">PostalCode</span>
+                            <span class="badge bg-secondary">Country</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div class="modal fade" id="resultModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Landing Created Successfully</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="successContent" style="display: none;">
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Success!</strong> Landing has been created.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">User ID:</label>
+                        <div class="form-control bg-light" id="modalUserId"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Secret Key:</label>
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control bg-light" 
+                                   id="modalSecretKey" 
+                                   readonly>
+                            <button class="btn btn-outline-secondary" 
+                                    type="button" 
+                                    onclick="copySecretKey()">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <small class="text-muted">Keep this secret key secure. It's used for API authentication.</small>
+                    </div>
+                </div>
+                <div id="errorContent" style="display: none;">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        <strong>Error!</strong> <span id="errorMessage"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="resetForm()">Create Another</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.getElementById('createLandingForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const submitBtn = document.getElementById('submitBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        // Disable button and show loading
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Creating...';
+        
+        try {
+            // Prepare request data
+            const requestData = {
+                UserName: document.getElementById('userName').value.trim(),
+                Values: {
+                    Name: document.getElementById('nameValue').value.trim(),
+                    PhoneNumber: document.getElementById('phoneValue').value.trim(),
+                    Email: document.getElementById('emailValue').value.trim(),
+                    Street: document.getElementById('streetValue').value.trim(),
+                    City: document.getElementById('cityValue').value.trim(),
+                    PostalCode: document.getElementById('postalCodeValue').value.trim(),
+                    Country: document.getElementById('countryValue').value.trim()
+                }
+            };
+            
+            // Validate required fields
+            if (!requestData.UserName) {
+                throw new Error('Username is required');
+            }
+            
+            // Send request
+            const response = await fetch('/Landings/create-landing', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value || ''
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            const result = await response.json();
+            
+            if (response.ok) {
+                // Show success modal
+                document.getElementById('modalUserId').textContent = result.userId;
+                document.getElementById('modalSecretKey').value = result.secretKey;
+                document.getElementById('successContent').style.display = 'block';
+                document.getElementById('errorContent').style.display = 'none';
+                new bootstrap.Modal(document.getElementById('resultModal')).show();
+            } else {
+                throw new Error(result.error || 'Failed to create landing');
+            }
+        } catch (error) {
+            // Show error modal
+            document.getElementById('errorMessage').textContent = error.message;
+            document.getElementById('successContent').style.display = 'none';
+            document.getElementById('errorContent').style.display = 'block';
+            new bootstrap.Modal(document.getElementById('resultModal')).show();
+        } finally {
+            // Reset button state
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
+    });
+    
+    function resetForm() {
+        document.getElementById('createLandingForm').reset();
+        // Clear any validation styles
+        const inputs = document.querySelectorAll('#createLandingForm input');
+        inputs.forEach(input => {
+            input.classList.remove('is-invalid');
+        });
+    }
+    
+    function copySecretKey() {
+        const secretKeyInput = document.getElementById('modalSecretKey');
+        secretKeyInput.select();
+        secretKeyInput.setSelectionRange(0, 99999); // For mobile devices
+        
+        try {
+            navigator.clipboard.writeText(secretKeyInput.value).then(() => {
+                // Show temporary success message
+                const copyBtn = event.target.closest('button');
+                const originalHtml = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check"></i>';
+                copyBtn.classList.remove('btn-outline-secondary');
+                copyBtn.classList.add('btn-outline-success');
+                
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHtml;
+                    copyBtn.classList.remove('btn-outline-success');
+                    copyBtn.classList.add('btn-outline-secondary');
+                }, 2000);
+            });
+        } catch (err) {
+            // Fallback for older browsers
+            document.execCommand('copy');
+        }
+    }
+</script>
+}
