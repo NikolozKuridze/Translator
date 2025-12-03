@@ -85,24 +85,51 @@
         </div>
         <div class="card-body">
             <form id="createValueForm" class="row g-3">
-                <div class="col-md-5">
-                    <label for="valueKey" class="form-label">Key</label>
+                <div class="col-md-4">
+                    <label for="valueKey" class="form-label">Key <span class="text-danger">*</span></label>
                     <input type="text" id="valueKey" name="key" class="form-control" required placeholder="Enter key..." />
                 </div>
-                <div class="col-md-5">
-                    <label for="valueValue" class="form-label">Value</label>
+                <div class="col-md-4">
+                    <label for="valueValue" class="form-label">Value <span class="text-danger">*</span></label>
                     <input type="text" id="valueValue" name="value" class="form-control" required placeholder="Enter value..." />
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
+                <div class="col-md-3">
+                    <label for="userSelect" class="form-label">User (Optional)</label>
+                    <div class="position-relative">
+                        <input type="text" 
+                               id="userSearchInput" 
+                               class="form-control" 
+                               placeholder="Search or select user..."
+                               autocomplete="off" />
+                        <input type="hidden" id="selectedUsername" name="username" />
+                        
+                        <!-- User dropdown -->
+                        <div id="userDropdown" class="dropdown-menu w-100" style="display: none; max-height: 200px; overflow-y: auto;">
+                            <div class="dropdown-item disabled text-muted" id="dropdownLoading">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                Loading users...
+                            </div>
+                            <div class="dropdown-item d-none" id="dropdownNoUsers">
+                                No users found
+                            </div>
+                            <div id="userOptionsContainer">
+                                <!-- User options will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">Leave empty to create global value</small>
+                </div>
+                <div class="col-md-1 d-flex align-items-center">
                     <button type="submit" class="btn btn-success w-100">
-                        Create
+                        <i class="fas fa-plus me-1"></i>
                     </button>
                 </div>
             </form>
         </div>
     </div>
 </div>
-
 <!-- Values Table -->
 <div class="card">
     <div class="card-body" style="padding:0;">
@@ -439,7 +466,17 @@ class ValuesManager {
         const form = document.getElementById('createValueForm');
         const submitBtn = form.querySelector('button[type="submit"]');
         
-        const formData = new FormData(form);
+        // Get form data
+        const formData = new FormData();
+        formData.append('key', document.getElementById('valueKey').value.trim());
+        formData.append('value', document.getElementById('valueValue').value.trim());
+        
+        // Get selected username
+        const usernameInput = document.getElementById('selectedUsername');
+        const username = usernameInput.value.trim();
+        if (username) {
+            formData.append('username', username);
+        }
         
         submitBtn.disabled = true;
         
@@ -455,6 +492,10 @@ class ValuesManager {
             if (result.success) {
                 this.showSuccess(result.message);
                 form.reset();
+                // Clear user selection
+                if (window.userDropdownManager) {
+                    window.userDropdownManager.clearSelection();
+                }
                 this.hideCreateForm();
                 this.loadData();
             } else {
@@ -947,6 +988,300 @@ class ValuesManager {
     }
 }
 
+class UserDropdownManager {
+    constructor() {
+        this.searchInput = document.getElementById('userSearchInput');
+        this.dropdown = document.getElementById('userDropdown');
+        this.optionsContainer = document.getElementById('userOptionsContainer');
+        this.loadingElement = document.getElementById('dropdownLoading');
+        this.noUsersElement = document.getElementById('dropdownNoUsers');
+        this.selectedUsernameInput = document.getElementById('selectedUsername');
+        this.selectedUser = null;
+        this.users = [];
+        this.debounceTimeout = null;
+
+        this.init();
+    }
+
+    init() {
+        this.bindEvents();
+        this.loadUsers();
+    }
+
+    bindEvents() {
+        // Focus events
+        this.searchInput.addEventListener('focus', () => {
+            this.showDropdown();
+        });
+
+        // Input events for filtering
+        this.searchInput.addEventListener('input', (e) => {
+            this.handleSearchInput(e.target.value);
+        });
+
+        // Click events
+        this.searchInput.addEventListener('click', () => {
+            this.showDropdown();
+        });
+
+        // Click outside to close dropdown
+        document.addEventListener('click', (e) => {
+            if (!this.searchInput.contains(e.target) && !this.dropdown.contains(e.target)) {
+                this.hideDropdown();
+            }
+        });
+
+        // Escape key to close dropdown
+        this.searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                this.hideDropdown();
+            }
+        });
+
+        // Arrow keys navigation
+        this.searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                e.preventDefault();
+                this.handleArrowKeys(e.key);
+            }
+        });
+    }
+
+    handleSearchInput(searchTerm) {
+        clearTimeout(this.debounceTimeout);
+
+        this.debounceTimeout = setTimeout(() => {
+            if (searchTerm.length >= 1) {
+                this.loadUsers(searchTerm);
+            } else if (searchTerm.length === 0) {
+                this.loadUsers();
+            }
+        }, 300);
+    }
+
+    async loadUsers(search = '') {
+        this.showLoading();
+
+        try {
+            const params = new URLSearchParams();
+            if (search) {
+                params.append('search', search);
+            }
+
+            const response = await fetch(`/Values/GetUsers?${params}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.users = result.users || [];
+                this.renderUserOptions();
+            } else {
+                this.showError('Failed to load users');
+            }
+        } catch (error) {
+            console.error('Error loading users:', error);
+            this.showError('Failed to load users');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    renderUserOptions() {
+        this.optionsContainer.innerHTML = '';
+
+        if (this.users.length === 0) {
+            this.noUsersElement.classList.remove('d-none');
+            return;
+        }
+
+        this.noUsersElement.classList.add('d-none');
+
+        this.users.forEach((user, index) => {
+            const option = this.createUserOption(user, index);
+            this.optionsContainer.appendChild(option);
+        });
+    }
+
+    createUserOption(user, index) {
+        const div = document.createElement('div');
+        div.className = 'dropdown-item user-option';
+        div.style.cursor = 'pointer';
+        div.dataset.username = user.userName;
+        div.dataset.userId = user.userId;
+        div.dataset.index = index;
+        div.tabIndex = 0;
+
+        div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${this.escapeHtml(user.userName)}</strong>
+                    <div class="text-muted small">
+                        <small>ID: ${user.userId.substring(0, 8)}...</small>
+                    </div>
+                </div>
+                ${this.selectedUser && this.selectedUser.userName === user.userName
+            ? '<i class="fas fa-check text-success"></i>'
+            : ''}
+            </div>
+        `;
+
+        div.addEventListener('click', () => {
+            this.selectUser(user);
+        });
+
+        div.addEventListener('mouseenter', () => {
+            this.highlightOption(div);
+        });
+
+        div.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                this.selectUser(user);
+            }
+        });
+
+        return div;
+    }
+
+    selectUser(user) {
+        this.selectedUser = user;
+        this.searchInput.value = user.userName;
+        this.selectedUsernameInput.value = user.userName;
+        this.hideDropdown();
+
+        // Update UI to show selection
+        this.updateSelectionUI();
+    }
+
+    clearSelection() {
+        this.selectedUser = null;
+        this.searchInput.value = '';
+        this.selectedUsernameInput.value = '';
+        this.updateSelectionUI();
+    }
+
+    updateSelectionUI() {
+        const userOptions = document.querySelectorAll('.user-option');
+        userOptions.forEach(option => {
+            const username = option.dataset.username;
+            const checkIcon = option.querySelector('.fa-check');
+
+            if (checkIcon) {
+                checkIcon.remove();
+            }
+
+            if (this.selectedUser && this.selectedUser.userName === username) {
+                const newCheckIcon = document.createElement('i');
+                newCheckIcon.className = 'fas fa-check text-success';
+                option.querySelector('.d-flex').appendChild(newCheckIcon);
+            }
+        });
+    }
+
+    showDropdown() {
+        if (!this.dropdown.classList.contains('show')) {
+            this.dropdown.style.display = 'block';
+            this.dropdown.classList.add('show');
+
+            // Position dropdown below input using Bootstrap's dropdown positioning
+            this.positionDropdown();
+        }
+    }
+
+    positionDropdown() {
+        const inputRect = this.searchInput.getBoundingClientRect();
+        const parentRect = this.searchInput.offsetParent.getBoundingClientRect();
+
+        // Calculate position relative to parent container
+        const top = inputRect.bottom - parentRect.top;
+        const left = inputRect.left - parentRect.left;
+
+        this.dropdown.style.position = 'absolute';
+        this.dropdown.style.top = `${top}px`;
+        this.dropdown.style.left = `${left}px`;
+        this.dropdown.style.width = `${inputRect.width}px`;
+        this.dropdown.style.zIndex = '1060'; // Higher than Bootstrap modals
+        this.dropdown.style.maxHeight = '200px';
+        this.dropdown.style.overflowY = 'auto';
+    }
+
+    hideDropdown() {
+        this.dropdown.style.display = 'none';
+        this.dropdown.classList.remove('show');
+
+        // If search input is empty but we have a selected user, restore the username
+        if (this.selectedUser && !this.searchInput.value.trim()) {
+            this.searchInput.value = this.selectedUser.userName;
+        }
+    }
+
+    handleArrowKeys(key) {
+        const options = Array.from(document.querySelectorAll('.user-option'));
+        if (options.length === 0) return;
+
+        const currentFocused = document.activeElement;
+        let currentIndex = -1;
+
+        if (currentFocused.classList.contains('user-option')) {
+            currentIndex = parseInt(currentFocused.dataset.index);
+        }
+
+        let nextIndex;
+        if (key === 'ArrowDown') {
+            nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+        } else {
+            nextIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+        }
+
+        if (nextIndex >= 0 && nextIndex < options.length) {
+            options[nextIndex].focus();
+        } else if (options.length > 0) {
+            options[0].focus();
+        }
+    }
+
+    highlightOption(option) {
+        document.querySelectorAll('.user-option').forEach(opt => {
+            opt.classList.remove('active');
+        });
+        option.classList.add('active');
+    }
+
+    showLoading() {
+        this.loadingElement.classList.remove('d-none');
+        this.optionsContainer.style.display = 'none';
+        this.noUsersElement.classList.add('d-none');
+    }
+
+    hideLoading() {
+        this.loadingElement.classList.add('d-none');
+        this.optionsContainer.style.display = 'block';
+    }
+
+    showError(message) {
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'dropdown-item text-danger';
+        errorDiv.textContent = message;
+        this.optionsContainer.innerHTML = '';
+        this.optionsContainer.appendChild(errorDiv);
+        this.noUsersElement.classList.add('d-none');
+    }
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+}
 // Global functions for backward compatibility
 function showDeleteModal(valueName) {
     document.getElementById('valueNameToDelete').textContent = valueName;
@@ -993,9 +1328,13 @@ function showToast(message, type = 'success') {
 
 // Initialize
 let valuesManager;
+let userDropdownManager;
+
 document.addEventListener('DOMContentLoaded', function() {
     console.log('🎉 DOM loaded, initializing ValuesManager...');
     valuesManager = new ValuesManager();
+    userDropdownManager = new UserDropdownManager();
+    window.userDropdownManager = userDropdownManager;
 
     // Auto-hide TempData alerts
     const successAlert = document.querySelector('.alert-success');
@@ -1343,6 +1682,217 @@ document.addEventListener('DOMContentLoaded', function() {
         
         .owner-badge {
             max-width: 80px !important;
+        }
+    }
+
+    /* User dropdown styles */
+    #userDropdown {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+
+    #userDropdown .dropdown-item {
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    #userDropdown .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    #userDropdown .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    #userDropdown .dropdown-item:active {
+        background-color: #e9ecef;
+    }
+
+    #userDropdown .user-option:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Loading spinner */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.2em;
+    }
+
+    /* Clear button for user input */
+    .user-input-clear {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        color: #6c757d;
+        cursor: pointer;
+        display: none;
+    }
+
+    .user-input-clear:hover {
+        color: #dc3545;
+    }
+
+    /* Responsive adjustments for create form */
+    @@media (max-width: 768px) {
+        #createValueForm .col-md-4,
+        #createValueForm .col-md-3 {
+            margin-bottom: 1rem;
+        }
+
+        #userDropdown {
+            position: fixed !important;
+            left: 10px !important;
+            right: 10px !important;
+            width: auto !important;
+            max-width: calc(100% - 20px);
+        }
+    }
+
+    /* Required field indicator */
+    .form-label .text-danger {
+        font-size: 1.2em;
+        vertical-align: middle;
+    }
+
+    /* Improve user dropdown scrolling */
+    #userDropdown {
+        scrollbar-width: thin;
+        scrollbar-color: #adb5bd #f8f9fa;
+    }
+
+    #userDropdown::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #userDropdown::-webkit-scrollbar-track {
+        background: #f8f9fa;
+    }
+
+    #userDropdown::-webkit-scrollbar-thumb {
+        background-color: #adb5bd;
+        border-radius: 3px;
+    }
+    /* User dropdown styles - FIXED */
+    .position-relative {
+        position: relative !important;
+    }
+
+    #userDropdown {
+        display: none;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        background-color: white;
+        min-width: 100%;
+    }
+
+    #userDropdown.show {
+        display: block !important;
+    }
+
+    #userDropdown .dropdown-item {
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #f8f9fa;
+        cursor: pointer;
+    }
+
+    #userDropdown .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    #userDropdown .dropdown-item:hover,
+    #userDropdown .dropdown-item.active {
+        background-color: #f8f9fa;
+        color: #000000;
+    }
+
+    #userDropdown .dropdown-item:active {
+        background-color: #e9ecef;
+    }
+
+    #userDropdown .user-option:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Loading spinner */
+    .spinner-border-sm {
+        width: 1rem;
+        height: 1rem;
+        border-width: 0.2em;
+    }
+
+    /* Responsive adjustments for create form */
+    @@media (max-width: 768px) {
+        #createValueForm .col-md-4,
+        #createValueForm .col-md-3 {
+            margin-bottom: 1rem;
+        }
+
+        #userDropdown {
+            position: fixed !important;
+            top: auto !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important;
+            width: 90vw !important;
+            max-width: 400px !important;
+            margin-top: 5px !important;
+        }
+    }
+
+    /* Required field indicator */
+    .form-label .text-danger {
+        font-size: 1.2em;
+        vertical-align: middle;
+    }
+
+    /* Improve user dropdown scrolling */
+    #userDropdown {
+        scrollbar-width: thin;
+        scrollbar-color: #adb5bd #f8f9fa;
+    }
+
+    #userDropdown::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    #userDropdown::-webkit-scrollbar-track {
+        background: #f8f9fa;
+        border-radius: 3px;
+    }
+
+    #userDropdown::-webkit-scrollbar-thumb {
+        background-color: #adb5bd;
+        border-radius: 3px;
+    }
+
+    /* Ensure dropdown is above other elements */
+    #userDropdown {
+        z-index: 1060 !important;
+    }
+
+    /* Make the parent container position relative */
+    #createValueForm .position-relative {
+        position: relative;
+    }
+
+    /* Dropdown animation */
+    #userDropdown {
+        animation: dropdownFadeIn 0.2s ease-out;
+    }
+
+    @@keyframes dropdownFadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
         }
     }
 </style>

@@ -36,18 +36,15 @@ public abstract class AdminSearchTemplate
 
             if (!string.IsNullOrWhiteSpace(request.TemplateName))
             {
-                var templateSearchTerm = request.TemplateName.Trim().ToLower();
-                query = query.Where(t =>
-                    t.Name.ToLower().Contains(templateSearchTerm) ||
-                    t.Name.ToLower() == templateSearchTerm);
+                var templateSearchTerm = request.TemplateName.Trim();
+                query = query.Where(t => EF.Functions.Like(t.Name, $"%{templateSearchTerm}%"));
             }
 
             if (!string.IsNullOrWhiteSpace(request.OwnerName))
             {
-                var ownerSearchTerm = request.OwnerName.Trim().ToLower();
-                query = query.Where(t =>
-                    (t.Owner != null && t.Owner.Username.ToLower().Contains(ownerSearchTerm)) ||
-                    (t.Owner == null && "global".Contains(ownerSearchTerm)));
+                var ownerSearchTerm = request.OwnerName.Trim();
+                query = query.Where(t => t.Owner != null && 
+                           EF.Functions.Like(t.Owner.Username, $"%{ownerSearchTerm}%"));
             }
 
             if (!string.IsNullOrWhiteSpace(request.OwnershipType))
@@ -83,9 +80,7 @@ public abstract class AdminSearchTemplate
                     : query.OrderBy(t => t.OwnerId == null ? "Global" : "User"),
 
                 _ => query
-                    .OrderBy(t => string.IsNullOrEmpty(request.TemplateName) ? 0 :
-                        t.Name.ToLower().StartsWith(request.TemplateName.ToLower()) ? 0 : 1)
-                    .ThenBy(t => t.OwnerId == null ? 0 : 1)
+                    .OrderBy(t => t.OwnerId == null ? 0 : 1)
                     .ThenBy(t => t.Name)
             };
 
@@ -94,16 +89,16 @@ public abstract class AdminSearchTemplate
             var templates = await query
                 .Skip((request.PaginationRequest.Page - 1) * request.PaginationRequest.PageSize)
                 .Take(request.PaginationRequest.PageSize)
-                .Select(tk => new AdminGetAllTemplates.Response(
-                    tk.Name,
-                    tk.Id,
-                    tk.Values.Count,
-                    tk.OwnerId,
-                    tk.Owner != null ? tk.Owner.Username : "Global",
-                    tk.OwnerId == null ? "Global" : "User",
-                    tk.OwnerId == null
+                .Select(t => new AdminGetAllTemplates.Response(
+                    t.Name,
+                    t.Id,
+                    t.Values.Count,
+                    t.OwnerId,
+                    t.Owner != null ? t.Owner.Username : "Global",
+                    t.OwnerId == null ? "Global" : "User",
+                    t.OwnerId == null
                 ))
-                .ToArrayAsync(cancellationToken);
+                .ToListAsync(cancellationToken); 
 
             return new PaginatedResponse<AdminGetAllTemplates.Response>
             {

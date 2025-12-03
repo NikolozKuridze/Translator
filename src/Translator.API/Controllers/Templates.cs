@@ -86,10 +86,10 @@ public class TemplatesController : Controller
         string? templateName = null,
         string? ownerName = null,
         string? ownershipType = null,
-        int pageNumber = 1,
-        int pageSize = 25,
         string sortBy = "name",
-        string sortDirection = "asc")
+        string sortDirection = "asc",
+        int pageNumber = 1,
+        int pageSize = 25)
     {
         try
         {

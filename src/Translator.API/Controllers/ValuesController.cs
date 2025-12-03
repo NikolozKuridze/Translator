@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
 using Translator.Application.Features.Language.Queries.GetLanguages;
 using Translator.Application.Features.Translation.Commands;
+using Translator.Application.Features.Users.Queries;
 using Translator.Application.Features.ValuesAdmin.Commands;
 using Translator.Application.Features.ValuesAdmin.Queries;
 using Translator.Domain.Pagination;
@@ -171,8 +172,29 @@ public class ValuesController : Controller
         }
     }
 
+    [HttpGet("GetUsers")]
+    public async Task<IActionResult> GetUsers(string search = "")
+    {
+        try
+        {
+            var query = new GetUsers.Query();
+            var users = await _mediator.Send(query);
+            
+            if (!string.IsNullOrEmpty(search))
+            {
+                users = users.Where(u => u.UserName.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+            
+            return Json(new { success = true, users = users.ToList() });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpPost("Create")]
-    public async Task<IActionResult> Create(string key, string value)
+    public async Task<IActionResult> Create(string key, string value, string? username = null)
     {
         try
         {
@@ -186,8 +208,12 @@ public class ValuesController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            await _mediator.Send(new AdminCreateValue.Command(key.Trim(), value.Trim()));
-            var successMsg = "Global value created successfully!";
+            var command = new AdminCreateValue.Command(key.Trim(), value.Trim(), username?.Trim());
+            await _mediator.Send(command);
+            
+            var successMsg = string.IsNullOrEmpty(username) 
+                ? "Global value created successfully!" 
+                : $"Value created successfully for user '{username}'!";
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new { success = true, message = successMsg });
@@ -205,7 +231,7 @@ public class ValuesController : Controller
 
         return RedirectToAction(nameof(Index));
     }
-
+    
     [HttpPost("Delete")]
     public async Task<IActionResult> Delete(string valueName)
     {

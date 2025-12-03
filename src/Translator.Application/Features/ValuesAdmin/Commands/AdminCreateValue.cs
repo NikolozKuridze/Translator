@@ -14,7 +14,8 @@ public abstract class AdminCreateValue
 {
     public record Command(
         string Key,
-        string Value
+        string Value,
+        string? Username = null
     ) : IRequest;
 
     public class AdminCreateValueHandler : IRequestHandler<Command>
@@ -22,27 +23,47 @@ public abstract class AdminCreateValue
         private readonly IRepository<LanguageEntity> _languageEntityRepository;
         private readonly IRepository<Value> _templateValueRepository;
         private readonly IRepository<TranslationEntity> _translationRepository;
+        private readonly IRepository<User> _userRepository;
 
         public AdminCreateValueHandler(
             IRepository<Value> templateValueRepository,
             IRepository<LanguageEntity> languageEntityRepository,
-            IRepository<TranslationEntity> translationRepository)
+            IRepository<TranslationEntity> translationRepository,
+            IRepository<User> userRepository)
         {
             _templateValueRepository = templateValueRepository;
             _languageEntityRepository = languageEntityRepository;
             _translationRepository = translationRepository;
+            _userRepository = userRepository;
         }
 
         public async Task Handle(Command request, CancellationToken cancellationToken)
         {
+            Guid? ownerId = null;
+
+            if (!string.IsNullOrEmpty(request.Username))
+            {
+                var user = await _userRepository
+                    .Where(u => u.Username == request.Username)
+                    .SingleOrDefaultAsync(cancellationToken);
+
+                if (user == null)
+                    throw new UserNotFoundException($"User with username '{request.Username}' not found");
+
+                ownerId = user.Id;
+            }
+
             var existsTemplateValueHash = TemplateEntity.HashName(request.Key);
 
             var existsValue = await _templateValueRepository
-                .Where(t => t.Hash == existsTemplateValueHash && t.OwnerId == null)
+                .Where(t => t.Hash == existsTemplateValueHash && t.OwnerId == ownerId)
                 .SingleOrDefaultAsync(cancellationToken);
 
             if (existsValue is not null)
-                throw new ValueAlreadyExistsException($"Global value '{request.Key}' already exists");
+            {
+                var scope = ownerId.HasValue ? $" for user '{request.Username}'" : " globally";
+                throw new ValueAlreadyExistsException($"Value '{request.Key}' already exists{scope}");
+            }
 
             var languages = await _languageEntityRepository
                 .Where(l => l.IsActive)
@@ -56,7 +77,7 @@ public abstract class AdminCreateValue
             var selectedLanguage =
                 detectedLanguages.FirstOrDefault(l => l.Code.Equals("en", StringComparison.OrdinalIgnoreCase));
 
-            var value = new Value(request.Key);
+            var value = new Value(request.Key, ownerId);
 
             var translation = new TranslationEntity(value.Id, request.Value)
             {
