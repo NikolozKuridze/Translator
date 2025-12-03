@@ -88,7 +88,20 @@ public class UserController : Controller
     {
         try
         {
-            var command = new DeleteUser.Command(username.ToLower().Trim());
+            var normalizedUsername = username.ToLower().Trim();
+        
+            if (normalizedUsername == "company website")
+            {
+                var errorMsg = "Cannot delete the 'Company Website' user. This user is protected and cannot be deleted.";
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                {
+                    return Json(new { success = false, message = errorMsg });
+                }
+                TempData["ErrorMessage"] = errorMsg;
+                return RedirectToAction("Index");
+            }
+
+            var command = new DeleteUser.Command(normalizedUsername);
             await _mediator.Send(command);
 
             var successMsg = $"User '{username}' deleted successfully!";
@@ -96,7 +109,6 @@ public class UserController : Controller
             {
                 return Json(new { success = true, message = successMsg });
             }
-
             TempData["SuccessMessage"] = successMsg;
         }
         catch (Exception ex)
@@ -106,10 +118,35 @@ public class UserController : Controller
             {
                 return Json(new { success = false, message = errorMsg });
             }
-
             TempData["ErrorMessage"] = errorMsg;
         }
 
         return RedirectToAction("Index");
+    }
+
+    
+    [HttpPost("Search")]
+    public async Task<IActionResult> Search([FromBody] SearchUsers.Query query)
+    {
+        try
+        {
+            var result = await _mediator.Send(query);
+        
+            return Json(new 
+            { 
+                success = true, 
+                data = result.Items,
+                page = result.Page,
+                pageSize = result.PageSize,
+                totalItems = result.TotalItems,
+                totalPages = (int)Math.Ceiling((double)result.TotalItems / result.PageSize),
+                hasNextPage = result.HasNextPage,
+                hasPreviousPage = result.HasPreviousPage
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
     }
 }

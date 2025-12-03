@@ -615,7 +615,13 @@ var translations = Model?.ToList() ?? new List<AdminGetValue.Response>();
                 formData.append('valueKey', this.valueKey);
                 formData.append('languageCode', language);
                 formData.append('translationValue', newTranslation);
-                formData.append('valueId', this.valueId); // Add this line!
+                formData.append('valueId', this.valueId);
+
+                // Add ownerId if available
+                const ownerId = '@ownerId';
+                if (ownerId && ownerId !== '00000000-0000-0000-0000-000000000000') {
+                    formData.append('ownerId', ownerId);
+                }
 
                 const response = await fetch('/Values/AdminUpdateTranslation', {
                     method: 'POST',

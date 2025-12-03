@@ -18,7 +18,6 @@ public abstract class AdminDeleteValueFromTemplate
     {
         private readonly TemplateCacheService _templateCacheService;
         private readonly IRepository<TemplateEntity> _templateRepository;
-        private readonly IRepository<Value> _valueRepository;
 
         public AdminDeleteValueFromTemplateHandler(
             IRepository<TemplateEntity> templateRepository,
@@ -26,7 +25,6 @@ public abstract class AdminDeleteValueFromTemplate
             TemplateCacheService templateCacheService)
         {
             _templateRepository = templateRepository;
-            _valueRepository = valueRepository;
             _templateCacheService = templateCacheService;
         }
 
