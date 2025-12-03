@@ -378,4 +378,50 @@ public class ValuesController : Controller
             return RedirectToAction("Details", new { valueId = ValueId });
         }
     }
+
+    [HttpPost("AdminUpdateTranslation")]
+    public async Task<IActionResult> AdminUpdateTranslation(string valueKey, string languageCode,
+        string translationValue, Guid valueId)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(valueKey) || string.IsNullOrWhiteSpace(languageCode) ||
+                string.IsNullOrWhiteSpace(translationValue))
+            {
+                var errorMsg = "Value key, language code, and translation value are required.";
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = errorMsg });
+                TempData["ErrorMessage"] = errorMsg;
+                return RedirectToAction("Details", new { valueId = valueId });
+            }
+
+            var command =
+                new AdminUpdateValueTranslation.Command(valueKey.Trim(), languageCode.Trim(), translationValue.Trim());
+            var result = await _mediator.Send(command);
+
+            var successMsg = $"Translation for {languageCode.ToUpper()} updated successfully!";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                var updatedResult = await _mediator.Send(new AdminGetValue.Command(valueId, null, true));
+                return Json(new
+                {
+                    success = true,
+                    message = successMsg,
+                    translations = updatedResult.ToList(),
+                    key = result.Key
+                });
+            }
+
+            TempData["SuccessMessage"] = successMsg;
+        }
+        catch (Exception ex)
+        {
+            var errorMsg = $"Error updating translation: {ex.Message}";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { success = false, message = errorMsg });
+            TempData["ErrorMessage"] = errorMsg;
+        }
+
+        return RedirectToAction("Details", new { valueId = valueId });
+    }
 }
