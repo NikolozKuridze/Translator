@@ -10,6 +10,8 @@
     var sortBy = ViewBag.SortBy as string ?? "name";
     var sortDirection = ViewBag.SortDirection as string ?? "asc";
     var searchKey = ViewBag.TemplateName as string ?? "";
+    var ownerName = ViewBag.OwnerName as string ?? "";
+    var ownershipType = ViewBag.OwnershipType as string ?? "";
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -42,18 +44,33 @@
 <div class="card mb-3">
     <div class="card-body">
         <form id="searchForm" class="row g-3">
-            <div class="col-md-4">
-                <label class="form-label">Search by Name</label>
-                <input type="text" id="searchInput" name="templateName"
+            <div class="col-md-3">
+                <label class="form-label">Template Name</label>
+                <input type="text" id="templateNameInput" name="templateName"
                        value="@searchKey"
                        class="form-control"
-                       placeholder="Enter template name to search..." />
+                       placeholder="Enter template name..." />
             </div>
-            <div class="col-md-2 d-flex align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Owner Name</label>
+                <input type="text" id="ownerNameInput" name="ownerName"
+                       value="@ownerName"
+                       class="form-control"
+                       placeholder="Enter owner name..." />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Ownership Type</label>
+                <select id="ownershipTypeSelect" name="ownershipType" class="form-select">
+                    <option value="">All Types</option>
+                    <option value="global" selected="@(ownershipType == "global")">Global</option>
+                    <option value="user" selected="@(ownershipType == "user")">User</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
                 <button type="submit" class="btn btn-primary me-2">
                     <i class="fas fa-search"></i> Search
                 </button>
-                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary" style="display: @(string.IsNullOrEmpty(searchKey) ? "none" : "inline-block")">
+                <button type="button" id="clearSearchBtn" class="btn btn-outline-secondary" style="display: @(string.IsNullOrEmpty(searchKey) && string.IsNullOrEmpty(ownerName) && string.IsNullOrEmpty(ownershipType) ? "none" : "inline-block")">
                     <i class="fas fa-times"></i> Clear
                 </button>
             </div>
@@ -120,7 +137,24 @@
                                 <i class="fas fa-sort sort-icon-name"></i>
                             </button>
                         </th>
-                        <th>Value Count</th>
+                        <th>
+                            Value Count
+                            <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="value" title="Sort by value count">
+                                <i class="fas fa-sort sort-icon-value"></i>
+                            </button>
+                        </th>
+                        <th>
+                            Owner
+                            <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="owner" title="Sort by owner">
+                                <i class="fas fa-sort sort-icon-owner"></i>
+                            </button>
+                        </th>
+                        <th>
+                            Type
+                            <button class="btn btn-link btn-sm p-1 ms-1 sort-btn" data-sort="type" title="Sort by ownership type">
+                                <i class="fas fa-sort sort-icon-type"></i>
+                            </button>
+                        </th>
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -144,6 +178,14 @@
                                     <span class="badge bg-secondary">@template.ValueCount</span>
                                 </td>
                                 <td>
+                                    <span class="@(template.IsGlobal ? "text-muted" : "")">@template.OwnerName</span>
+                                </td>
+                                <td>
+                                    <span class="badge @(template.IsGlobal ? "bg-info" : "bg-success")">
+                                        @template.OwnershipType
+                                    </span>
+                                </td>
+                                <td>
                                     <div class="d-flex gap-1">
                                         <a href="@Url.Action("Details", "Templates", new { templateId = template.TemplateId })"
                                            class="btn btn-sm btn-outline-primary">
@@ -161,7 +203,7 @@
                     else
                     {
                         <tr id="emptyState">
-                            <td colspan="3" class="text-center text-muted py-4">
+                            <td colspan="5" class="text-center text-muted py-4">
                                 <i class="fas fa-inbox fa-3x mb-3"></i>
                                 <div>No templates found</div>
                             </td>
@@ -296,7 +338,9 @@
             this.pageSize = @pageSize;
             this.sortBy = '@sortBy';
             this.sortDirection = '@sortDirection';
-            this.searchKey = '@Html.Raw(searchKey)';
+            this.templateName = '@Html.Raw(searchKey)';
+            this.ownerName = '@Html.Raw(ownerName)';
+            this.ownershipType = '@Html.Raw(ownershipType)';
             this.totalCount = @totalCount;
             this.totalPages = @totalPages;
             this.searchTimeout = null;
@@ -429,19 +473,21 @@
                 this.performSearch();
             });
 
-            const searchInput = document.getElementById('searchInput');
-            let debounceTimeout;
+            const templateNameInput = document.getElementById('templateNameInput');
+            const ownerNameInput = document.getElementById('ownerNameInput');
+            const ownershipTypeSelect = document.getElementById('ownershipTypeSelect');
 
-            searchInput.addEventListener('input', (e) => {
-                clearTimeout(debounceTimeout);
-                const inputValue = e.target.value.trim();
+            // Add input listeners for real-time search (optional)
+            templateNameInput.addEventListener('input', (e) => {
+                this.handleSearchInput();
+            });
 
-                debounceTimeout = setTimeout(() => {
-                    this.searchKey = inputValue;
-                    this.currentPage = 1;
-                    this.loadDataWithoutInputUpdate();
-                    this.updateSearchUI();
-                }, 300);
+            ownerNameInput.addEventListener('input', (e) => {
+                this.handleSearchInput();
+            });
+
+            ownershipTypeSelect.addEventListener('change', (e) => {
+                this.handleSearchInput();
             });
 
             // Clear search
@@ -491,11 +537,26 @@
             });
         }
 
+        handleSearchInput() {
+            this.templateName = document.getElementById('templateNameInput').value.trim();
+            this.ownerName = document.getElementById('ownerNameInput').value.trim();
+            this.ownershipType = document.getElementById('ownershipTypeSelect').value;
+            
+            // Debounce the search
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.currentPage = 1;
+                this.loadData();
+                this.updateSearchUI();
+            }, 500);
+        }
+
         async performSearch() {
-            const searchInput = document.getElementById('searchInput');
             const submitBtn = document.querySelector('#searchForm button[type="submit"]');
 
-            this.searchKey = searchInput.value.trim();
+            this.templateName = document.getElementById('templateNameInput').value.trim();
+            this.ownerName = document.getElementById('ownerNameInput').value.trim();
+            this.ownershipType = document.getElementById('ownershipTypeSelect').value;
             this.currentPage = 1;
 
             submitBtn.disabled = true;
@@ -509,16 +570,23 @@
         }
 
         clearSearch() {
-            document.getElementById('searchInput').value = '';
-            this.searchKey = '';
+            document.getElementById('templateNameInput').value = '';
+            document.getElementById('ownerNameInput').value = '';
+            document.getElementById('ownershipTypeSelect').value = '';
+            
+            this.templateName = '';
+            this.ownerName = '';
+            this.ownershipType = '';
             this.currentPage = 1;
+            
             this.loadData();
             this.updateSearchUI();
         }
 
         updateSearchUI() {
             const clearBtn = document.getElementById('clearSearchBtn');
-            clearBtn.style.display = this.searchKey ? 'inline-block' : 'none';
+            const hasSearch = this.templateName || this.ownerName || this.ownershipType;
+            clearBtn.style.display = hasSearch ? 'inline-block' : 'none';
         }
 
         async createTemplate() {
@@ -639,11 +707,23 @@
                     sortDirection: this.sortDirection
                 });
 
-                if (this.searchKey) {
-                    params.append('templateName', this.searchKey);
+                // Add search parameters if they exist
+                if (this.templateName) {
+                    params.append('templateName', this.templateName);
+                }
+                if (this.ownerName) {
+                    params.append('ownerName', this.ownerName);
+                }
+                if (this.ownershipType) {
+                    params.append('ownershipType', this.ownershipType);
                 }
 
-                const endpoint = this.searchKey ? '/Templates/Search' : '/Templates/';
+                // Always use Search endpoint when any search parameter is present
+                const hasSearch = this.templateName || this.ownerName || this.ownershipType;
+                const endpoint = hasSearch ? '/Templates/Search' : '/Templates/';
+                
+                console.log(`Fetching from ${endpoint} with params:`, params.toString());
+                
                 const response = await fetch(`${endpoint}?${params}`, {
                     method: 'GET',
                     headers: {
@@ -682,65 +762,29 @@
             this.pageSize = data.pageSize || 10;
             this.sortBy = data.sortBy || this.sortBy;
             this.sortDirection = data.sortDirection || this.sortDirection;
-            if (data.searchKey !== undefined) {
-                this.searchKey = data.searchKey;
-            }
-        }
-
-        async loadDataWithoutInputUpdate() {
-            console.log('🔄 Loading data...');
-            this.updateSortIcons();
-
-            try {
-                const params = new URLSearchParams({
-                    pageNumber: this.currentPage,
-                    pageSize: this.pageSize,
-                    sortBy: this.sortBy,
-                    sortDirection: this.sortDirection
-                });
-
-                if (this.searchKey) {
-                    params.append('templateName', this.searchKey);
-                }
-
-                const endpoint = this.searchKey ? '/Templates/Search' : '/Templates/';
-                const response = await fetch(`${endpoint}?${params}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const result = await response.json();
-
-                if (result.success) {
-                    this.updatePageData(result);
-                    this.renderTemplates(result.data || []);
-                    this.renderPagination(result);
-                    this.renderPageSizeSelector(result);
-                    document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
-                } else {
-                    this.showError('Failed to load templates: ' + (result.message || 'Unknown error'));
-                    this.renderEmptyState();
-                }
-            } catch (error) {
-                console.error('💥 Error loading data:', error);
-                this.showError('Network error: ' + error.message);
-                this.renderEmptyState();
-            }
+            
+            // Update search parameters from response if available
+            if (data.searchKey !== undefined) this.templateName = data.searchKey;
+            if (data.ownerName !== undefined) this.ownerName = data.ownerName;
+            if (data.ownershipType !== undefined) this.ownershipType = data.ownershipType;
         }
 
         updateUI() {
             document.getElementById('totalCountInfo').textContent = `(${this.totalCount} total)`;
 
-            const searchInput = document.getElementById('searchInput');
-            if (document.activeElement !== searchInput) {
-                searchInput.value = this.searchKey;
+            // Only update inputs if they're not focused
+            const templateInput = document.getElementById('templateNameInput');
+            const ownerInput = document.getElementById('ownerNameInput');
+            const typeSelect = document.getElementById('ownershipTypeSelect');
+
+            if (document.activeElement !== templateInput) {
+                templateInput.value = this.templateName;
+            }
+            if (document.activeElement !== ownerInput) {
+                ownerInput.value = this.ownerName;
+            }
+            if (document.activeElement !== typeSelect) {
+                typeSelect.value = this.ownershipType;
             }
 
             this.updateSearchUI();
@@ -767,6 +811,9 @@
         }
 
         createTemplateRow(template) {
+            const badgeClass = template.isGlobal ? 'bg-info' : 'bg-success';
+            const ownerTextClass = template.isGlobal ? 'text-muted' : '';
+            
             return `
             <tr>
                 <td>
@@ -781,6 +828,14 @@
                 </td>
                 <td>
                     <span class="badge bg-secondary">${template.valueCount}</span>
+                </td>
+                <td>
+                    <span class="${ownerTextClass}">${this.escapeHtml(template.ownerName)}</span>
+                </td>
+                <td>
+                    <span class="badge ${badgeClass}">
+                        ${template.ownershipType}
+                    </span>
                 </td>
                 <td>
                     <div class="d-flex gap-1">
@@ -822,7 +877,7 @@
             const tbody = document.getElementById('templatesTableBody');
             tbody.insertAdjacentHTML('beforeend', `
             <tr id="emptyState">
-                <td colspan="3" class="text-center text-muted py-4">
+                <td colspan="5" class="text-center text-muted py-4">
                     <i class="fas fa-inbox fa-3x mb-3"></i>
                     <div>No templates found</div>
                 </td>
@@ -952,10 +1007,12 @@
         }
 
         updateSortIcons() {
-            document.querySelectorAll('.sort-icon-name').forEach(icon => {
+            // Reset all sort icons
+            document.querySelectorAll('[class*="sort-icon-"]').forEach(icon => {
                 icon.className = 'fas fa-sort';
             });
 
+            // Set active sort icon
             const iconClass = this.sortDirection === 'asc' ? 'fa-sort-up' : 'fa-sort-down';
             const currentIcon = document.querySelector(`.sort-icon-${this.sortBy}`);
             if (currentIcon) {
@@ -1018,7 +1075,7 @@
     // Global functions
     function showDeleteModal(templateName, templateId) {
         document.getElementById('templateNameToDelete').textContent = templateName;
-        templateManager.currentTemplateToDelete = templateName; // Store template name for deletion
+        templateManager.currentTemplateToDelete = templateName;
         const modal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
         modal.show();
     }
@@ -1074,7 +1131,7 @@
         </div>
         <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)">
             <i class="fas fa-trash"></i> Remove
-        </button>
+                </button>
     `;
         container.appendChild(div);
 

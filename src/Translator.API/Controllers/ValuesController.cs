@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Translator.API.Attributes;
 using Translator.Application.Features.Language.Queries.GetLanguages;
 using Translator.Application.Features.Translation.Commands;
+using Translator.Application.Features.Users.Queries;
 using Translator.Application.Features.ValuesAdmin.Commands;
 using Translator.Application.Features.ValuesAdmin.Queries;
 using Translator.Domain.Pagination;
@@ -26,14 +27,15 @@ public class ValuesController : Controller
         string sortBy = "date",
         string sortDirection = "desc",
         int pageNumber = 1,
-        int pageSize = 10)
+        int pageSize = 10,
+        string userName = "")
     {
         try
         {
             var paginationRequest =
                 new PaginationRequest(pageNumber, pageSize, null, null, null, sortBy, sortDirection);
 
-            var command = new AdminGetAllValues.Command(paginationRequest);
+            var command = new AdminSearchValue.Command(null, userName, paginationRequest);
             var result = await _mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -47,7 +49,8 @@ public class ValuesController : Controller
                     pageSize = result.PageSize,
                     sortBy,
                     sortDirection,
-                    searchKey = ""
+                    searchKey = "",
+                    searchUserName = userName
                 });
 
             ViewBag.CurrentPage = result.Page;
@@ -58,6 +61,7 @@ public class ValuesController : Controller
             ViewBag.HasPreviousPage = result.HasPreviousPage;
             ViewBag.SortBy = sortBy;
             ViewBag.SortDirection = sortDirection;
+            ViewBag.UserName = userName;
 
             ViewBag.GlobalCount = result.Items.Count(x => x.OwnershipType == "Global");
             ViewBag.UserCount = result.Items.Count(x => x.OwnershipType == "User");
@@ -112,6 +116,7 @@ public class ValuesController : Controller
     [HttpGet("Search")]
     public async Task<IActionResult> Search(
         string valueKey = "",
+        string userName = "",
         string sortBy = "date",
         string sortDirection = "desc",
         int pageNumber = 1,
@@ -122,7 +127,8 @@ public class ValuesController : Controller
             var paginationRequest =
                 new PaginationRequest(pageNumber, pageSize, null, null, null, sortBy, sortDirection);
 
-            var command = new AdminSearchValue.Command(valueKey, paginationRequest);
+            // Update to include userName
+            var command = new AdminSearchValue.Command(valueKey, userName, paginationRequest);
             var result = await _mediator.Send(command);
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
@@ -136,7 +142,8 @@ public class ValuesController : Controller
                     pageSize = result.PageSize,
                     sortBy,
                     sortDirection,
-                    searchKey = valueKey
+                    searchKey = valueKey,
+                    searchUserName = userName // Add this
                 });
 
             ViewBag.CurrentPage = result.Page;
@@ -146,6 +153,7 @@ public class ValuesController : Controller
             ViewBag.HasNextPage = result.HasNextPage;
             ViewBag.HasPreviousPage = result.HasPreviousPage;
             ViewBag.ValueKey = valueKey;
+            ViewBag.UserName = userName; // Add this
             ViewBag.SortBy = sortBy;
             ViewBag.SortDirection = sortDirection;
 
@@ -164,8 +172,29 @@ public class ValuesController : Controller
         }
     }
 
+    [HttpGet("GetUsers")]
+    public async Task<IActionResult> GetUsers(string search = "")
+    {
+        try
+        {
+            var query = new GetUsers.Query();
+            var users = await _mediator.Send(query);
+            
+            if (!string.IsNullOrEmpty(search))
+            {
+                users = users.Where(u => u.UserName.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+            
+            return Json(new { success = true, users = users.ToList() });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+
     [HttpPost("Create")]
-    public async Task<IActionResult> Create(string key, string value)
+    public async Task<IActionResult> Create(string key, string value, string? username = null)
     {
         try
         {
@@ -179,8 +208,12 @@ public class ValuesController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            await _mediator.Send(new AdminCreateValue.Command(key.Trim(), value.Trim()));
-            var successMsg = "Global value created successfully!";
+            var command = new AdminCreateValue.Command(key.Trim(), value.Trim(), username?.Trim());
+            await _mediator.Send(command);
+            
+            var successMsg = string.IsNullOrEmpty(username) 
+                ? "Global value created successfully!" 
+                : $"Value created successfully for user '{username}'!";
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new { success = true, message = successMsg });
@@ -198,7 +231,7 @@ public class ValuesController : Controller
 
         return RedirectToAction(nameof(Index));
     }
-
+    
     [HttpPost("Delete")]
     public async Task<IActionResult> Delete(string valueName)
     {
@@ -370,5 +403,51 @@ public class ValuesController : Controller
             TempData["ErrorMessage"] = errorMsg;
             return RedirectToAction("Details", new { valueId = ValueId });
         }
+    }
+
+    [HttpPost("AdminUpdateTranslation")]
+    public async Task<IActionResult> AdminUpdateTranslation(string valueKey, string languageCode,
+        string translationValue, Guid valueId)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(valueKey) || string.IsNullOrWhiteSpace(languageCode) ||
+                string.IsNullOrWhiteSpace(translationValue))
+            {
+                var errorMsg = "Value key, language code, and translation value are required.";
+                if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                    return Json(new { success = false, message = errorMsg });
+                TempData["ErrorMessage"] = errorMsg;
+                return RedirectToAction("Details", new { valueId = valueId });
+            }
+
+            var command =
+                new AdminUpdateValueTranslation.Command(valueKey.Trim(), languageCode.Trim(), translationValue.Trim());
+            var result = await _mediator.Send(command);
+
+            var successMsg = $"Translation for {languageCode.ToUpper()} updated successfully!";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                var updatedResult = await _mediator.Send(new AdminGetValue.Command(valueId, null, true));
+                return Json(new
+                {
+                    success = true,
+                    message = successMsg,
+                    translations = updatedResult.ToList(),
+                    key = result.Key
+                });
+            }
+
+            TempData["SuccessMessage"] = successMsg;
+        }
+        catch (Exception ex)
+        {
+            var errorMsg = $"Error updating translation: {ex.Message}";
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+                return Json(new { success = false, message = errorMsg });
+            TempData["ErrorMessage"] = errorMsg;
+        }
+
+        return RedirectToAction("Details", new { valueId = valueId });
     }
 }
