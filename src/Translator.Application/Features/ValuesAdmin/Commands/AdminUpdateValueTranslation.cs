@@ -16,7 +16,8 @@ public abstract class AdminUpdateValueTranslation
     public sealed record Command(
         string ValueKey,
         string LanguageCode,
-        string TranslationValue
+        string TranslationValue,
+        Guid? OwnedId
     ) : IRequest<Response>;
 
     public sealed record Response(
@@ -47,13 +48,19 @@ public abstract class AdminUpdateValueTranslation
         {
             var valueHash = TemplateEntity.HashName(request.ValueKey);
             
-            var value = await _valueRepository
-                .AsQueryable()
-                .Where(x => x.Hash == valueHash)
+            var query = _valueRepository.AsQueryable();
+
+            query = query.Where(x => x.Hash == valueHash);
+
+            if (request.OwnedId.HasValue)
+                query = query.Where(x => x.OwnerId == request.OwnedId.Value);
+
+            query = query
                 .Include(x => x.Translations)
-                .ThenInclude(x => x.Language)
-                .SingleOrDefaultAsync(cancellationToken);
-    
+                .ThenInclude(t => t.Language);
+
+            var value = await query.SingleOrDefaultAsync(cancellationToken);
+
             if (value is null)
                 throw new ValueNotFoundException(request.ValueKey);
     
