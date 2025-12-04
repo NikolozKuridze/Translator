@@ -52,8 +52,12 @@ public abstract class AdminSearchValue
             var searchUser = request.UserName?.Trim().ToLower() ?? "";
             
             query = query
-                .OrderBy(v => v.Key.ToLower().StartsWith(searchKey) ? 0 : 1)
-                .ThenBy(v => v.Owner != null && v.Owner.Username.ToLower().StartsWith(searchUser) ? 0 : 1)
+                .OrderBy(v => v.Key.ToLower() == searchKey ? 0 : 1)
+                .ThenBy(v => v.Key.ToLower().StartsWith(searchKey) ? 0 : 1)
+                .ThenBy(v =>
+                    v.Owner != null && v.Owner.Username.ToLower() == searchUser ? 0 : 1)
+                .ThenBy(v =>
+                    v.Owner != null && v.Owner.Username.ToLower().StartsWith(searchUser) ? 0 : 1)
                 .ThenBy(v => v.OwnerId == null ? 0 : 1)
                 .ThenByDescending(v => v.CreatedAt);
 
