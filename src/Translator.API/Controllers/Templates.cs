@@ -323,6 +323,28 @@ public class TemplatesController : Controller
             return RedirectToAction(nameof(Index));
         }
     }
+    
+    [HttpPost("AddValueToTemplate")]
+    public async Task<IActionResult> AddValueToTemplate([FromBody] AddValueToTemplateRequest request)
+    {
+        try
+        {
+            var command = new AdminAddValueToTemplate.Command(request.ValueName, request.TemplateId);
+            await _mediator.Send(command);
+        
+            return Json(new { success = true, message = $"Value '{request.ValueName}' added to template successfully!" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error adding value: {ex.Message}" });
+        }
+    }
+
+    public class AddValueToTemplateRequest
+    {
+        public string ValueName { get; set; } = string.Empty;
+        public Guid TemplateId { get; set; }
+    }
 
     [HttpPost("Delete/{templateId:guid}")]
     public async Task<IActionResult> DeleteById(Guid templateId)

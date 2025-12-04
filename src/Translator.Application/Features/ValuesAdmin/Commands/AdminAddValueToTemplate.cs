@@ -7,22 +7,23 @@ using Translator.Infrastructure.Database.Postgres.Repository;
 using Translator.Infrastructure.Database.Redis.CacheServices;
 using TemplateEntity = Translator.Domain.Entities.Template;
 
-namespace Translator.Application.Features.Values.Commands;
+namespace Translator.Application.Features.ValuesAdmin.Commands;
 
-public abstract class DeleteValueFromTemplate
+public abstract class AdminAddValueToTemplate
 {
+    
     public sealed record Command(
         string ValueName,
         Guid TemplateId) : IRequest;
 
-    public class DeleteValueFromTemplateHandler : IRequestHandler<Command>
+    public class AddValueToTemplateHandler : IRequestHandler<Command>
     {
-        private readonly ICurrentUserService _currentUserService;
         private readonly TemplateCacheService _templateCacheService;
         private readonly IRepository<TemplateEntity> _templateRepository;
+        private readonly IRepository<Value> _valueRepository;
         private readonly IRepository<User> _userRepository;
 
-        public DeleteValueFromTemplateHandler(
+        public AddValueToTemplateHandler(
             IRepository<TemplateEntity> templateRepository,
             IRepository<Value> valueRepository,
             IRepository<User> userRepository,
@@ -30,24 +31,13 @@ public abstract class DeleteValueFromTemplate
             ICurrentUserService currentUserService)
         {
             _templateRepository = templateRepository;
+            _valueRepository = valueRepository;
             _userRepository = userRepository;
             _templateCacheService = templateCacheService;
-            _currentUserService = currentUserService;
         }
 
         public async Task Handle(Command request, CancellationToken cancellationToken)
         {
-            var userId = _currentUserService.GetCurrentUserId();
-            if (!userId.HasValue)
-                throw new UnauthorizedAccessException("User authentication required");
-
-            var user = await _userRepository
-                .Where(u => u.Id == userId.Value)
-                .SingleOrDefaultAsync(cancellationToken);
-
-            if (user == null)
-                throw new UserNotFoundException(userId.Value);
-
             var valueHash = TemplateEntity.HashName(request.ValueName);
 
             var existsTemplate = await _templateRepository
@@ -55,27 +45,30 @@ public abstract class DeleteValueFromTemplate
                 .Include(t => t.Values)
                 .ThenInclude(v => v.Translations)
                 .ThenInclude(tr => tr.Language)
-                .Where(t => t.Id == request.TemplateId &&
-                            (t.OwnerId == userId.Value || t.OwnerId == null))
+                .Where(t => t.Id == request.TemplateId)
                 .SingleOrDefaultAsync(cancellationToken);
 
             if (existsTemplate is null)
                 throw new TemplateNotFoundException(request.TemplateId);
-
-            if (existsTemplate.OwnerId != userId.Value)
-                throw new UnauthorizedOperationException("You can only modify your own templates");
-
-            var existsValue = existsTemplate
+            
+            var valueAlreadyExists = existsTemplate
                 .Values
-                .SingleOrDefault(x => x.Hash == valueHash);
+                .Any(v => v.Hash == valueHash && v.OwnerId == existsTemplate.OwnerId);
 
-            if (existsValue is null)
-                throw new ValueNotFoundException(request.ValueName);
+            if (valueAlreadyExists)
+                throw new InvalidOperationException($"Template already has value '{request.ValueName}'");
 
-            if (existsValue.OwnerId != userId.Value && existsValue.OwnerId != null)
-                throw new UnauthorizedOperationException("You can only remove your own values or global values");
+            var value = await _valueRepository
+                .AsQueryable()
+                .Include(v => v.Translations)
+                .ThenInclude(t => t.Language)
+                .Where(v => v.Hash == valueHash && v.OwnerId == existsTemplate.OwnerId)
+                .SingleOrDefaultAsync(cancellationToken);
 
-            existsTemplate.RemoveValue(existsValue);
+            if (value is null)
+                throw new InvalidOperationException($"Value '{request.ValueName}' does not exist in database");
+
+            existsTemplate.AddValue(value);
 
             var actualTranslations = existsTemplate.Values
                 .SelectMany(v => v.Translations
@@ -91,7 +84,7 @@ public abstract class DeleteValueFromTemplate
                 existsTemplate.OwnerId,
                 existsTemplate.Owner?.Username,
                 actualTranslations);
-            
+
             await _templateRepository.SaveChangesAsync(cancellationToken);
         }
     }

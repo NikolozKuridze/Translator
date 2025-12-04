@@ -58,7 +58,7 @@ public static class InfrastructureDependencies
                 ServerUrl = "https://api-free.deepl.com" 
                 // "https://api.deepl.com" for pro
             };
-            return new DeepLClient(key, options);
+            return new DeepLClient(key!, options);
         });
         
         services.AddSingleton<IRedisService, RedisService>();

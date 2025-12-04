@@ -42,6 +42,9 @@ var translations = Model?.ToList() ?? new List<AdminGetValue.Response>();
                 data-bs-target="#createTranslationSection">
             <i class="fas fa-plus"></i> Add Translation
         </button>
+        <button class="btn btn-warning btn-sm" onclick="cacheValue('@valueId')" title="Cache Value">
+            <i class="fas fa-database me-1"></i>Cache
+        </button>
         <a href="@Url.Action("Index", "Values")" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-arrow-left"></i> Back to List
         </a>
@@ -404,6 +407,39 @@ var translations = Model?.ToList() ?? new List<AdminGetValue.Response>();
             this.initializeTooltips();
             this.clearOldAlerts();
             this.bindEditInputEvents();
+        }
+
+        async cacheValue(valueId) {
+            const btn = event.target.closest('button');
+            const originalHtml = btn.innerHTML;
+
+            // Disable button and show loading
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Caching...';
+
+            try {
+                const response = await fetch(`/Cache/CacheValue/${valueId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.showAlert(result.message, 'success');
+                } else {
+                    this.showAlert(result.message, 'danger');
+                }
+            } catch (error) {
+                console.error('Error caching value:', error);
+                this.showAlert(`Failed to cache value: ${error.message}`, 'danger');
+            } finally {
+                // Reset button
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
         }
 
         clearOldAlerts() {
@@ -1045,6 +1081,80 @@ var translations = Model?.ToList() ?? new List<AdminGetValue.Response>();
         }
     }
 
+    // Global cache function for backward compatibility
+    async function cacheValue(valueId) {
+        const btn = event.target;
+        const originalHtml = btn.innerHTML;
+
+        // Disable button and show loading
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Caching...';
+
+        try {
+            const response = await fetch(`/Cache/CacheValue/${valueId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                // Use the ValueDetailsManager's showAlert if available
+                if (window.valueDetailsManager) {
+                    window.valueDetailsManager.showAlert(result.message, 'success');
+                } else {
+                    // Fallback to toast
+                    showToast(result.message, 'success');
+                }
+            } else {
+                if (window.valueDetailsManager) {
+                    window.valueDetailsManager.showAlert(result.message, 'danger');
+                } else {
+                    showToast(result.message, 'error');
+                }
+            }
+        } catch (error) {
+            console.error('Error caching value:', error);
+            const message = `Failed to cache value: ${error.message}`;
+            if (window.valueDetailsManager) {
+                window.valueDetailsManager.showAlert(message, 'danger');
+            } else {
+                showToast(message, 'error');
+            }
+        } finally {
+            // Reset button
+            btn.disabled = false;
+            btn.innerHTML = originalHtml;
+        }
+    }
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'position-fixed top-0 end-0 p-3';
+        toast.style.zIndex = '9999';
+
+        const bgClass = type === 'success' ? 'bg-success' : 'bg-danger';
+
+        toast.innerHTML = `
+        <div class="toast show ${bgClass} text-white" role="alert">
+            <div class="toast-header ${bgClass} text-white border-0">
+                <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'} me-2"></i>
+                <strong class="me-auto">${type === 'success' ? 'Success' : 'Error'}</strong>
+                <button type="button" class="btn-close btn-close-white" onclick="this.closest('.position-fixed').remove()"></button>
+            </div>
+            <div class="toast-body">${message}</div>
+        </div>
+    `;
+
+        document.body.appendChild(toast);
+
+        setTimeout(() => {
+            if (toast.parentNode) {
+                toast.remove();
+            }
+        }, 3000);
+    }
     // Copy to clipboard function
     async function copyToClipboard(text) {
         try {

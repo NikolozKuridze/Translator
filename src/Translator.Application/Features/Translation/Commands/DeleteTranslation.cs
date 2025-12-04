@@ -66,8 +66,12 @@ public abstract class DeleteTranslation
                     ))
                     .ToList();
 
-                await _valueCacheService.SetTranslationsAsync(value.Id, value.Key, translationsDto);
-            }
+                await _valueCacheService.SetTranslationsAsync(
+                    value.Id,
+                    value.Key,
+                    value.OwnerId,
+                    value.Owner?.Username,
+                    translationsDto);            }
 
             await _translationRepository.DeleteAsync([removedTranslation]);
             await _translationRepository.SaveChangesAsync(cancellationToken);

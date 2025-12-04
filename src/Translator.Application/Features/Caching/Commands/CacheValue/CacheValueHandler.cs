@@ -17,6 +17,8 @@ public class CacheValueHandler : IRequestHandler<CacheValueCommand>
         await _valueCacheService.SetTranslationsAsync(
             request.ValueId,
             request.ValueKey,
+            request.OwnerId,
+            request.OwnerName,
             request.Translations);
     }
 }

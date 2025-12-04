@@ -174,7 +174,7 @@ public class UserController : Controller
 
             var fileName = $"users-export-{DateTime.UtcNow:yyyyMMdd-HHmmss}.json";
         
-            Response.Headers.Add("Content-Disposition", $"attachment; filename=\"{fileName}\"");
+            Response.Headers.Append("Content-Disposition", $"attachment; filename=\"{fileName}\"");
             Response.ContentType = "application/json";
 
             return File(Encoding.UTF8.GetBytes(json), "application/json", fileName);

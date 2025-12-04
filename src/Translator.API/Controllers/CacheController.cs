@@ -8,7 +8,9 @@ using Translator.Application.Features.Caching.Commands.DeleteValueCache;
 using Translator.Application.Features.Caching.Queries.Template;
 using Translator.Application.Features.Caching.Queries.Value;
 using Translator.Application.Features.Template.Queries;
+using Translator.Application.Features.TemplatesAdmin.Queries;
 using Translator.Application.Features.Values.Queries;
+using Translator.Application.Features.ValuesAdmin.Queries;
 using Translator.Domain.Pagination;
 using Translator.Infrastructure.Database.Redis.CacheServices;
 
@@ -113,7 +115,7 @@ public class CacheController : Controller
     {
         try
         {
-            var templateQuery = new GetTemplate.Command(
+            var templateQuery = new AdminGetTemplate.Command(
                 templateId,
                 null,
                 true,
@@ -123,23 +125,28 @@ public class CacheController : Controller
             if (!templateData.Items.Any()) return Json(new { success = false, message = "Template not found" });
 
             var templateName = templateData.Items.First().Key;
-
+            var templateOwnerId = templateData.Items.First().ValueOwnerId;
+            var templateOwnerName = templateData.Items.First().ValueOwnerName;
             var translations = templateData.Items.Select(t => new TranslationDto(
                 t.Key,
                 t.Value,
                 t.ValueId,
                 t.LanguageCode ?? "en"
             )).ToList();
-
+            
             var templateCacheDto = new TemplateCacheDto(
                 templateId,
                 templateName,
+                templateOwnerId,
+                templateOwnerName,
                 translations
-            );
+                );
 
             var cacheCommand = new CacheTemplateCommand(
                 templateCacheDto.TemplateId,
                 templateCacheDto.TemplateName,
+                templateCacheDto.OwnerId,
+                templateCacheDto.OwnerName,
                 templateCacheDto.Translations);
             await _mediator.Send(cacheCommand);
 
@@ -165,12 +172,15 @@ public class CacheController : Controller
     {
         try
         {
-            var valueQuery = new GetValue.Command(valueId, null, true);
+            var valueQuery = new AdminGetValue.Command(valueId, null, true);
             var valueData = (await _mediator.Send(valueQuery)).ToList();
 
             if (!valueData.Any()) return Json(new { success = false, message = "Value not found" });
 
             var valueKey = valueData.First().ValueKey;
+            var valueOwnerName = valueData.First().OwnerName;
+            var valueOwnerId = valueData.First().OwnerId;
+
             var translations = valueData.Select(v => new TranslationDto(
                 v.ValueKey,
                 v.ValueTranslation,
@@ -178,11 +188,18 @@ public class CacheController : Controller
                 v.LanguageCode
             )).ToList();
 
-            var valueCacheDto = new ValueCacheDto(valueId, valueKey, translations);
+            var valueCacheDto = new ValueCacheDto(
+                valueId, 
+                valueKey, 
+                valueOwnerId,
+                valueOwnerName,
+                translations);
 
             var cacheCommand = new CacheValueCommand(
                 valueCacheDto.Id,
                 valueCacheDto.Key,
+                valueCacheDto.OwnerId,
+                valueCacheDto.OwnerName,
                 valueCacheDto.Translations
             );
             await _mediator.Send(cacheCommand);
