@@ -357,7 +357,7 @@
 class TemplateDetailsManager {
     constructor() {
         this.templateId = '@templateId';
-        this.templateName = '@Html.Raw(templateName)';
+        this.templateName = decodeURIComponent('@Html.Raw(System.Uri.EscapeDataString(templateName))');
         this.currentLanguage = '@currentLanguage';
         this.currentPage = @currentPage;
         this.pageSize = @pageSize;
@@ -722,25 +722,22 @@ class TemplateDetailsManager {
 
     async deleteTemplate() {
         console.log('🗑️ Deleting template:', this.templateName);
-        
+
         const deleteBtn = document.getElementById('confirmDeleteTemplateBtn');
         const spinner = deleteBtn.querySelector('.spinner-border');
-        
+
         deleteBtn.disabled = true;
         if (spinner) spinner.classList.remove('d-none');
 
         try {
-            const formData = new FormData();
-            formData.append('templateName', this.templateName);
-
-            const response = await fetch('/Templates/Delete', {
+            // Use the DeleteById endpoint instead
+            const response = await fetch(`/Templates/Delete/${this.templateId}`, {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
                 showToast(result.message, 'success');
                 setTimeout(() => window.location.href = '/Templates', 1500);
@@ -755,7 +752,6 @@ class TemplateDetailsManager {
             if (spinner) spinner.classList.add('d-none');
         }
     }
-
     async deleteValue(valueName) {
         console.log('🗑️ Deleting value:', valueName);
         const deleteBtn = document.getElementById('confirmDeleteValueBtn');

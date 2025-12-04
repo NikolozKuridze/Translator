@@ -65,7 +65,7 @@ public abstract class UpdateTranslation
             var valueHash = TemplateEntity.HashName(request.ValueKey);
             var value = await _valueRepository
                 .AsQueryable()
-                .Where(x => x.Hash == valueHash)
+                .Where(x => x.Hash == valueHash && x.OwnerId == userId)
                 .Include(x => x.Translations)
                 .ThenInclude(x => x.Language)
                 .SingleOrDefaultAsync(cancellationToken);
