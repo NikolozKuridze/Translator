@@ -35,6 +35,10 @@
     </div>
     <div class="d-flex gap-2 align-items-center">
         
+        <button class="btn btn-success" onclick="showAddValueModal()">
+            <i class="fas fa-plus"></i> Add Value
+        </button>
+        
         <button class="btn btn-warning" onclick="cacheTemplate('@templateId')" title="Cache Template">
             <i class="fas fa-database me-1"></i>Cache
         </button>
@@ -298,6 +302,66 @@
     </div>
 </div>
 
+<!-- Add Value Modal -->
+<div class="modal fade" id="addValueModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Value to Template</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="valueSearchInput" class="form-label">Search and Select Value</label>
+                    <div class="input-group">
+                        <input type="text" 
+                               class="form-control" 
+                               id="valueSearchInput" 
+                               placeholder="Start typing to search values..."
+                               autocomplete="off">
+                        <button class="btn btn-outline-secondary" type="button" id="clearSearchBtn">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <small class="text-muted">Search for values that can be added to this template (global or user-specific)</small>
+                </div>
+                
+                <div id="searchResultsContainer" class="border rounded p-3" style="max-height: 300px; overflow-y: auto; display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Available Values</h6>
+                        <small class="text-muted" id="resultsCount">0 results</small>
+                    </div>
+                    <div id="searchResults" class="list-group">
+                        <!-- Results will be populated here -->
+                    </div>
+                    <div id="noResultsMessage" class="text-center text-muted py-3" style="display: none;">
+                        <i class="fas fa-search fa-2x mb-2"></i>
+                        <p>No values found matching your search</p>
+                    </div>
+                </div>
+                
+                <div id="selectedValueContainer" class="mt-3 border rounded p-3" style="display: none;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0">Selected Value</h6>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSelection()">
+                            <i class="fas fa-times"></i> Clear
+                        </button>
+                    </div>
+                    <div id="selectedValueDetails">
+                        <!-- Selected value details will be shown here -->
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmAddValueBtn" disabled>
+                    <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
+                    <i class="fas fa-plus"></i> Add to Template
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Delete Template Modal -->
 <div class="modal fade" id="deleteTemplateModal" tabindex="-1">
     <div class="modal-dialog">
@@ -357,12 +421,13 @@
 class TemplateDetailsManager {
     constructor() {
         this.templateId = '@templateId';
-        this.templateName = '@Html.Raw(templateName)';
+        this.templateName = decodeURIComponent('@Html.Raw(System.Uri.EscapeDataString(templateName))');
         this.currentLanguage = '@currentLanguage';
         this.currentPage = @currentPage;
         this.pageSize = @pageSize;
         this.totalCount = @totalCount;
         this.totalPages = @totalPages;
+        this.currentValues = [];
         
         this.init();
     }
@@ -399,6 +464,45 @@ class TemplateDetailsManager {
         document.getElementById('confirmDeleteValueBtn').addEventListener('click', () => {
                 const valueName = document.getElementById('valueNameToDelete').textContent;
                 this.deleteValue(valueName);
+        });
+
+        // Value search input
+        const valueSearchInput = document.getElementById('valueSearchInput');
+        if (valueSearchInput) {
+            valueSearchInput.addEventListener('input', this.performSearch.bind(this));
+            valueSearchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.performSearch();
+                }
+            });
+        }
+
+        // Clear search button
+        const clearSearchBtn = document.getElementById('clearSearchBtn');
+        if (clearSearchBtn) {
+            clearSearchBtn.addEventListener('click', this.clearSelection.bind(this));
+        }
+
+        // Add value button
+        const confirmAddValueBtn = document.getElementById('confirmAddValueBtn');
+        if (confirmAddValueBtn) {
+            confirmAddValueBtn.addEventListener('click', () => {
+                if (window.selectedValue) {
+                    this.addValueToTemplate(window.selectedValue.key);
+                }
+            });
+        }
+
+        // Language dropdown items
+        document.querySelectorAll('.language-link').forEach(link => {
+            link.addEventListener('click', (e) => {
+                if (link.getAttribute('href') === '#') {
+                    e.preventDefault();
+                    const lang = link.getAttribute('data-lang');
+                    this.changeLanguage(lang);
+                }
+            });
         });
     }
 
@@ -438,7 +542,8 @@ class TemplateDetailsManager {
             if (result.success) {
                 this.updatePageData(result);
                 this.updateUI(result);
-                this.renderValues(result.data || []);
+                this.currentValues = result.data || [];
+                this.renderValues(this.currentValues);
                 this.renderPagination(result);
                 this.renderPageSizeSelector(result);
                 this.updateLanguageDropdown();
@@ -508,7 +613,6 @@ class TemplateDetailsManager {
             this.renderEmptyState();
         }
     }
-
 
     createValueRow(value) {
         return `
@@ -722,25 +826,22 @@ class TemplateDetailsManager {
 
     async deleteTemplate() {
         console.log('🗑️ Deleting template:', this.templateName);
-        
+
         const deleteBtn = document.getElementById('confirmDeleteTemplateBtn');
         const spinner = deleteBtn.querySelector('.spinner-border');
-        
+
         deleteBtn.disabled = true;
         if (spinner) spinner.classList.remove('d-none');
 
         try {
-            const formData = new FormData();
-            formData.append('templateName', this.templateName);
-
-            const response = await fetch('/Templates/Delete', {
+            // Use the DeleteById endpoint instead
+            const response = await fetch(`/Templates/Delete/${this.templateId}`, {
                 method: 'POST',
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
-                body: formData
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
             });
 
             const result = await response.json();
-            
+
             if (result.success) {
                 showToast(result.message, 'success');
                 setTimeout(() => window.location.href = '/Templates', 1500);
@@ -808,7 +909,6 @@ class TemplateDetailsManager {
         }
     }
 
-// Add this new function to your TemplateDetailsManager class
     removeValueFromUI(valueName) {
         // Find and remove the row
         const tbody = document.getElementById('valuesTableBody');
@@ -855,6 +955,263 @@ class TemplateDetailsManager {
         }
     }
 
+    async searchValues(searchTerm = '') {
+        try {
+            // Get the template owner information
+            const allTemplates = await this.getAllTemplates();
+            const currentTemplate = allTemplates.find(t => t.templateId === this.templateId);
+            
+            if (!currentTemplate) {
+                this.showError('Could not find template information');
+                return [];
+            }
+
+            // Use your existing endpoint
+            const response = await fetch(`/Templates/GetUserValues?userName=${encodeURIComponent(currentTemplate.ownerName || '')}&search=${encodeURIComponent(searchTerm)}&limit=50`, {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+            
+            if (result.success) {
+                return result.values || [];
+            } else {
+                this.showError(result.message);
+                return [];
+            }
+        } catch (error) {
+            console.error('Error searching values:', error);
+            this.showError('Failed to search values');
+            return [];
+        }
+    }
+
+    async getAllTemplates() {
+        try {
+            const response = await fetch('/Templates?pageNumber=1&pageSize=1000', {
+                method: 'GET',
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                return result.data || [];
+            } else {
+                return [];
+            }
+        } catch (error) {
+            console.error('Error fetching templates:', error);
+            return [];
+        }
+    }
+
+    async addValueToTemplate(valueName) {
+        console.log('➕ Adding value to template:', valueName);
+        
+        const addBtn = document.getElementById('confirmAddValueBtn');
+        const spinner = addBtn.querySelector('.spinner-border');
+        
+        addBtn.disabled = true;
+        if (spinner) spinner.classList.remove('d-none');
+
+        try {
+            // Use the endpoint from your controller
+            const response = await fetch('/Templates/AddValueToTemplate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    valueName: valueName,
+                    templateId: this.templateId
+                })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                showToast(result.message, 'success');
+                
+                // Hide modal
+                const modal = document.getElementById('addValueModal');
+                if (window.bootstrap) {
+                    const bsModal = bootstrap.Modal.getInstance(modal);
+                    if (bsModal) bsModal.hide();
+                }
+                
+                // Reload the template details to show the new value
+                this.loadTemplateDetails();
+                
+                // Clear selection for next use
+                this.clearSelection();
+            } else {
+                showToast(result.message, 'error');
+            }
+        } catch (error) {
+            console.error('Error adding value:', error);
+            showToast('Failed to add value to template', 'error');
+        } finally {
+            addBtn.disabled = false;
+            if (spinner) spinner.classList.add('d-none');
+        }
+    }
+
+    async performSearch() {
+        const searchTerm = document.getElementById('valueSearchInput').value.trim();
+        const resultsContainer = document.getElementById('searchResultsContainer');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+        const searchResults = document.getElementById('searchResults');
+        
+        if (searchTerm.length === 0) {
+            resultsContainer.style.display = 'none';
+            return;
+        }
+
+        // Show loading state
+        searchResults.innerHTML = '<div class="text-center py-3"><div class="spinner-border spinner-border-sm" role="status"></div> Searching...</div>';
+        resultsContainer.style.display = 'block';
+        noResultsMessage.style.display = 'none';
+
+        // Use debouncing
+        clearTimeout(window.debounceTimer);
+        window.debounceTimer = setTimeout(async () => {
+            const values = await this.searchValues(searchTerm);
+            
+            if (values.length === 0) {
+                searchResults.innerHTML = '';
+                noResultsMessage.style.display = 'block';
+                document.getElementById('resultsCount').textContent = '0 results';
+            } else {
+                this.renderSearchResults(values);
+                noResultsMessage.style.display = 'none';
+                document.getElementById('resultsCount').textContent = `${values.length} result${values.length !== 1 ? 's' : ''}`;
+            }
+        }, 300);
+    }
+
+    renderSearchResults(values) {
+        const searchResults = document.getElementById('searchResults');
+        searchResults.innerHTML = '';
+        
+        values.forEach(value => {
+            const item = document.createElement('a');
+            item.href = '#';
+            item.className = 'list-group-item list-group-item-action value-search-item';
+            item.dataset.valueName = value.key;
+            
+            // Check if value is already in template
+            const isInTemplate = this.currentValues?.some(v => v.key === value.key);
+            
+            item.innerHTML = `
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <strong>${this.escapeHtml(value.key)}</strong>
+                            ${value.ownershipType === 'Global' ? 
+                                '<span class="badge bg-primary value-tag">Global</span>' : 
+                                `<span class="badge bg-success value-tag">User: ${this.escapeHtml(value.ownerName || '')}</span>`
+                            }
+                            ${isInTemplate ? '<span class="badge bg-warning value-tag">Already in template</span>' : ''}
+                        </div>
+                        <div class="text-muted">
+                            <small>
+                                <i class="fas fa-flag"></i> ${value.translationsCount || 0} translation${value.translationsCount !== 1 ? 's' : ''}
+                            </small>
+                        </div>
+                    </div>
+                    ${!isInTemplate ? '<i class="fas fa-plus text-success"></i>' : '<i class="fas fa-check text-muted"></i>'}
+                </div>
+            `;
+            
+            if (!isInTemplate) {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    this.selectValue(value);
+                });
+            } else {
+                item.classList.add('disabled');
+                item.style.opacity = '0.6';
+                item.style.cursor = 'not-allowed';
+            }
+            
+            searchResults.appendChild(item);
+        });
+    }
+
+    selectValue(value) {
+        window.selectedValue = value;
+        
+        // Update UI
+        const allItems = document.querySelectorAll('.value-search-item');
+        allItems.forEach(item => {
+            item.classList.remove('selected');
+        });
+        
+        const selectedItem = document.querySelector(`[data-value-name="${value.key}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('selected');
+        }
+        
+        // Show selected value details
+        const selectedContainer = document.getElementById('selectedValueContainer');
+        const selectedDetails = document.getElementById('selectedValueDetails');
+        
+        selectedDetails.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <h6>${this.escapeHtml(value.key)}</h6>
+                    <div class="mb-2">
+                        ${value.ownershipType === 'Global' ? 
+                            '<span class="badge bg-primary">Global Value</span>' : 
+                            `<span class="badge bg-success">User Value: ${this.escapeHtml(value.ownerName || '')}</span>`
+                        }
+                    </div>
+                    <div>
+                        <small class="text-muted">
+                            <i class="fas fa-flag"></i> ${value.translationsCount || 0} translations
+                        </small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <small class="text-muted">Value ID:</small>
+                    <div class="mb-2">
+                        <code class="bg-light p-1 rounded d-inline-block">${value.valueId || 'N/A'}</code>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        selectedContainer.style.display = 'block';
+        document.getElementById('confirmAddValueBtn').disabled = false;
+        
+        // Hide search results
+        document.getElementById('searchResultsContainer').style.display = 'none';
+    }
+
+    clearSelection() {
+        window.selectedValue = null;
+        document.getElementById('valueSearchInput').value = '';
+        document.getElementById('searchResultsContainer').style.display = 'none';
+        document.getElementById('selectedValueContainer').style.display = 'none';
+        document.getElementById('confirmAddValueBtn').disabled = true;
+        
+        // Clear search results
+        document.getElementById('searchResults').innerHTML = '';
+        document.getElementById('noResultsMessage').style.display = 'none';
+    }
 
     showTableLoader() {
         const loader = document.getElementById('tableLoader');
@@ -887,6 +1244,11 @@ class TemplateDetailsManager {
     }
 }
 
+// Global variables
+let detailsManager;
+window.debounceTimer = null;
+window.selectedValue = null;
+
 // Global functions for backward compatibility
 function showDeleteModal(templateName) {
     const modal = new bootstrap.Modal(document.getElementById('deleteTemplateModal'));
@@ -897,6 +1259,21 @@ function showDeleteValueModal(valueName) {
     document.getElementById('valueNameToDelete').textContent = valueName;
     const modal = new bootstrap.Modal(document.getElementById('deleteValueModal'));
     modal.show();
+}
+
+function showAddValueModal() {
+    const modal = new bootstrap.Modal(document.getElementById('addValueModal'));
+    modal.show();
+    
+    // Clear previous selections
+    if (detailsManager) {
+        detailsManager.clearSelection();
+    }
+    
+    // Focus on search input
+    setTimeout(() => {
+        document.getElementById('valueSearchInput').focus();
+    }, 500);
 }
 
 async function copyTemplateId(templateId) {
@@ -970,7 +1347,6 @@ async function cacheTemplate(templateId) {
 }
 
 // Initialize
-let detailsManager;
 document.addEventListener('DOMContentLoaded', function () {
     console.log('DOM loaded, initializing TemplateDetailsManager...');
     detailsManager = new TemplateDetailsManager();
@@ -987,7 +1363,6 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 </script>
-
 <style>
     .badge.fs-6 {
         font-size: 1rem !important;
@@ -1003,5 +1378,32 @@ document.addEventListener('DOMContentLoaded', function () {
 
     .gap-2 {
         gap: 0.5rem;
+    }
+
+    .value-search-item {
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .value-search-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .value-search-item.selected {
+        background-color: #e7f1ff;
+        border-left: 4px solid #0d6efd;
+    }
+
+    .value-tag {
+        font-size: 0.75rem;
+    }
+
+    .value-translation {
+        font-size: 0.85rem;
+        color: #666;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 300px;
     }
 </style>

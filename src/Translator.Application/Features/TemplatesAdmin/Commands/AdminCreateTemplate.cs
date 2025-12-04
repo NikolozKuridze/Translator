@@ -13,7 +13,8 @@ public abstract class AdminCreateTemplate
 {
     public sealed record Command(
         string TemplateName,
-        IEnumerable<string> Values) : IRequest;
+        IEnumerable<string> Values,
+        string? Username = null) : IRequest;
 
     public class Validator : AbstractValidator<Command>
     {
@@ -45,21 +46,38 @@ public abstract class AdminCreateTemplate
         private readonly IRepository<TemplateEntity> _templateRepository;
         private readonly IValidator<Command> _validator;
         private readonly IRepository<Value> _valueRepository;
+        private readonly IRepository<User> _userRepository;
 
         public Handler(
             IRepository<TemplateEntity> templateRepository,
             IRepository<Value> valueRepository,
-            IValidator<Command> validator)
+            IValidator<Command> validator,
+            IRepository<User> userRepository)
         {
             _templateRepository = templateRepository;
             _valueRepository = valueRepository;
             _validator = validator;
+            _userRepository = userRepository;
         }
 
         public async Task Handle(Command request, CancellationToken cancellationToken)
         {
             await _validator.ValidateAndThrowAsync(request, cancellationToken);
 
+            Guid? ownerId = null;
+
+            if (!string.IsNullOrEmpty(request.Username))
+            {
+                var user = await _userRepository
+                    .Where(u => u.Username == request.Username)
+                    .SingleOrDefaultAsync(cancellationToken);
+
+                if (user == null)
+                    throw new UserNotFoundException($"User with username '{request.Username}' not found");
+
+                ownerId = user.Id;
+            }
+            
             var templateNameHash = TemplateEntity.HashName(request.TemplateName);
 
             var existsTemplate = await _templateRepository
@@ -69,13 +87,13 @@ public abstract class AdminCreateTemplate
             if (existsTemplate is not null)
                 throw new TemplateAlreadyExistsException(existsTemplate.Id);
 
-            var newTemplate = new TemplateEntity(request.TemplateName);
+            var newTemplate = new TemplateEntity(request.TemplateName, ownerId);
 
             var uniqueValues = request.Values.Distinct().ToList();
             var valueHashes = uniqueValues.Select(TemplateEntity.HashName).ToList();
 
             var availableValues = await _valueRepository
-                .Where(v => valueHashes.Contains(v.Hash))
+                .Where(v => valueHashes.Contains(v.Hash) && (v.OwnerId == ownerId || v.OwnerId == null))
                 .ToListAsync(cancellationToken);
 
             var missingValues = new List<string>();

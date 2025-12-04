@@ -78,7 +78,7 @@ public abstract class AddValueToTemplate
                 .AsQueryable()
                 .Include(v => v.Translations)
                 .ThenInclude(t => t.Language)
-                .Where(v => v.Hash == valueHash)
+                .Where(v => v.Hash == valueHash && v.OwnerId == userId)
                 .SingleOrDefaultAsync(cancellationToken);
 
             if (value is null)
@@ -94,7 +94,12 @@ public abstract class AddValueToTemplate
                 .ToList();
 
             await _templateCacheService.DeleteTemplateAsync(request.TemplateId);
-            await _templateCacheService.SetTemplateAsync(existsTemplate.Id, existsTemplate.Name, actualTranslations);
+            await _templateCacheService.SetTemplateAsync(
+                existsTemplate.Id,
+                existsTemplate.Name,
+                existsTemplate.OwnerId,
+                existsTemplate.Owner?.Username,
+                actualTranslations);
 
             await _templateRepository.SaveChangesAsync(cancellationToken);
         }

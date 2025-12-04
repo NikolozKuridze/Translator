@@ -64,8 +64,13 @@ public abstract class AdminDeleteValueFromTemplate
                 .ToList();
 
             await _templateCacheService.DeleteTemplateAsync(request.TemplateId);
-            await _templateCacheService.SetTemplateAsync(existsTemplate.Id, existsTemplate.Name, actualTranslations);
-
+            await _templateCacheService.SetTemplateAsync(
+                existsTemplate.Id,
+                existsTemplate.Name,
+                existsTemplate.OwnerId,
+                existsTemplate.Owner?.Username,
+                actualTranslations);
+            
             await _templateRepository.SaveChangesAsync(cancellationToken);
         }
     }

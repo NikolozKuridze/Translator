@@ -123,8 +123,12 @@ public class AddTranslationsToAllValues
                                 t.Language.Code ))
                             .ToListAsync(cancellationToken);
                         
-                        await _valueCacheService.SetTranslationsAsync(value.Id, value.Key, updatedTranslations); 
-                    }
+                        await _valueCacheService.SetTranslationsAsync(
+                            value.Id,
+                            value.Key,
+                            value.OwnerId,
+                            value.Owner?.Username,
+                            updatedTranslations);                    }
                 }
                 else
                 {

@@ -85,14 +85,44 @@
             <h5 class="mb-0">Create New Template</h5>
         </div>
         <div class="card-body">
-            <form id="createTemplateForm">
-                <div class="mb-3">
-                    <label for="templateName" class="form-label">Template Name</label>
-                    <input type="text" name="templateName" id="templateName" class="form-control" required>
+            <form id="createTemplateForm" class="row g-3">
+                <div class="col-md-4">
+                    <label for="templateName" class="form-label">Template Name <span class="text-danger">*</span></label>
+                    <input type="text" id="templateName" name="templateName" class="form-control" required 
+                           placeholder="Enter template name..." />
                 </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Template Values</label>
+                
+                <div class="col-md-4">
+                    <label for="userSearchInput" class="form-label">User (Optional)</label>
+                    <div class="position-relative">
+                        <input type="text" 
+                               id="userSearchInput" 
+                               class="form-control" 
+                               placeholder="Search or select user..."
+                               autocomplete="off" />
+                        <input type="hidden" id="selectedUsername" name="username" />
+                        
+                        <!-- User dropdown -->
+                        <div id="userDropdown" class="dropdown-menu w-100" style="display: none; max-height: 200px; overflow-y: auto;">
+                            <div class="dropdown-item disabled text-muted" id="dropdownLoading">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Loading...</span>
+                                </div>
+                                Loading users...
+                            </div>
+                            <div class="dropdown-item d-none" id="dropdownNoUsers">
+                                No users found
+                            </div>
+                            <div id="userOptionsContainer">
+                                <!-- User options will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                    <small class="text-muted">Leave empty to create global template</small>
+                </div>
+                
+                <div class="col-md-12">
+                    <label class="form-label">Template Values <span class="text-danger">*</span></label>
                     <div id="valuesContainer">
                         <div class="mb-2 value-input-group">
                             <div class="position-relative">
@@ -110,14 +140,20 @@
                     <button type="button" class="btn btn-outline-primary btn-sm" onclick="addValueInput()">
                         <i class="fas fa-plus"></i> Add Value
                     </button>
+                    <small class="form-text text-muted">
+                        Values will be sourced from global or user's values based on username.
+                    </small>
                 </div>
 
-                <div class="d-flex gap-2">
-                    <button type="submit" class="btn btn-success">
-                        <span class="spinner-border spinner-border-sm d-none me-2" role="status"></span>
-                        Create
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="clearForm()">Clear</button>
+                <div class="col-md-12">
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>Create Template
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="clearForm()">
+                            <i class="fas fa-eraser me-2"></i>Clear
+                        </button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -412,13 +448,23 @@
 
         async searchValues(searchTerm, dropdown, inputElement) {
             try {
+                // Get owner context from input element
+                const ownerId = inputElement.dataset.ownerId;
+                const ownerName = inputElement.dataset.ownerName;
+
                 const params = new URLSearchParams({
                     valueKey: searchTerm,
                     pageNumber: 1,
                     pageSize: 20,
-                    sortBy: 'date',
-                    sortDirection: 'desc'
+                    sortBy: 'key',
+                    sortDirection: 'asc'
                 });
+
+                // Add owner filter if available
+                if (ownerName) {
+                    params.append('userName', ownerName);
+                    params.append('includeGlobal', 'true'); // Also include global values
+                }
 
                 const response = await fetch(`/Values/Search?${params}`, {
                     headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -427,23 +473,63 @@
                 const data = await response.json();
 
                 if (data.success && data.data && data.data.length > 0) {
-                    this.showDropdown(dropdown, data.data, inputElement);
+                    // Filter values based on owner
+                    const filteredData = data.data.filter(item => {
+                        if (ownerId) {
+                            // Show values that are global OR belong to the selected user
+                            return !item.ownerId || item.ownerId === ownerId;
+                        }
+                        // If no user selected, show only global values
+                        return !item.ownerId;
+                    });
+
+                    if (filteredData.length > 0) {
+                        this.showDropdown(dropdown, filteredData, inputElement);
+                    } else {
+                        this.showNoValuesMessage(dropdown, ownerName);
+                    }
                 } else {
-                    this.hideDropdown(dropdown);
+                    this.showNoValuesMessage(dropdown, ownerName);
                 }
             } catch (error) {
                 console.error('Search error:', error);
                 this.hideDropdown(dropdown);
             }
         }
+        
+        showNoValuesMessage(dropdown, ownerName) {
+            this.hideDropdown(dropdown);
+
+            if (ownerName) {
+                this.showError(`No values found for user '${ownerName}' and global values. Create values first.`);
+            } else {
+                this.showError('No global values found. Create values first.');
+            }
+        }
 
         showDropdown(dropdown, items, inputElement) {
             dropdown.innerHTML = '';
 
+            const ownerName = inputElement.dataset.ownerName;
+
             items.forEach(item => {
                 const div = document.createElement('div');
                 div.className = 'autocomplete-item';
-                div.innerHTML = `<i class="fas fa-tag text-primary me-2"></i>${this.escapeHtml(item.key)}`;
+
+                // Add badge for ownership type
+                const badgeClass = item.ownerId ? 'bg-success' : 'bg-secondary';
+                const badgeText = item.ownerId ? 'User' : 'Global';
+
+                div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-tag text-primary me-2"></i>
+                    ${this.escapeHtml(item.key)}
+                </div>
+                <span class="badge ${badgeClass}">${badgeText}</span>
+            </div>
+        `;
+
                 div.addEventListener('click', () => {
                     inputElement.value = item.key;
                     this.hideDropdown(dropdown);
@@ -592,9 +678,10 @@
         async createTemplate() {
             const form = document.getElementById('createTemplateForm');
             const submitBtn = form.querySelector('button[type="submit"]');
-            const spinner = submitBtn.querySelector('.spinner-border');
 
             const templateName = document.getElementById('templateName').value.trim();
+            const usernameInput = document.getElementById('selectedUsername');
+            const username = usernameInput ? usernameInput.value.trim() : null;
             const valueInputs = document.querySelectorAll('input[name="values"]');
             const values = [];
 
@@ -611,11 +698,13 @@
             }
 
             submitBtn.disabled = true;
-            if (spinner) spinner.classList.remove('d-none');
 
             try {
                 const formData = new FormData();
                 formData.append('templateName', templateName);
+                if (username) {
+                    formData.append('username', username);
+                }
                 values.forEach(value => formData.append('values', value));
 
                 const response = await fetch('/Templates/Create', {
@@ -639,10 +728,8 @@
                 this.showError('Failed to create template');
             } finally {
                 submitBtn.disabled = false;
-                if (spinner) spinner.classList.add('d-none');
             }
         }
-
         async deleteTemplate() {
             if (!this.currentTemplateToDelete) {
                 this.showError('No template selected for deletion');
@@ -1021,25 +1108,33 @@
         }
 
         clearForm() {
-            document.getElementById('createTemplateForm').reset();
+            const form = document.getElementById('createTemplateForm');
+            if (!form) return;
 
+            form.reset();
+
+            // Clear user selection
+            if (window.templateUserDropdownManager) {
+                window.templateUserDropdownManager.clearSelection();
+            }
+
+            // Reset value inputs container
             document.getElementById('valuesContainer').innerHTML = `
-            <div class="mb-2 value-input-group">
-                <div class="position-relative">
-                    <input type="text" name="values" class="form-control value-input" 
-                           placeholder="Type to search for values..." required>
-                    <div class="autocomplete-dropdown" style="display: none;"></div>
-                </div>
-                <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)" disabled>
-                    <i class="fas fa-trash"></i> Remove
-                </button>
+        <div class="mb-2 value-input-group">
+            <div class="position-relative">
+                <input type="text" name="values" class="form-control value-input" 
+                       placeholder="Type to search for values..." required>
+                <div class="autocomplete-dropdown" style="display: none;"></div>
             </div>
-        `;
+            <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)" disabled>
+                <i class="fas fa-trash"></i> Remove
+            </button>
+        </div>
+    `;
 
             this.initializeAutocomplete();
             updateRemoveButtons();
         }
-
         hideCreateForm() {
             const section = document.getElementById('createTemplateSection');
             if (window.bootstrap) {
@@ -1072,6 +1167,344 @@
         }
     }
 
+    class UserDropdownManager {
+        constructor() {
+            this.searchInput = document.getElementById('userSearchInput');
+            this.dropdown = document.getElementById('userDropdown');
+            this.optionsContainer = document.getElementById('userOptionsContainer');
+            this.loadingElement = document.getElementById('dropdownLoading');
+            this.noUsersElement = document.getElementById('dropdownNoUsers');
+            this.selectedUsernameInput = document.getElementById('selectedUsername');
+            this.selectedUser = null;
+            this.users = [];
+            this.debounceTimeout = null;
+
+            if (this.searchInput) {
+                this.init();
+            }
+        }
+
+        init() {
+            this.bindEvents();
+            this.loadUsers();
+        }
+
+        bindEvents() {
+            // Focus events
+            this.searchInput.addEventListener('focus', () => {
+                this.showDropdown();
+            });
+
+            // Input events for filtering
+            this.searchInput.addEventListener('input', (e) => {
+                this.handleSearchInput(e.target.value);
+            });
+
+            // Click events
+            this.searchInput.addEventListener('click', () => {
+                this.showDropdown();
+            });
+
+            // Click outside to close dropdown
+            document.addEventListener('click', (e) => {
+                if (!this.searchInput.contains(e.target) && !this.dropdown.contains(e.target)) {
+                    this.hideDropdown();
+                }
+            });
+
+            // Escape key to close dropdown
+            this.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    this.hideDropdown();
+                }
+            });
+
+            // Arrow keys navigation
+            this.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    this.handleArrowKeys(e.key);
+                }
+            });
+        }
+
+        handleSearchInput(searchTerm) {
+            clearTimeout(this.debounceTimeout);
+
+            this.debounceTimeout = setTimeout(() => {
+                if (searchTerm.length >= 1) {
+                    this.loadUsers(searchTerm);
+                } else if (searchTerm.length === 0) {
+                    this.loadUsers();
+                }
+            }, 300);
+        }
+
+        async loadUsers(search = '') {
+            this.showLoading();
+
+            try {
+                const params = new URLSearchParams();
+                if (search) {
+                    params.append('search', search);
+                }
+
+                const response = await fetch(`/Templates/GetUsers?${params}`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const result = await response.json();
+
+                if (result.success) {
+                    this.users = result.users || [];
+                    this.renderUserOptions();
+                } else {
+                    this.showError('Failed to load users');
+                }
+            } catch (error) {
+                console.error('Error loading users:', error);
+                this.showError('Failed to load users');
+            } finally {
+                this.hideLoading();
+            }
+        }
+
+        renderUserOptions() {
+            this.optionsContainer.innerHTML = '';
+
+            if (this.users.length === 0) {
+                this.noUsersElement.classList.remove('d-none');
+                return;
+            }
+
+            this.noUsersElement.classList.add('d-none');
+
+            this.users.forEach((user, index) => {
+                const option = this.createUserOption(user, index);
+                this.optionsContainer.appendChild(option);
+            });
+        }
+
+        createUserOption(user, index) {
+            const div = document.createElement('div');
+            div.className = 'dropdown-item user-option';
+            div.style.cursor = 'pointer';
+            div.dataset.username = user.userName;
+            div.dataset.userId = user.userId;
+            div.dataset.index = index;
+            div.tabIndex = 0;
+
+            div.innerHTML = `
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <strong>${this.escapeHtml(user.userName)}</strong>
+                    <div class="text-muted small">
+                        <small>ID: ${user.userId.substring(0, 8)}...</small>
+                    </div>
+                </div>
+                ${this.selectedUser && this.selectedUser.userName === user.userName
+                ? '<i class="fas fa-check text-success"></i>'
+                : ''}
+            </div>
+        `;
+
+            div.addEventListener('click', () => {
+                this.selectUser(user);
+            });
+
+            div.addEventListener('mouseenter', () => {
+                this.highlightOption(div);
+            });
+
+            div.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.selectUser(user);
+                }
+            });
+
+            return div;
+        }
+
+        selectUser(user) {
+            this.selectedUser = user;
+            this.searchInput.value = user.userName;
+            this.selectedUsernameInput.value = user.userName;
+            this.hideDropdown();
+
+            // Update UI to show selection
+            this.updateSelectionUI();
+
+            // Update placeholder for value inputs to indicate user context
+            this.updateValueInputsPlaceholder();
+
+            // Store selected user ID for value filtering
+            this.selectedUserId = user.userId;
+
+            // Update all value inputs with user context
+            this.updateAllValueInputs();
+        }
+
+        updateAllValueInputs() {
+            const valueInputs = document.querySelectorAll('.value-input');
+            valueInputs.forEach(input => {
+                // Update placeholder
+                input.placeholder = `Search values (global + ${this.selectedUser.userName}'s values)...`;
+
+                // Clear current value to avoid conflicts
+                input.value = '';
+
+                // Store user context
+                input.dataset.ownerId = this.selectedUserId;
+                input.dataset.ownerName = this.selectedUser.userName;
+            });
+        }
+
+        clearSelection() {
+            this.selectedUser = null;
+            this.selectedUserId = null;
+            this.searchInput.value = '';
+            this.selectedUsernameInput.value = '';
+            this.updateSelectionUI();
+            this.resetValueInputsPlaceholder();
+        }
+
+        updateSelectionUI() {
+            const userOptions = document.querySelectorAll('.user-option');
+            userOptions.forEach(option => {
+                const username = option.dataset.username;
+                const checkIcon = option.querySelector('.fa-check');
+
+                if (checkIcon) {
+                    checkIcon.remove();
+                }
+
+                if (this.selectedUser && this.selectedUser.userName === username) {
+                    const newCheckIcon = document.createElement('i');
+                    newCheckIcon.className = 'fas fa-check text-success';
+                    option.querySelector('.d-flex').appendChild(newCheckIcon);
+                }
+            });
+        }
+
+        updateValueInputsPlaceholder() {
+            const valueInputs = document.querySelectorAll('.value-input');
+            valueInputs.forEach(input => {
+                input.placeholder = `Search values (global + ${this.selectedUser.userName}'s values)...`;
+            });
+        }
+
+        resetValueInputsPlaceholder() {
+            const valueInputs = document.querySelectorAll('.value-input');
+            valueInputs.forEach(input => {
+                input.placeholder = 'Type to search for values...';
+                delete input.dataset.ownerId;
+                delete input.dataset.ownerName;
+            });
+        }
+
+        showDropdown() {
+            if (!this.dropdown.classList.contains('show')) {
+                this.dropdown.style.display = 'block';
+                this.dropdown.classList.add('show');
+
+                // Position dropdown below input using Bootstrap's dropdown positioning
+                this.positionDropdown();
+            }
+        }
+
+        positionDropdown() {
+            const inputRect = this.searchInput.getBoundingClientRect();
+            const parentRect = this.searchInput.offsetParent.getBoundingClientRect();
+
+            // Calculate position relative to parent container
+            const top = inputRect.bottom - parentRect.top;
+            const left = inputRect.left - parentRect.left;
+
+            this.dropdown.style.position = 'absolute';
+            this.dropdown.style.top = `${top}px`;
+            this.dropdown.style.left = `${left}px`;
+            this.dropdown.style.width = `${inputRect.width}px`;
+            this.dropdown.style.zIndex = '1060'; // Higher than Bootstrap modals
+            this.dropdown.style.maxHeight = '200px';
+            this.dropdown.style.overflowY = 'auto';
+        }
+
+        hideDropdown() {
+            this.dropdown.style.display = 'none';
+            this.dropdown.classList.remove('show');
+
+            // If search input is empty but we have a selected user, restore the username
+            if (this.selectedUser && !this.searchInput.value.trim()) {
+                this.searchInput.value = this.selectedUser.userName;
+            }
+        }
+
+        handleArrowKeys(key) {
+            const options = Array.from(document.querySelectorAll('.user-option'));
+            if (options.length === 0) return;
+
+            const currentFocused = document.activeElement;
+            let currentIndex = -1;
+
+            if (currentFocused.classList.contains('user-option')) {
+                currentIndex = parseInt(currentFocused.dataset.index);
+            }
+
+            let nextIndex;
+            if (key === 'ArrowDown') {
+                nextIndex = currentIndex < options.length - 1 ? currentIndex + 1 : 0;
+            } else {
+                nextIndex = currentIndex > 0 ? currentIndex - 1 : options.length - 1;
+            }
+
+            if (nextIndex >= 0 && nextIndex < options.length) {
+                options[nextIndex].focus();
+            } else if (options.length > 0) {
+                options[0].focus();
+            }
+        }
+
+        highlightOption(option) {
+            document.querySelectorAll('.user-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            option.classList.add('active');
+        }
+
+        showLoading() {
+            this.loadingElement.classList.remove('d-none');
+            this.optionsContainer.style.display = 'none';
+            this.noUsersElement.classList.add('d-none');
+        }
+
+        hideLoading() {
+            this.loadingElement.classList.add('d-none');
+            this.optionsContainer.style.display = 'block';
+        }
+
+        showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'dropdown-item text-danger';
+            errorDiv.textContent = message;
+            this.optionsContainer.innerHTML = '';
+            this.optionsContainer.appendChild(errorDiv);
+            this.noUsersElement.classList.add('d-none');
+        }
+
+        escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    }
     // Global functions
     function showDeleteModal(templateName, templateId) {
         document.getElementById('templateNameToDelete').textContent = templateName;
@@ -1119,23 +1552,31 @@
 
     function addValueInput() {
         const container = document.getElementById('valuesContainer');
+        const userDropdownManager = window.templateUserDropdownManager;
+
         const div = document.createElement('div');
         div.className = 'mb-2 value-input-group';
         div.innerHTML = `
         <div class="position-relative">
             <input type="text" name="values" class="form-control value-input" 
-                   placeholder="Type to search for values..." 
+                   placeholder="${userDropdownManager?.selectedUser ? `Search values (global + ${userDropdownManager.selectedUser.userName}'s values)...` : 'Type to search for values...'}" 
                    autocomplete="off" 
                    required>
             <div class="autocomplete-dropdown" style="display: none;"></div>
         </div>
         <button class="btn btn-outline-danger mt-2" type="button" onclick="removeValueInput(this)">
             <i class="fas fa-trash"></i> Remove
-                </button>
+        </button>
     `;
         container.appendChild(div);
 
         const newInput = div.querySelector('.value-input');
+
+        // Set owner context if available
+        if (userDropdownManager?.selectedUser) {
+            newInput.dataset.ownerId = userDropdownManager.selectedUserId;
+            newInput.dataset.ownerName = userDropdownManager.selectedUser.userName;
+        }
 
         if (templateManager && newInput) {
             templateManager.setupAutocomplete(newInput);
@@ -1143,7 +1584,6 @@
 
         updateRemoveButtons();
     }
-
     function removeValueInput(button) {
         button.closest('.value-input-group').remove();
         updateRemoveButtons();
@@ -1165,10 +1605,15 @@
 
     // Initialize
     let templateManager;
+    let templateUserDropdownManager;
+
     document.addEventListener('DOMContentLoaded', function() {
         console.log('🎉 DOM loaded, initializing TemplateManager...');
         templateManager = new TemplateManager();
+        templateUserDropdownManager = new UserDropdownManager();
+        window.templateUserDropdownManager = templateUserDropdownManager;
 
+        // Auto-hide TempData alerts
         const successAlert = document.querySelector('.alert-success');
         if (successAlert) {
             setTimeout(() => new bootstrap.Alert(successAlert).close(), 5000);
@@ -1231,5 +1676,71 @@
 
     .gap-2 {
         gap: 0.5rem;
+    }
+
+    /* User dropdown styles for Templates */
+    #createTemplateForm .position-relative {
+        position: relative !important;
+    }
+
+    #userDropdown {
+        display: none;
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        background-color: white;
+        min-width: 100%;
+    }
+
+    #userDropdown.show {
+        display: block !important;
+    }
+
+    #userDropdown .dropdown-item {
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #f8f9fa;
+        cursor: pointer;
+    }
+
+    #userDropdown .dropdown-item:last-child {
+        border-bottom: none;
+    }
+
+    #userDropdown .dropdown-item:hover,
+    #userDropdown .dropdown-item.active {
+        background-color: #f8f9fa;
+        color: #000000;
+    }
+
+    #userDropdown .dropdown-item:active {
+        background-color: #e9ecef;
+    }
+
+    #userDropdown .user-option:hover {
+        background-color: #f8f9fa;
+    }
+
+    /* Required field indicator */
+    #createTemplateForm .form-label .text-danger {
+        font-size: 1.2em;
+        vertical-align: middle;
+    }
+
+    /* Template ownership badges */
+    .global-template-badge {
+        background-color: #e3f2fd;
+        color: #1565c0;
+    }
+
+    .user-template-badge {
+        background-color: #f3e5f5;
+        color: #7b1fa2;
+    }
+
+    /* Responsive adjustments for template form */
+    @@media (max-width: 768px) {
+    #createTemplateForm .col-md-4 {
+        margin-bottom: 1rem;
+    }
     }
 </style>

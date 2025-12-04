@@ -22,10 +22,15 @@ public class TemplateCacheService
         return await _redisService.GetAsync<TemplateCacheDto>(key);
     }
 
-    public async Task SetTemplateAsync(Guid templateId, string templateName, List<TranslationDto> translations)
+    public async Task SetTemplateAsync(
+        Guid templateId, 
+        string templateName, 
+        Guid? ownerId,
+        string? ownerName,
+        List<TranslationDto> translations)
     {
         var key = GetRedisKey(templateId);
-        var dto = new TemplateCacheDto(templateId, templateName, translations);
+        var dto = new TemplateCacheDto(templateId, templateName, ownerId, ownerName, translations);
         
         await _redisService.SetAsync(key, dto);
         
@@ -71,6 +76,8 @@ public class TemplateCacheService
                     return new CachedTemplateInfo(
                         template.TemplateId, 
                         template.TemplateName,
+                        template.OwnerId,
+                        template.OwnerName,
                         template.Translations.Count
                     );
                 }
@@ -88,7 +95,16 @@ public class TemplateCacheService
         return keysList.Count;
     }
 }
-
-public record CachedTemplateInfo(Guid TemplateId, string TemplateName, int ValuesCount);
-public record TemplateCacheDto(Guid TemplateId, string TemplateName, List<TranslationDto> Translations);
+public record CachedTemplateInfo(
+    Guid TemplateId, 
+    string TemplateName, 
+    Guid? OwnerId,
+    string? OwnerName,
+    int ValuesCount);
+public record TemplateCacheDto(
+    Guid TemplateId, 
+    string TemplateName, 
+    Guid? OwnerId,
+    string? OwnerName,
+    List<TranslationDto> Translations);
 public record TranslationDto(string Key, string Value, Guid ValueId, string LanguageCode);

@@ -4,6 +4,7 @@ using Translator.API.Attributes;
 using Translator.Application.Features.Language.Queries.GetLanguages;
 using Translator.Application.Features.TemplatesAdmin.Commands;
 using Translator.Application.Features.TemplatesAdmin.Queries;
+using Translator.Application.Features.Users.Queries;
 using Translator.Application.Features.ValuesAdmin.Commands;
 using Translator.Application.Features.ValuesAdmin.Queries;
 using Translator.Domain.Pagination;
@@ -207,7 +208,7 @@ public class TemplatesController : Controller
     }
 
     [HttpPost("Create")]
-    public async Task<IActionResult> Create(string templateName, List<string> values)
+    public async Task<IActionResult> Create(string templateName, List<string> values, string? username = null)
     {
         try
         {
@@ -221,10 +222,13 @@ public class TemplatesController : Controller
                 return RedirectToAction(nameof(Index));
             }
 
-            var command = new AdminCreateTemplate.Command(templateName.Trim(), values);
+            var command = new AdminCreateTemplate.Command(templateName.Trim(), values, username?.Trim());
             await _mediator.Send(command);
+        
+            var successMsg = string.IsNullOrEmpty(username) 
+                ? "Global template created successfully!" 
+                : $"Template created successfully for user '{username}'!";
 
-            var successMsg = "Global template created successfully!";
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
                 return Json(new { success = true, message = successMsg });
 
@@ -241,7 +245,49 @@ public class TemplatesController : Controller
             return RedirectToAction(nameof(Index));
         }
     }
+    [HttpGet("GetUserValues")]
+    public async Task<IActionResult> GetUserValues(string userName, string search = "", int limit = 20)
+    {
+        try
+        {
+            var paginationRequest = new PaginationRequest(1, limit, null, null, null, "key", "asc");
+        
+            // This will get values for the specific user (including global if needed)
+            var command = new AdminSearchValue.Command(search, userName, paginationRequest);
+            var result = await _mediator.Send(command);
 
+            return Json(new 
+            { 
+                success = true, 
+                values = result.Items,
+                totalCount = result.TotalItems
+            });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
+    [HttpGet("GetUsers")]
+    public async Task<IActionResult> GetUsers(string search = "")
+    {
+        try
+        {
+            var query = new GetUsers.Query();
+            var users = await _mediator.Send(query);
+        
+            if (!string.IsNullOrEmpty(search))
+            {
+                users = users.Where(u => u.UserName.Contains(search, StringComparison.OrdinalIgnoreCase));
+            }
+        
+            return Json(new { success = true, users = users.ToList() });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
+    }
     [HttpPost("Delete")]
     public async Task<IActionResult> Delete(string templateName)
     {
@@ -276,6 +322,28 @@ public class TemplatesController : Controller
             TempData["ErrorMessage"] = errorMsg;
             return RedirectToAction(nameof(Index));
         }
+    }
+    
+    [HttpPost("AddValueToTemplate")]
+    public async Task<IActionResult> AddValueToTemplate([FromBody] AddValueToTemplateRequest request)
+    {
+        try
+        {
+            var command = new AdminAddValueToTemplate.Command(request.ValueName, request.TemplateId);
+            await _mediator.Send(command);
+        
+            return Json(new { success = true, message = $"Value '{request.ValueName}' added to template successfully!" });
+        }
+        catch (Exception ex)
+        {
+            return Json(new { success = false, message = $"Error adding value: {ex.Message}" });
+        }
+    }
+
+    public class AddValueToTemplateRequest
+    {
+        public string ValueName { get; set; } = string.Empty;
+        public Guid TemplateId { get; set; }
     }
 
     [HttpPost("Delete/{templateId:guid}")]

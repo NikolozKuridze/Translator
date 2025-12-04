@@ -29,11 +29,15 @@ public class ValueCacheService
         return value != null;
     }
 
-    public async Task SetTranslationsAsync(Guid valueId, string valueKey, List<TranslationDto> translations)
+    public async Task SetTranslationsAsync(
+        Guid valueId, 
+        string valueKey, 
+        Guid? ownerId,
+        string? ownerName,
+        List<TranslationDto> translations)
     {
         var key = GetRedisKey(valueId);
-        var valueCacheDto = new ValueCacheDto(valueId, valueKey, translations);
-        
+        var valueCacheDto = new ValueCacheDto(valueId, valueKey, ownerId, ownerName, translations);
         
         await _redisService.SetAsync(key, valueCacheDto);
         
@@ -86,6 +90,8 @@ public class ValueCacheService
                         return new CachedValueInfo(
                             value.Id, 
                             value.Key,
+                            value.OwnerId,
+                            value.OwnerName,
                             value.Translations.Count
                         );
                     }
@@ -108,6 +114,15 @@ public class ValueCacheService
         return keysList.Count;
     }
 }
-
-public record CachedValueInfo(Guid ValueId, string ValueKey, int TranslationsCount);
-public record ValueCacheDto(Guid Id, string Key, List<TranslationDto> Translations);
+public record CachedValueInfo(
+    Guid ValueId, 
+    string ValueKey, 
+    Guid? OwnerId,
+    string? OwnerName,
+    int TranslationsCount);
+public record ValueCacheDto(
+    Guid Id, 
+    string Key, 
+    Guid? OwnerId,
+    string? OwnerName,
+    List<TranslationDto> Translations);
