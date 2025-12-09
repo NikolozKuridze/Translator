@@ -34,10 +34,10 @@ public abstract class AddUser
         {
             await validator.ValidateAndThrowAsync(request, cancellationToken);
 
-            var normalizedUserName = request.UserName.ToLower().Trim();
+            var normalizedUserName = request.UserName.Trim();
             
             var userExists = await userRepository.AsQueryable()
-                .FirstOrDefaultAsync(u => u.Username == normalizedUserName, cancellationToken);
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == normalizedUserName.ToLower(), cancellationToken);
             
             if (userExists is not null)
                 throw new UserAlreadyExistsException(normalizedUserName);

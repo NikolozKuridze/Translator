@@ -49,7 +49,7 @@ public class LandingsController : Controller
                 message = "Landing created successfully" 
             });
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             return StatusCode(500, new { error = ex.Message });
         }
