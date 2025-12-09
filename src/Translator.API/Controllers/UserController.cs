@@ -90,7 +90,7 @@ public class UserController : Controller
     {
         try
         {
-            var normalizedUsername = username.ToLower().Trim();
+            var normalizedUsername = username.Trim();
         
             if (normalizedUsername == "company website")
             {
