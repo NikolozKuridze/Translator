@@ -17,6 +17,9 @@ jobs:
       with:
         dotnet-version: '9.0.x'
         
+    - name: Restore dependencies
+      run: dotnet restore src/Translator.API
+        
     - name: Dotnet Publish
       run: dotnet publish src/Translator.API -c Release -o deploy-web -r linux-x64 --self-contained false
       
@@ -30,6 +33,8 @@ jobs:
     - name: Deploy with rsync
       run: |
         rsync -avz --delete -e "ssh -p ${{ secrets.REMOTE_PORT }}" \
+        --exclude 'appsettings.Production.json' \
+        --exclude 'logs/' \
         ./deploy-web/ \
         ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/translator
         
