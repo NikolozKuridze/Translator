@@ -41,7 +41,6 @@ public abstract class SearchUsers
             var effectivePageSize = Math.Min(100, request.PageSize);
 
             var users = await query
-                .OrderBy(u => u.Username)
                 .Skip((pageNumber - 1) * effectivePageSize)
                 .Take(effectivePageSize)
                 .Select(u => new Response(
