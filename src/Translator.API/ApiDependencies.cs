@@ -91,11 +91,9 @@ public static class ApiDependencies
 {
     using (var scope = app.Services.CreateScope())
     {
-        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-        var logsDbContext = scope.ServiceProvider.GetRequiredService<LogsDbContext>();
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>(); 
  
-        db.Database.Migrate();
-        logsDbContext.Database.Migrate();
+        db.Database.Migrate(); 
     }
 
     var productionUrl = app.Configuration
