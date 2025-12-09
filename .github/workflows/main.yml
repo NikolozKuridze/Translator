@@ -1,5 +1,4 @@
 name: Deploy to VPS
-
 on:
   push:
     branches:
@@ -12,28 +11,28 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-
+      
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: '9.0.x'
-
+        
     - name: Dotnet Publish
-      run: dotnet publish src/Translator.API -c Release -o deploy-web -r linux-x64
-
+      run: dotnet publish src/Translator.API -c Release -o deploy-web -r linux-x64 --self-contained false
+      
     - name: Install SSH Key
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.REMOTE_SSH_KEY }}
         known_hosts: ${{ secrets.KNOWN_HOSTS }}
         if_key_exists: replace
-
+        
     - name: Deploy with rsync
       run: |
-        rsync -avz -e "ssh -p ${{ secrets.REMOTE_PORT }}" \
+        rsync -avz --delete -e "ssh -p ${{ secrets.REMOTE_PORT }}" \
         ./deploy-web/ \
         ${{ secrets.SERVER_USERNAME }}@${{ secrets.SERVER_HOST }}:/www/wwwroot/translator
-
+        
     - name: Execute remote SSH commands
       uses: appleboy/ssh-action@master
       with:
@@ -42,8 +41,18 @@ jobs:
         key: ${{ secrets.REMOTE_SSH_KEY }}
         port: ${{ secrets.REMOTE_PORT }}
         script: |
-          sudo /www/server/panel/pyenv/bin/supervisorctl restart translator:*
-
+          # Renew SSL certificate if needed
+          sudo certbot renew --quiet || true
+          
+          # Set executable permissions
+          chmod +x /www/wwwroot/translator/Translator.API
+          
+          # Reload PM2 process (graceful restart)
+          pm2 reload translator --update-env || pm2 start /www/wwwroot/translator/ecosystem.config.js
+          
+          # Save PM2 process list
+          pm2 save
+          
     - name: Cleanup
       if: always()
-      run: rm -rf ~/.ssh 
+      run: rm -rf ~/.ssh
