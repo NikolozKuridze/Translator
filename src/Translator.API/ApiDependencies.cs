@@ -87,48 +87,43 @@ public static class ApiDependencies
     }
 
     public static void UseApiDependencies(this WebApplication app)
+{
+    using (var scope = app.Services.CreateScope())
     {
-        using (var scope = app.Services.CreateScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var logsDbContext = scope.ServiceProvider.GetRequiredService<LogsDbContext>();
-            var creator = db.Database.GetService<IRelationalDatabaseCreator>();
-            var logsCreator = logsDbContext.Database.GetService<IRelationalDatabaseCreator>();
-
-            if (!db.Database.CanConnect())
-                creator.Create();
-
-            if (!logsDbContext.Database.CanConnect())
-                logsCreator.Create();
-        }
-
-        var productionUrl = app.Configuration
-            .GetSection(nameof(ProductionUrl))
-            .Get<ProductionUrl>();
-
-        app.MapOpenApi();
-
-        var servers = new List<ScalarServer> { new(productionUrl!.Path) };
-
-        app.MapScalarApiReference("/docs", options =>
-        {
-            options.Title = "Translator API";
-            options.Theme = ScalarTheme.Mars;
-            options.WithOpenApiRoutePattern("/openapi/v1.json");
-            options.Servers = servers;
-        });
-
-        app.MapControllers();
-        app.UseHttpsRedirection();
-
-        app.UseSession();
-
-        app.UseMiddleware<SecretKeyAuthenticationMiddleware>();
-
-        app.UseMiddleware<ErrorHandlingMiddleware>();
-
-        app.MapControllerRoute(
-            "default",
-            "{controller=Home}/{action=Index}");
+        var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+        var logsDbContext = scope.ServiceProvider.GetRequiredService<LogsDbContext>();
+ 
+        db.Database.Migrate();
+        logsDbContext.Database.Migrate();
     }
+
+    var productionUrl = app.Configuration
+        .GetSection(nameof(ProductionUrl))
+        .Get<ProductionUrl>();
+
+    app.MapOpenApi();
+
+    var servers = new List<ScalarServer> { new(productionUrl!.Path) };
+
+    app.MapScalarApiReference("/docs", options =>
+    {
+        options.Title = "Translator API";
+        options.Theme = ScalarTheme.Mars;
+        options.WithOpenApiRoutePattern("/openapi/v1.json");
+        options.Servers = servers;
+    });
+
+    app.MapControllers();
+    app.UseHttpsRedirection();
+
+    app.UseSession();
+
+    app.UseMiddleware<SecretKeyAuthenticationMiddleware>();
+
+    app.UseMiddleware<ErrorHandlingMiddleware>();
+
+    app.MapControllerRoute(
+        "default",
+        "{controller=Home}/{action=Index}");
+}
 }
