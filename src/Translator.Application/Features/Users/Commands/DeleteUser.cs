@@ -37,7 +37,7 @@ public class DeleteUser
             var normalizedUserName = request.UserName.Trim();
             
             var userExists = await userRepository.AsQueryable()
-                .FirstOrDefaultAsync(u => u.Username == normalizedUserName, cancellationToken);
+                .FirstOrDefaultAsync(u => u.Username.ToLower() == normalizedUserName.ToLower(), cancellationToken);
             
             if (userExists is  null)
                 throw new UserNotFoundException(normalizedUserName);
