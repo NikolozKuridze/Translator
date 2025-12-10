@@ -30,9 +30,8 @@ public abstract class SearchUsers
 
             if (!string.IsNullOrWhiteSpace(request.UserName))
             {
-                var searchTerm = $"%{request.UserName.Trim()}%";
-                query = query.Where(u => 
-                    EF.Functions.Like(u.Username, searchTerm));
+                var searchTerm = request.UserName.ToLower().Trim();
+                query = query.Where(u => u.Username.ToLower().Contains(searchTerm));
             }
 
             var totalCount = await query.CountAsync(cancellationToken);
