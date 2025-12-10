@@ -34,7 +34,7 @@ public class DeleteUser
         {
             await validator.ValidateAndThrowAsync(request,  cancellationToken);
             
-            var normalizedUserName = request.UserName.ToLower().Trim();
+            var normalizedUserName = request.UserName.Trim();
             
             var userExists = await userRepository.AsQueryable()
                 .FirstOrDefaultAsync(u => u.Username == normalizedUserName, cancellationToken);
